@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringShopEmployeeMapper">
+
+        <resultMap id="shopEmployeeMap" type="com.meiyuan.catering.merchant.entity.CateringShopEmployeeEntity">
+                <result property="id" column="id" jdbcType="BIGINT"></result>
+                <result property="name" column="name" jdbcType="VARCHAR"></result>
+                <result property="accountNumber" column="account_number" jdbcType="VARCHAR"></result>
+                <result property="password" column="password" jdbcType="VARCHAR"></result>
+                <result property="shopId" column="shop_id" jdbcType="BIGINT"></result>
+                <result property="phone" column="phone" jdbcType="VARCHAR"></result>
+                <result property="sex" column="sex" jdbcType="VARCHAR"></result>
+                <result property="email" column="email" jdbcType="VARCHAR"></result>
+                <result property="status" column="status" jdbcType="INTEGER"></result>
+                <result property="isDel" column="is_del" jdbcType="INTEGER"></result>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"></result>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"></result>
+        </resultMap>
+        <sql id="employeeColumns">id,name,account_number,password,shop_id,phone,sex,email,status,is_del,create_time,update_time</sql>
+
+        <select id="queryPageShopEmployee" resultType="com.meiyuan.catering.merchant.dto.shop.ShopEmployeeDTO">
+                select id,name,account_number,password,shop_id,phone,sex,email,status,create_time
+                from catering_shop_employee
+                <where>
+                        and is_del = 0
+                        and shop_id = #{dto.shopId}
+                        <if test="dto.status">
+                                and status = #{dto.status}
+                        </if>
+                        <if test="dto.keyword != null">
+                                and (name like concat('%', #{dto.keyword},'%') or account_number like concat('%', #{dto.keyword},'%')
+                                or phone like concat('%', #{dto.keyword},'%'))
+                        </if>
+                        order by create_time desc
+                </where>
+        </select>
+
+        <select id="selectByPhone" resultType="com.meiyuan.catering.merchant.entity.CateringShopEmployeeEntity">
+                select * from catering_shop_employee where phone=#{phone} and is_del=0 limit 1
+        </select>
+
+</mapper>

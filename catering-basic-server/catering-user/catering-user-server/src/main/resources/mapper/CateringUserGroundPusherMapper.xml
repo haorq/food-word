@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringUserGroundPusherMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.user.entity.CateringUserGroundPusherEntity">
+        <result column="id" jdbcType="BIGINT" property="id"/>
+        <result column="pusher_code" jdbcType="VARCHAR" property="pusherCode"/>
+        <result column="pusher_name" jdbcType="VARCHAR" property="pusherName"/>
+        <result column="pusher_tel" jdbcType="VARCHAR" property="pusherTel"/>
+        <result column="qr_code" jdbcType="VARCHAR" property="qrCode"/>
+        <result column="pusher_status" jdbcType="TINYINT" property="pusherStatus"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="create_by" jdbcType="BIGINT" property="createBy"/>
+        <result column="update_by" jdbcType="BIGINT" property="updateBy"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,
+        pusher_code,
+        pusher_name,
+        pusher_tel,
+        pusher_status,
+        qr_code,
+        is_del,
+        create_time,
+        update_time,
+        create_by,
+        update_by
+    </sql>
+
+    <select id="selectList" resultType="com.meiyuan.catering.user.vo.user.PusherListVo">
+        SELECT
+        gp.id,
+        gp.pusher_status,
+        gp.create_by,
+        gp.pusher_code,
+        gp.qr_code,
+        gp.update_by,
+        gp.create_time,
+        gp.pusher_tel,
+        gp.update_time,
+        gp.is_del,
+        gp.pusher_name,
+        ( SELECT COUNT( * ) FROM catering_user u WHERE gp.id = u.ground_pusher_id ) AS userCount
+        FROM catering_user_ground_pusher gp
+        <where>
+            is_del=0
+            <if test="dto.startTime != null">
+                AND gp.create_time &gt;= #{dto.startTime}
+            </if>
+            <if test="dto.endTime != null">
+                AND gp.create_time &lt; DATE_ADD(#{dto.endTime},INTERVAL 1 DAY)
+            </if>
+            <if test="dto.pusherStatus != null and dto.pusherStatus != ''">
+                AND gp.pusher_status = #{dto.pusherStatus}
+            </if>
+            <if test="dto.keyWord != null and dto.keyWord != ''">
+
+                and gp.pusher_code like concat('%',#{dto.keyWord},'%')
+                or gp.pusher_name like concat('%',#{dto.keyWord},'%')
+                or gp.pusher_tel like concat('%',#{dto.keyWord},'%')
+            </if>
+            order by
+            <if test="dto.sort == 1">
+                userCount asc,
+            </if>
+            <if test="dto.sort == 2">
+                userCount desc,
+            </if>
+            gp.create_time desc
+        </where>
+
+    </select>
+    <select id="groundPuserCodeMaxInteger" resultType="java.lang.Integer">
+      SELECT
+      substring( pusher_code, 5, 10 ) AS codeNum
+      FROM
+       catering_user_ground_pusher
+      ORDER BY
+       codeNum + 0 DESC
+       LIMIT 1;
+    </select>
+
+
+</mapper>

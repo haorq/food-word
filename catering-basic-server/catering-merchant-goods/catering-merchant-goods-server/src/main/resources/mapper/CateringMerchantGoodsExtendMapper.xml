@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringMerchantGoodsExtendMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.goods.entity.CateringMerchantGoodsExtendEntity">
+        <id column="id" property="id" />
+        <result column="goods_id" property="goodsId" />
+        <result column="merchant_id" property="merchantId" />
+        <result column="shop_id" property="shopId" />
+        <result column="merchant_goods_name" property="merchantGoodsName" />
+        <result column="category_id" property="categoryId" />
+        <result column="category_name" property="categoryName" />
+        <result column="merchant_goods_status" property="merchantGoodsStatus" />
+        <result column="presell_flag" property="presellFlag" />
+        <result column="start_sell_time" property="startSellTime" />
+        <result column="end_sell_time" property="endSellTime" />
+        <result column="sell_week_time" property="sellWeekTime" />
+        <result column="close_sell_time" property="closeSellTime" />
+        <result column="market_price" property="marketPrice" />
+        <result column="sales_price" property="salesPrice" />
+        <result column="enterprise_price" property="enterprisePrice" />
+        <result column="goods_weight" property="goodsWeight" />
+        <result column="goods_spec_type" property="goodsSpecType" />
+        <result column="highest_buy" property="highestBuy" />
+        <result column="lowest_buy" property="lowestBuy" />
+        <result column="goods_add_type" property="goodsAddType" />
+        <result column="create_time" property="createTime" />
+        <result column="is_del" property="del" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+    <sql id="Base_Column_List">
+       id, goods_id, merchant_id,shop_id, category_id, category_name, merchant_goods_status, merchant_goods_name,presell_flag, start_sell_time, end_sell_time, sell_week_time, close_sell_time, market_price, sales_price, enterprise_price, goods_weight, goods_spec_type, highest_buy, lowest_buy, goods_add_type, create_time, is_del, update_time
+    </sql>
+
+    <select id="getGoodsInfoByGoodsId"
+            resultMap="BaseResultMap">
+       select * from catering_merchant_goods_extend where merchant_id = #{merchantId} and goods_id = #{goodsId} order by create_time desc limit 1
+    </select>
+    <select id="listLastIdByMerchantId" resultType="java.lang.Long">
+        SELECT max(id) FROM catering_merchant_goods_extend WHERE merchant_id = #{merchantId} GROUP BY goods_id
+    </select>
+
+</mapper>

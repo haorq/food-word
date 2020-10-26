@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.meiyuan</groupId>
+	<artifactId>catering-cloud</artifactId>
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.1.8.RELEASE</version>
+		<relativePath/>
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
+		<maven.test.skip>true</maven.test.skip>
+		<fastjson.version>1.2.62</fastjson.version>
+		<jackson-databind.version>2.9.8</jackson-databind.version>
+		<mysql.version>8.0.17</mysql.version>
+		<jetcache.version>1.0.0</jetcache.version>
+		<marsh.concurrent.version>1.0.0</marsh.concurrent.version>
+		<mybatisplus.version>1.0.0</mybatisplus.version>
+		<lombok.version>1.18.4</lombok.version>
+		<!--swagger-->
+		<swagger.version>1.7.0.RELEASE</swagger.version>
+		<swagger-bootstrap.version>1.9.4</swagger-bootstrap.version>
+
+		<apollo.version>1.4.0</apollo.version>
+
+		<spring.cloud.version>Greenwich.SR2</spring.cloud.version>
+	</properties>
+
+	<modules>
+		<module>catering-commons</module>
+		<module>catering-basic-server</module>
+		<module>catering-front</module>
+	</modules>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.elasticsearch</groupId>
+				<artifactId>elasticsearch</artifactId>
+				<version>6.8.6</version>
+			</dependency>
+			<dependency>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-high-level-client</artifactId>
+			<version>6.8.6</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring.cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.hibernate.validator</groupId>
+				<artifactId>hibernate-validator</artifactId>
+				<version>6.0.15.Final</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>druid-spring-boot-starter</artifactId>
+				<version>1.1.21</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.github.binarywang</groupId>
+				<artifactId>weixin-java-pay</artifactId>
+				<version>3.9.0</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.github.binarywang</groupId>
+				<artifactId>weixin-java-miniapp</artifactId>
+				<version>3.9.0</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.github.qcloudsms</groupId>
+				<artifactId>qcloudsms</artifactId>
+				<version>1.0.5</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.aliyun.oss</groupId>
+				<artifactId>aliyun-sdk-oss</artifactId>
+				<version>2.5.0</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-json</artifactId>
+				<version>2.0.4.RELEASE</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-mail</artifactId>
+				<version>2.0.4.RELEASE</version>
+			</dependency>
+
+
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>fastjson</artifactId>
+				<version>${fastjson.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson-databind.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+				<version>${mysql.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.meiyuan.marsh.jetcache</groupId>
+				<artifactId>marsh-jetcache-plus</artifactId>
+				<exclusions>
+					<exclusion>
+						<groupId>com.alicp.jetcache</groupId>
+						<artifactId>jetcache-starter-redis-springdata</artifactId>
+					</exclusion>
+				</exclusions>
+				<version>${jetcache.version}</version>
+			</dependency>
+
+
+			<!-- mybatis数据库字段类型映射，此处是重点 -->
+			<dependency>
+				<groupId>org.mybatis</groupId>
+				<artifactId>mybatis-typehandlers-jsr310</artifactId>
+				<version>1.0.1</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.meiyuan.marsh.mybatis</groupId>
+				<artifactId>marsh-mybatis-plus</artifactId>
+				<version>${mybatisplus.version}</version>
+			</dependency>
+
+			<!--lombok插件-->
+			<dependency>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<optional>true</optional>
+				<version>${lombok.version}</version>
+			</dependency>
+
+			<!--swagger-->
+			<dependency>
+				<groupId>com.spring4all</groupId>
+				<artifactId>swagger-spring-boot-starter</artifactId>
+				<version>${swagger.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.xiaoymin</groupId>
+				<artifactId>swagger-bootstrap-ui</artifactId>
+				<version>${swagger-bootstrap.version}</version>
+			</dependency>
+
+			<!-- apollo -->
+			<dependency>
+				<groupId>com.ctrip.framework.apollo</groupId>
+				<artifactId>apollo-client</artifactId>
+				<version>${apollo.version}</version>
+			</dependency>
+
+			<!-- message -->
+			<dependency>
+				<groupId>com.meiyuan</groupId>
+				<artifactId>message-started</artifactId>
+				<version>1.0.0</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.meiyuan.marsh.poi</groupId>
+				<artifactId>marsh-poi-plus</artifactId>
+				<version>1.0.0</version>
+			</dependency>
+
+			<dependency>
+				<groupId>commons-lang</groupId>
+				<artifactId>commons-lang</artifactId>
+				<version>2.6</version>
+			</dependency>
+			<dependency>
+				<groupId>com.meiyuan.marsh</groupId>
+				<artifactId>marsh-concurrent-starter-redis</artifactId>
+				<version>${marsh.concurrent.version}</version>
+			</dependency>
+		</dependencies>
+
+	</dependencyManagement>
+	<dependencies>
+		<!-- 热部署模块 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<!-- 测试模块 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.vaadin.external.google</groupId>
+					<artifactId>android-json</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<!-- dev 环境 -->
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<profile.active>dev</profile.active>
+				<logback.dir>./logs</logback.dir>
+			</properties>
+		</profile>
+		<profile>
+			<!-- test-online 环境 -->
+			<id>test-online</id>
+			<properties>
+				<profile.active>test-online</profile.active>
+				<logback.dir>./logs</logback.dir>
+			</properties>
+		</profile>
+		<profile>
+			<!-- prod 环境 -->
+			<id>prod</id>
+			<properties>
+				<profile.active>prod</profile.active>
+				<logback.dir>./logs</logback.dir>
+			</properties>
+		</profile>
+	</profiles>
+
+	<repositories>
+		<repository>
+			<id>maven-releases</id>
+			<url>http://nexus.meiy520.com/repository/maven-releases/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>public</id>
+			<name>aliyun nexus</name>
+			<url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>public</id>
+			<name>aliyun nexus</name>
+			<url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+</project>

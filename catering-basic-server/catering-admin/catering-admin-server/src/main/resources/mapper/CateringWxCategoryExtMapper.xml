@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringWxCategoryExtMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.admin.entity.CateringWxCategoryExtEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="wx_category_id" jdbcType="BIGINT" property="wxCategoryId"/>
+        <result column="icon" jdbcType="VARCHAR" property="icon"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="describe_txt" jdbcType="VARCHAR" property="describeTxt"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, wx_category_id, icon, title, `describe_txt`, create_time, update_time
+  </sql>
+
+</mapper>

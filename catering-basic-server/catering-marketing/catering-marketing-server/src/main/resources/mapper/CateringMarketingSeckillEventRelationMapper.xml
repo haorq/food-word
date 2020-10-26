@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingSeckillEventRelationMapper">
+
+    <delete id="deleteBySeckillId" parameterType="java.lang.Long">
+        delete from catering_marketing_seckill_event_relation where seckill_id = #{seckillId}
+    </delete>
+
+    <select id="selectSeckillIds"
+            resultType="com.meiyuan.catering.marketing.vo.seckillevent.MarketingSeckillEventInfoVO">
+        select distinct
+            cmser.id as id,
+            cmser.event_id as eventId,
+            cmser.seckill_id as seckillId,
+            cmser.m_goods_id as mGoodsId
+        from
+            catering_marketing_seckill_event_relation as cmser
+        left join catering_marketing_seckill as cms on cms.id = cmser.seckill_id
+        where
+            cmser.event_id = #{eventId} and cms.up_down = 2 and cms.is_del = 0
+            and <![CDATA[ cms.begin_time <= #{dateTime} ]]> and <![CDATA[ #{dateTime} <= cms.end_time ]]>
+            and cms.merchant_id in
+            <foreach collection="shopIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+
+    <select id="selectEventListBySeckillId" parameterType="java.lang.Long"
+            resultType="com.meiyuan.catering.marketing.vo.seckill.MarketingSeckillDetailEventVO">
+        select distinct event_Id as eventId, event_time as eventTime from catering_marketing_seckill_event_relation where seckill_id = #{seckillId}
+    </select>
+
+    <select id="selectEventList"
+            resultType="com.meiyuan.catering.marketing.vo.seckillevent.MarketingSeckillEventVO">
+        select
+        seckill_id as seckillId,
+        event_id as eventId,
+        event_time as eventTime,
+        event_begin_time as eventBeginTime,
+        event_end_time as eventEndTime
+        from
+        catering_marketing_seckill_event_relation
+        where
+        seckill_id in
+        <foreach collection="seckillIdList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by event_id
+        order by event_time
+    </select>
+    <select id="selectEventMarketingGoodsIds" resultType="java.lang.Long">
+        select distinct
+            cmser.m_goods_id
+        from
+            catering_marketing_seckill_event_relation as cmser
+        left join catering_marketing_seckill as cms on cms.id = cmser.seckill_id
+        left join catering_marketing_goods as cmg on cmg.of_id = cms.id
+        where
+            cmser.event_id = #{eventId} and cms.up_down = 2 and cms.is_del = 0
+            and cmg.goods_status = 2 and cmg.is_del = 0
+            and <![CDATA[ cms.begin_time <= #{dateTime} ]]> and <![CDATA[ #{dateTime} <= cms.end_time
+
+
+        ]]>
+    </select>
+    <select id="selectUnderwayEventList"
+            resultType="com.meiyuan.catering.marketing.vo.seckillevent.MarketingSeckillEventVO">
+        select
+        seckill_id as seckillId,
+        event_id as eventId,
+        event_time as eventTime,
+        event_begin_time as eventBeginTime,
+        event_end_time as eventEndTime
+        from
+        catering_marketing_seckill_event_relation
+        where
+        seckill_id in
+        <foreach collection="seckillIdList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and time(now()) >= event_begin_time
+        and time(now()) &lt;= event_end_time
+        order by event_time
+    </select>
+
+    <select id="underwayEventIdList" resultType="java.lang.Long">
+        select
+        event_id
+        from
+        catering_marketing_seckill_event_relation
+        where
+        event_id in
+        <foreach collection="seckillEventIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and time(now()) >= event_begin_time
+        and time(now()) &lt;= event_end_time
+        group by event_id
+    </select>
+
+    <select id="queryByEventId" resultType="com.meiyuan.catering.marketing.vo.seckillevent.MarketingSeckillEventVO">
+        select
+        seckill_id as seckillId,
+        event_id as eventId,
+        event_time as eventTime,
+        event_begin_time as eventBeginTime,
+        event_end_time as eventEndTime
+        from
+        catering_marketing_seckill_event_relation
+        where
+        event_id = #{seckillEventId}
+        limit 1
+    </select>
+    <select id="selectEventIdsBySeckillIds" resultType="com.meiyuan.catering.marketing.vo.seckillevent.MarketingSeckillEventIdsVO">
+        select
+            seckill_id as seckillId,
+            GROUP_CONCAT(distinct event_id Separator ',') as seckillEventIds
+        from
+            catering_marketing_seckill_event_relation
+        where seckill_id in
+        <foreach collection="seckillIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by seckill_id
+    </select>
+
+
+</mapper>

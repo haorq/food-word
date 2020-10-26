@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringMerchantMenuGoodsMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.goods.entity.CateringMerchantMenuGoodsEntity">
+        <result column="id" jdbcType="BIGINT" property="id" />
+        <result column="merchant_id" jdbcType="BIGINT" property="merchantId" />
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName" />
+        <result column="is_del" jdbcType="TINYINT" property="del" />
+        <result column="create_by" jdbcType="BIGINT" property="createBy" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_by" jdbcType="BIGINT" property="updateBy" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    </resultMap>
+
+    <resultMap id="BaseResultMapVo" type="com.meiyuan.catering.merchant.goods.vo.MerchantMenuGoodsVO">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName" />
+        <result column="shop_name" jdbcType="VARCHAR" property="shopName" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,
+        merchant_id,
+        menu_name,
+        is_del,
+        create_by,
+        create_time,
+        update_by,
+        update_time
+    </sql>
+
+    <select id="queryPageList" resultMap="BaseResultMapVo">
+        SELECT
+            DISTINCT cmmg.id,
+            cmmg.menu_name,
+            cmmg.create_time,
+            (select GROUP_CONCAT(shop_name) from catering_menu_shop_goods_relation
+                WHERE menu_id = cmmg.id
+                order by id desc
+            ) as shop_name
+        FROM
+            catering_merchant_menu_goods cmmg
+        left join catering_menu_shop_goods_relation shop on cmmg.id = shop.menu_id
+        <where>
+            and cmmg.merchant_id = #{dto.merchantId}
+            <if test="null != dto.menuName and '' != dto.menuName">
+                and cmmg.menu_name like concat('%',#{dto.menuName},'%')
+            </if>
+            <if test="null != dto.shopId">
+                and shop.shop_id = #{dto.shopId}
+            </if>
+        </where>
+        order by cmmg.create_time desc
+    </select>
+
+    <resultMap id="menuDetailsMap" type="com.meiyuan.catering.merchant.goods.vo.MerchantMenuGoodsDetailsVO">
+        <result column="id" jdbcType="BIGINT" property="id" />
+        <result column="merchant_id" jdbcType="BIGINT" property="merchantId" />
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <collection property="goodsList" ofType="com.meiyuan.catering.merchant.goods.vo.MerchantGoodsMenuListVO">
+            <result column="goods_id" jdbcType="BIGINT" property="goodsId" />
+            <result column="sku_code" property="skuCode"/>
+        </collection>
+        <collection property="shopList" ofType="com.meiyuan.catering.merchant.vo.merchant.GoodPushShopVo">
+            <result property="shopId" column="shop_id"/>
+        </collection>
+    </resultMap>
+    <select id="queryMenuById" resultMap="menuDetailsMap">
+        SELECT
+            cmmg.id,
+            cmmg.merchant_id,
+            cmmg.menu_name,
+            cmmg.create_time,
+            cmgr.sku_code,
+            cmgr.goods_id,
+            cmsgr.shop_id
+        FROM
+            catering_merchant_menu_goods cmmg
+        LEFT JOIN catering_menu_goods_relation cmgr ON cmmg.id = cmgr.menu_id
+        LEFT JOIN catering_menu_shop_goods_relation cmsgr ON cmmg.id = cmsgr.menu_id
+        <where>
+            and cmmg.id = #{id}
+            and cmmg.merchant_id = #{merchantId}
+        </where>
+    </select>
+
+    <select id="queryMenuShopByMerchantId" resultType="java.lang.Long">
+        SELECT DISTINCT shop_id FROM catering_merchant_menu_goods menu
+        LEFT JOIN catering_menu_shop_goods_relation shop on menu.id = shop.menu_id
+        WHERE menu.merchant_id = #{merchantId}
+        and shop_id is not null
+    </select>
+
+    <delete id="deleteByGoodsIdAndMerchantId">
+        DELETE
+        cmgr
+        FROM
+        catering_merchant_menu_goods cmmg
+        LEFT JOIN catering_menu_goods_relation cmgr ON cmmg.id = cmgr.menu_id
+        LEFT JOIN catering_menu_shop_goods_relation cmsgr ON cmmg.id = cmsgr.menu_id
+        <where>
+            and cmgr.goods_id = #{goodsId}
+            and cmmg.merchant_id = #{merchantId}
+        </where>
+
+    </delete>
+
+</mapper>

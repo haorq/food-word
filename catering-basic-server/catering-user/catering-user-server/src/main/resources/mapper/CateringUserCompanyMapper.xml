@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringUserCompanyMapper">
+
+    <resultMap type="com.meiyuan.catering.user.entity.CateringUserCompanyEntity" id="CateringUserCompanyMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="companyName" column="company_name" jdbcType="VARCHAR"/>
+        <result property="account" column="account" jdbcType="VARCHAR"/>
+        <result property="contantName" column="contant_name" jdbcType="VARCHAR"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="businessLicense" column="business_license" jdbcType="VARCHAR"/>
+        <result column="company_status" jdbcType="TINYINT" property="companyStatus" />
+        <result property="addressProvinceCode" column="address_province_code" jdbcType="VARCHAR"/>
+        <result property="addressCityCode" column="address_city_code" jdbcType="VARCHAR"/>
+        <result property="addressAreaCode" column="address_area_code" jdbcType="VARCHAR"/>
+        <result property="addressProvince" column="address_province" jdbcType="VARCHAR"/>
+        <result property="addressCity" column="address_city" jdbcType="VARCHAR"/>
+        <result property="addressArea" column="address_area" jdbcType="VARCHAR"/>
+        <result property="addressDetail" column="address_detail" jdbcType="VARCHAR"/>
+        <result property="addressFull" column="address_full" jdbcType="VARCHAR"/>
+        <result property="mapCoordinate" column="map_coordinate" jdbcType="VARCHAR"/>
+        <result property="isDel" column="is_del" jdbcType="INTEGER"/>
+        <result column="delete_time" jdbcType="TIMESTAMP" property="deleteTime" />
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+        <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+     </resultMap>
+
+
+    <!--  用户管理  企业用户列表-->
+    <select id="companyList" resultType="com.meiyuan.catering.user.vo.user.UserCompanyListVo">
+
+        select
+        id,
+        create_time,
+        company_name,
+        company_status,
+        address_province AS provinceName,
+        address_city AS cityName,
+        address_area AS areaName,
+        address_detail,
+        contant_name as name,
+        account as phone
+        from
+        catering_user_company
+
+        <where>
+            is_del=0
+            <if test="dto.provinceId!=null and dto.provinceId!=''">
+                and address_province_code=#{dto.provinceId}
+            </if>
+            <if test="dto.cityId != null and dto.cityId != ''">
+                and address_city_code=#{dto.cityId}
+            </if>
+            <if test="dto.areaId != null and dto.areaId != ''">
+                and address_area_code=#{dto.areaId}
+            </if>
+            <if test="dto.companyName != null and dto.companyName!=''">
+                and company_name like concat('%',#{dto.companyName,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="dto.beginTime != null">
+                AND create_time &gt;= #{dto.beginTime}
+            </if>
+            <if test="dto.eddTime != null">
+                AND create_time &lt; DATE_ADD(#{dto.eddTime},INTERVAL 1 DAY)
+            </if>
+            <if test="dto.companyStatus != null and dto.companyStatus != ''">
+                AND company_status = #{dto.companyStatus}
+            </if>
+            <if test="dto.nameOrTel != null and dto.nameOrTel != ''">
+
+                and contant_name like concat('%',#{dto.nameOrTel},'%')
+                or account like concat('%',#{dto.nameOrTel},'%')
+            </if>
+        </where>
+            order by create_time desc
+    </select>
+
+
+
+
+    <!--  用户管理  企业用户详情-->
+    <select id="companyDetailById" resultType="com.meiyuan.catering.user.vo.user.CompanyDetailVo">
+   select
+        uc.create_time,
+        uc.company_name,
+        uc.company_status,
+        uc.business_license,
+        uc.address_province AS provinceName,
+        uc.address_city AS cityName,
+        uc.address_area AS areaName,
+        uc.address_detail,
+        uc.address_full,
+        uc.account as phone,
+        uc.contant_name as name
+        from
+        catering_user_company uc
+        where
+        uc.is_del=0 and uc.id=#{id}
+    </select>
+
+
+
+
+    <!--用户管理  个人用户列表-->
+    <select id="userList" resultType="com.meiyuan.catering.user.vo.user.UserListVo">
+        SELECT
+            uc.create_time,
+            uc.user_name AS `name`,
+            uc.nickname,
+            gp.pusher_code AS pusherCode,
+            uc.`status`,
+            IF(uc.area = null || uc.area = '' || uc.area = 'null' || uc.area = 'NULL',(NULL),uc.area) as area,
+            uc.phone,
+            uc.pull_new_user AS pullNewUser
+        FROM
+            catering_user uc
+        LEFT JOIN catering_user_ground_pusher gp ON uc.ground_pusher_id = gp.id
+        <where>
+            uc.is_del=0
+            <if test="dto.provinceId!=null and dto.provinceId!=''">
+                and uc.address_province_code=#{dto.provinceId}
+            </if>
+            <if test="dto.cityId != null and dto.cityId != ''">
+                and uc.address_city_code=#{dto.cityId}
+            </if>
+            <if test="dto.areaId != null and dto.areaId != ''">
+                and uc.address_area_code=#{dto.areaId}
+            </if>
+            <if test="dto.userStatus!=null and dto.userStatus != ''">
+                and uc.status=#{dto.userStatus}
+            </if>
+            <if test="dto.nameOrTel != null and dto.nameOrTel != ''">
+                and uc.user_name like concat('%',#{dto.nameOrTel,jdbcType=VARCHAR},'%')
+                or uc.phone like concat('%',#{dto.nameOrTel,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="dto.pullNewUser!=null">
+                and uc.pull_new_user = #{dto.pullNewUser}
+            </if>
+            <if test="dto.startTime!=null">
+                and uc.create_time <![CDATA[ >= ]]> #{dto.startTime}
+            </if>
+            <if test="dto.endTime!=null">
+                and uc.create_time <![CDATA[ < ]]> #{dto.endTime}
+            </if>
+        </where>
+        order by uc.create_time desc
+    </select>
+
+
+
+    <!--用户管理  回收站-->
+    <select id="recycleList" resultType="com.meiyuan.catering.user.vo.user.RecycleListVo">
+        select
+        uc.id,
+        uc.delete_time,
+        uc.company_status,
+        uc.address_province AS provinceName,
+        uc.address_city AS cityName,
+        uc.address_area AS areaName,
+        uc.contant_name as name,
+        uc.account as phone
+        from
+        catering_user_company uc
+        <where>
+            uc.is_del=1
+            <if test="dto.provinceId!=null and dto.provinceId!=''">
+                and uc.address_province_code=#{dto.provinceId}
+            </if>
+            <if test="dto.cityId != null and dto.cityId != ''">
+                and uc.address_city_code=#{dto.cityId}
+            </if>
+            <if test="dto.areaId != null and dto.areaId != ''">
+                and uc.address_area_code=#{dto.areaId}
+            </if>
+            <if test="dto.beginTime != null ">
+                AND uc.delete_time &gt;= #{dto.beginTime}
+            </if>
+            <if test="dto.eddTime != null">
+                AND uc.delete_time &lt; #{dto.eddTime}
+            </if>
+
+            <if test="dto.nameOrTel != null and dto.nameOrTel != ''">
+                and uc.contant_name like concat('%',#{dto.nameOrTel,jdbcType=VARCHAR},'%')
+                or uc.account like concat('%',#{dto.nameOrTel,jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+        order by uc.delete_time desc
+
+    </select>
+
+    <select id="getListUcInfo" resultType="com.meiyuan.catering.core.dto.base.UserCompanyInfo">
+        SELECT
+        id,
+        company_name name,
+        account phone,
+        1 userType
+        FROM
+        `catering_user_company`
+        <where>
+            is_del = 0
+         <if test="uidOrCids != null and uidOrCids.size() != 0">
+             and id in
+             <foreach collection="uidOrCids" item="item" separator="," open="(" close=")">
+                 #{item}
+             </foreach>
+         </if>
+        </where>
+    </select>
+
+
+</mapper>

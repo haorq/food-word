@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringShopGoodsSpuMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.goods.entity.CateringShopGoodsSpuEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="spu_code" property="spuCode"/>
+        <result column="goods_id" property="goodsId"/>
+        <result column="shop_id" property="shopId"/>
+        <result column="merchant_id" property="merchantId"/>
+        <result column="shop_goods_status" property="shopGoodsStatus"/>
+        <result column="sort" property="sort"/>
+        <result column="goods_and_type" property="goodsAndType"/>
+        <result column="is_del" jdbcType="TINYINT" property="del"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,
+        spu_code,
+        goods_id,
+        merchant_id,
+        shop_id,
+        shop_goods_status,
+        sort,
+        goods_and_type,
+        is_del,
+        create_time,
+        update_time
+    </sql>
+    <delete id="deleteCategoty">
+    delete
+    from
+    catering_category_shop_relation
+    where  shop_id=#{shopId}
+    and category_id in
+    <foreach collection="categoryIds" item="categoryId" open="(" close=")" separator=",">
+        #{categoryId}
+    </foreach>
+
+
+
+    </delete>
+
+
+    <select id="deleteIsGoodsNull" resultType="java.lang.Integer">
+        UPDATE catering_shop_goods_spu
+        SET is_del = 1
+        WHERE
+            id IN (
+                SELECT * FROM(
+                    SELECT
+                        spu.id
+                    FROM
+                        catering_shop_goods_spu spu
+                        LEFT JOIN catering_shop_goods_sku sku ON ( spu.goods_id = sku.goods_id AND spu.id = sku.shop_goods_spu_id )
+                    WHERE
+                    sku.goods_id IS NULL
+                ) as newTable
+            )
+    </select>
+    <select id="getShopGoodsStatus" resultType="com.meiyuan.catering.core.dto.es.ShopGoodsStatusMap">
+        SELECT
+        *
+        FROM
+        `catering_shop_goods_spu`
+        <where>
+          is_del=0
+
+            <if test="shopIds != null and shopIds.size() != 0">
+                and shop_id in
+                <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                    #{shopId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="getShopGoodsSkus" resultType="com.meiyuan.catering.core.dto.es.ShopGoodsSku">
+        SELECT
+        *
+        FROM
+        `catering_shop_goods_sku`
+        <where>
+            is_del = 0
+            <if test="shopIds != null and shopIds.size() != 0">
+                and shop_id in
+                <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                    #{shopId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="existSkuShop" resultType="java.lang.Long">
+        SELECT
+        spu.shop_id
+        FROM
+        `catering_shop_goods_spu` spu
+        left JOIN catering_shop_goods_sku sku on spu.id = sku.shop_goods_spu_id
+        <where>
+            spu.is_del = 0
+            and
+            sku.is_del = 0
+            and spu.goods_id = #{goodsMerchantId}
+            <if test="shopIds != null and shopIds.size() != 0">
+                and spu.shop_id in
+                <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                    #{shopId}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY spu.shop_id
+
+    </select>
+    <select id="getShopGoodsSortMaxList" resultType="com.meiyuan.catering.merchant.goods.dto.goods.GoodsSortMaxDTO">
+        SELECT
+        max(s.sort) as sort,
+        e.category_id
+        FROM
+            catering_merchant_goods_extend e
+            LEFT JOIN catering_shop_goods_spu s
+            ON (e.goods_id = s.goods_id AND e.merchant_id = s.merchant_id)
+        <where>
+            e. is_del = 0
+            and
+            s.is_del = 0
+            and
+            s.shop_id=#{shopId}
+            <if test="categoryIds != null and categoryIds.size() != 0">
+                and  e.category_id in
+                <foreach collection="categoryIds" item="id" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY e.category_id
+    </select>
+
+
+    <select id="selectGoods" resultType="com.meiyuan.catering.merchant.goods.dto.goods.GoodsSortMaxDTO">
+        SELECT
+            e.category_id,e.goods_id
+        FROM
+            catering_merchant_goods_extend e
+        WHERE
+            e.merchant_id= #{merchantId}
+          and
+            e. is_del = 0
+          and
+            e.goods_id in
+            <foreach collection="goodsIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+    </select>
+
+    <select id="getShopGoodsSortMin"
+            resultType="com.meiyuan.catering.merchant.goods.dto.goods.GoodsSortMaxDTO">
+
+        SELECT
+            min(s.sort) as sort,
+            e.category_id
+        FROM
+            catering_merchant_goods_extend e
+                LEFT JOIN catering_shop_goods_spu s
+                          ON (e.goods_id = s.goods_id AND e.merchant_id = s.merchant_id)
+        WHERE
+            e. is_del = 0
+          and
+            s.is_del = 0
+          and
+            s.shop_id=#{shopId}
+          and
+            e.category_id =#{categoryId}
+
+    </select>
+
+
+    <select id="getIdByGoodsId" resultType="java.lang.Long">
+
+        SELECT
+        `id`
+        FROM catering_shop_goods_spu
+        WHERE merchant_id =#{merchantId}
+        and goods_id=#{goodsId}
+        and is_del=0
+
+
+    </select>
+
+
+
+    <select id="getShopGoodsSortMax"
+            resultType="com.meiyuan.catering.merchant.goods.dto.goods.GoodsSortMaxDTO">
+        SELECT
+        max(s.sort) as sort,
+        e.category_id,
+        s.shop_id
+        FROM
+        catering_merchant_goods_extend e
+        LEFT JOIN catering_shop_goods_spu s
+        ON (e.goods_id = s.goods_id AND e.merchant_id = s.merchant_id)
+        <where>
+            e. is_del = 0
+            and
+            s.is_del = 0
+            and
+            e.category_id =#{categoryId}
+            and
+            s.shop_id = #{shopId}
+        </where>
+    </select>
+
+    <select id="getSortMaxList" resultType="com.meiyuan.catering.merchant.goods.dto.goods.GoodsSortMaxDTO">
+        SELECT
+        max(s.sort) as sort,
+        e.category_id,
+        s.shop_id
+        FROM
+        catering_merchant_goods_extend e
+        LEFT JOIN catering_shop_goods_spu s
+        ON (e.goods_id = s.goods_id AND e.merchant_id = s.merchant_id)
+        <where>
+            e. is_del = 0
+            and
+            s.is_del = 0
+            and
+            e.category_id =#{categoryId}
+            AND s.shop_id in
+            <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </where>
+        GROUP BY s.shop_id;
+
+    </select>
+
+
+    <select id="getShopGoodsSort" resultType="com.meiyuan.catering.core.dto.goods.GoodsSort">
+        SELECT
+        e.goods_id,
+        e.merchant_id,
+        s.shop_id
+        FROM
+        catering_merchant_goods_extend e
+        LEFT JOIN catering_shop_goods_spu s
+        ON (e.goods_id = s.goods_id AND e.merchant_id = s.merchant_id)
+        <where>
+            e. is_del = 0
+            and
+            s.is_del = 0
+            and
+            e.category_id =#{categoryId}
+            and
+            e.merchant_id = #{merchantId}
+        </where>
+
+    </select>
+
+    <select id="queryByIdList" resultType="com.meiyuan.catering.core.vo.wxcategory.WxCategoryGoodsVO">
+        SELECT
+            spu.id as shopGoodsId,
+            spu.spu_code,
+            spu.goods_id as goodsId,
+            spu.shop_goods_status as shopGoodsStatus,
+            spu.merchant_id as merchantId,
+            spu.shop_id as shopId,
+            spu.is_del as del,
+            (select shop_name from catering_shop where id = spu.shop_id) as shopName,
+            goods.goods_name as goodsName,
+            (select merchant_goods_status from catering_merchant_goods_extend
+            where goods_id = spu.goods_id and merchant_id = spu.merchant_id and is_del = 0) as merchantGoodsStatus
+        FROM
+            `catering_shop_goods_spu` spu
+        LEFT JOIN catering_merchant_goods goods on spu.goods_id = goods.goods_id
+        <where>
+            AND spu.id in
+            <foreach collection="spuIdList" item="spuId" open="(" close=")" separator=",">
+                #{spuId}
+            </foreach>
+        </where>
+    </select>
+
+
+    <resultMap id="MerchantCategoryGoodsMap" type="com.meiyuan.catering.merchant.goods.dto.goods.MerchantCategoryGoodsDTO">
+        <result column="shop_id" property="shopId"/>
+        <result column="merchant_id" property="merchantId"/>
+        <collection property="categoryIds" ofType="long">
+            <result column="categoryId"/>
+        </collection>
+    </resultMap>
+    <select id="selectCategoryId" resultMap="MerchantCategoryGoodsMap">
+        SELECT
+        spu.merchant_id ,
+        spu.shop_id                                                                                              ,
+        mge.category_id as categoryId
+        FROM
+            catering_merchant_goods_extend mge
+                LEFT JOIN catering_shop_goods_spu spu ON ( mge.goods_id = spu.goods_id AND mge.merchant_id = spu.merchant_id )
+        WHERE
+            mge.is_del = FALSE
+          AND spu.is_del = FALSE
+          AND spu.merchant_id =#{merchantId}
+          AND spu.goods_id IN
+        <foreach collection="goodsIds" item="item" index="index" open="(" close=")" separator=",">
+           #{item}
+        </foreach>
+
+    </select>
+
+
+
+    <select id="getSortForMerchant" resultType="com.meiyuan.catering.merchant.goods.entity.CateringShopGoodsSpuEntity">
+        select
+         *
+        from
+        catering_shop_goods_spu shop_spu
+        left join catering_merchant_goods_extend mgoods_ext
+        on (shop_spu.merchant_id = mgoods_ext.merchant_id and mgoods_ext.goods_id=shop_spu.goods_id)
+        where
+        shop_spu.is_del = 0
+        and mgoods_ext.is_del = 0
+        and shop_spu.shop_id = #{dto.shopId}
+        and mgoods_ext.category_id = #{dto.categoryId}
+        <if test="dto.upOrDown==2">
+            and shop_spu.sort > #{dto.firstSort}
+        </if>
+        <if test="dto.upOrDown==1">
+            and shop_spu.sort >=#{dto.firstSort}
+            and shop_spu.goods_id !=#{dto.firstId}
+        </if>
+        GROUP BY shop_spu.goods_id
+        order by shop_spu.sort asc
+    </select>
+    <select id="selectMerchantId" resultType="java.lang.Long">
+        SELECT
+            id
+        FROM
+            catering_merchant
+        WHERE
+            id NOT IN ( SELECT merchant_id FROM catering_merchant_category WHERE default_category = 2 AND category_add_type = 2 and is_del=0)
+
+    </select>
+</mapper>

@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersAppraiseMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersAppraiseEntity" id="CateringOrdersAppraiseMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="storePicture" column="store_picture" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="userNickname" column="user_nickname" jdbcType="VARCHAR"/>
+        <result property="userAvatar" column="user_avatar" jdbcType="VARCHAR"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="reply" column="reply" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="appraiseLevel" column="appraise_level" jdbcType="OTHER"/>
+        <result property="taste" column="taste" jdbcType="INTEGER"/>
+        <result property="service" column="service" jdbcType="INTEGER"/>
+        <result property="pack" column="pack" jdbcType="INTEGER"/>
+        <result property="appraisePicture" column="appraise_picture" jdbcType="VARCHAR"/>
+        <result property="appraiseType" column="appraise_type" jdbcType="INTEGER"/>
+        <result property="browse" column="browse" jdbcType="INTEGER"/>
+        <result property="anonymous" column="is_anonymous" jdbcType="INTEGER"/>
+        <result property="canShow" column="is_show" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="replyTime" column="reply_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+    <select id="appraiseListQuery" resultType="com.meiyuan.catering.order.dto.query.admin.OrdersAppraiseAdminDTO">
+        SELECT
+        appraise.merchant_id AS merchantId,
+        appraise.store_id AS storeId,
+        shop.shop_name AS storeName,
+        COUNT(*) AS appraiseNumber,
+        SUM(CASE appraise.status
+        WHEN 1 THEN 1 ELSE 0
+        END) AS goodNumber,
+        SUM(CASE appraise.status
+        WHEN 2 THEN 1 ELSE 0
+        END) AS generalNumber,
+        SUM(CASE appraise.status
+        WHEN 3 THEN 1 ELSE 0
+        END) AS badNumber
+        FROM catering_orders_appraise appraise
+        LEFT JOIN catering_shop shop ON shop.id = appraise.store_id
+        WHERE appraise.is_del = 0
+        <if test="param.storeName != null and param.storeName != ''">
+            and shop.shop_name like concat ('%',#{param.storeName},'%')
+        </if>
+        GROUP BY appraise.store_id
+    </select>
+
+    <select id="storeOrdersAppraise" resultType="com.meiyuan.catering.order.dto.query.admin.OrdersAppraiseAdminDTO">
+        SELECT
+        appraise.merchant_id AS merchantId,
+        appraise.store_id AS storeId,
+        shop.shop_name AS storeName,
+        COUNT(*) AS appraiseNumber,
+        SUM(CASE appraise.status
+        WHEN 1 THEN 1 ELSE 0
+        END) AS goodNumber,
+        SUM(CASE appraise.status
+        WHEN 2 THEN 1 ELSE 0
+        END) AS generalNumber,
+        SUM(CASE appraise.status
+        WHEN 3 THEN 1 ELSE 0
+        END) AS badNumber
+        FROM catering_orders_appraise appraise
+        LEFT JOIN catering_shop shop ON shop.id = appraise.store_id
+        WHERE appraise.is_del = 0
+        and appraise.store_id = #{shopId}
+    </select>
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersAppraiseDetailListAdminDTO"
+               id="OrdersAppraiseListMap">
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="appraiseTime" column="create_time" jdbcType="INTEGER"/>
+        <result property="userNickname" column="userNickname"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="reply" column="reply" jdbcType="VARCHAR"/>
+        <collection property="goodsDetails" column="order_number"
+                    select="com.meiyuan.catering.order.dao.CateringOrdersAppraiseMapper.orderGoodsDetails"
+                    ofType="com.meiyuan.catering.order.dto.query.admin.OrdersAppraiseDetailGoodsDTO"/>
+    </resultMap>
+    <select id="ordersAppraiseListQuery" resultMap="OrdersAppraiseListMap">
+        SELECT
+        appraise.create_time,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_nickname ELSE '匿名用户'
+        END AS userNickname,
+        appraise.order_number, appraise.status, appraise.content, appraise.reply
+        FROM catering_orders_appraise appraise
+        WHERE appraise.is_del = 0
+        and appraise.store_id = #{param.shopId}
+    </select>
+
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersAppraiseDetailGoodsDTO" id="OrderGoodsDetailsMap">
+        <result property="orderGoodsId" column="goods_id" jdbcType="INTEGER"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+        <result property="transactionPrice" column="transaction_price" jdbcType="OTHER"/>
+    </resultMap>
+    <select id="orderGoodsDetails" resultMap="OrderGoodsDetailsMap">
+        SELECT goods.id, goods.goods_name, goods.quantity, goods.transaction_price
+        FROM catering_orders_goods goods
+        WHERE goods.order_number = #{orderNumber}
+    </select>
+
+    <select id="appraisBaseQueryMerchant"
+            resultType="com.meiyuan.catering.order.dto.query.merchant.OrdersAppraiseMerchantDTO">
+       SELECT
+        ROUND(AVG(appraise.appraise_level),1) totalScore,
+        ROUND(AVG(appraise.taste),1) tasteScore,
+        ROUND(AVG(appraise.service),1) serviceScore,
+        ROUND(AVG(appraise.pack),1) packScore
+        FROM catering_orders_appraise appraise
+        WHERE appraise.store_id = #{shopId}
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.merchant.OrdersAppraiseListMerchantDTO"
+               id="AppraiseListQueryMerchantMap">
+        <result property="appraiseId" column="id" jdbcType="BIGINT"/>
+        <result property="appraiseTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="userNickname" column="user_nickname" jdbcType="VARCHAR"/>
+        <result property="userAvatar" column="user_avatar" jdbcType="VARCHAR"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="reply" column="reply" jdbcType="VARCHAR"/>
+        <result property="appraisePicture" column="appraise_picture" jdbcType="VARCHAR"/>
+        <result property="appraiseLevel" column="appraise_level" jdbcType="OTHER"/>
+        <result property="canShow" column="is_show" jdbcType="INTEGER"/>
+        <result property="replyTime" column="reply_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <select id="appraiseListQueryMerchant" resultMap="AppraiseListQueryMerchantMap">
+        SELECT
+        appraise.id,
+        appraise.create_time,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_nickname ELSE '匿名用户'
+        END AS user_nickname,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_avatar ELSE 'https://oss-prod-catering.meiy365.com/catering-prod/20200923/xpol08ckabtnw727u2cs.png'
+        END AS user_avatar,
+        appraise.order_number,
+        appraise.status,
+        appraise.content,
+        appraise.reply,
+        appraise.reply_time,
+        appraise.appraise_picture,
+        appraise.appraise_level,
+        appraise.is_show
+        FROM catering_orders_appraise appraise
+        WHERE appraise.is_del = 0 and appraise.store_id = #{param.shopId}
+        <if test="param.appraiseTime != null">
+            and to_days(appraise.create_time) = to_days(#{param.appraiseTime})
+        </if>
+        <if test="param.appraiseContent">
+            and ((appraise.content is not null and trim(appraise.content) != '')
+            or (appraise.appraise_picture is not null and trim(appraise.appraise_picture) != ''))
+        </if>
+        <if test="param.orderLabel != null">
+            <choose>
+                <when test="param.orderLabel == -1">
+                </when>
+                <otherwise>
+                    and appraise.status = #{param.orderLabel}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="param.appraiseStatus != null">
+            <choose>
+                <when test="param.appraiseStatus==2">
+                    and appraise.is_show = 0
+                </when>
+                <when test="param.appraiseStatus==1">
+                    and appraise.is_show = 1
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <choose>
+            <when test="param.isReply==1">
+                and appraise.reply is not null
+            </when>
+            <when test="param.isReply==2">
+                and appraise.reply is null
+            </when>
+            <otherwise></otherwise>
+        </choose>
+        order by appraise.create_time desc
+    </select>
+    <resultMap type="com.meiyuan.catering.order.dto.query.wx.MyAppraiseDTO" id="MyAppraiseMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="storePicture" column="store_picture" jdbcType="VARCHAR"/>
+        <result property="userNickname" column="user_nickname" jdbcType="VARCHAR"/>
+        <result property="userAvatar" column="user_avatar" jdbcType="VARCHAR"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="reply" column="reply" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="appraiseLevel" column="appraise_level" jdbcType="OTHER"/>
+        <result property="appraisePicture" column="appraise_picture" jdbcType="VARCHAR"/>
+        <result property="browse" column="browse" jdbcType="INTEGER"/>
+        <result property="appraiseTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="sellType" column="sell_type" jdbcType="INTEGER"/>
+    </resultMap>
+    <select id="myAppraiseList" resultMap="MyAppraiseMap">
+        SELECT
+        appraise.id,
+        appraise.store_id,
+        appraise.store_name,
+        appraise.store_picture,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_nickname ELSE '匿名用户'
+        END AS user_nickname,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_avatar ELSE ''
+        END AS user_avatar,
+        appraise.content,
+        appraise.reply,
+        appraise.status,
+        appraise.appraise_level,
+        appraise.browse,
+        appraise.appraise_picture,
+        appraise.create_time,
+        case orders.order_type
+        when 4 then 1 else 2
+        end sell_type
+        FROM catering_orders_appraise appraise
+        left join catering_orders orders on appraise.order_id = orders.id and orders.is_del=0
+        WHERE appraise.is_del = 0 and appraise.user_id = #{param.memberId}
+        order by appraise.create_time desc
+    </select>
+    <select id="myAppraiseDetail" resultMap="MyAppraiseMap">
+        SELECT
+        appraise.id,
+        appraise.merchant_id,
+        appraise.store_id,
+        appraise.store_name,
+        appraise.store_picture,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_nickname ELSE '匿名用户'
+        END AS user_nickname,
+        CASE appraise.is_anonymous
+        WHEN 0 THEN appraise.user_avatar ELSE ''
+        END AS user_avatar,
+        appraise.content,
+        appraise.reply,
+        appraise.status,
+        appraise.appraise_level,
+        appraise.browse,
+        appraise.appraise_picture,
+        appraise.create_time,
+        case orders.order_type
+        when 4 then 1 else 2
+        end sell_type
+        FROM catering_orders_appraise appraise
+        left join catering_orders orders on appraise.order_id = orders.id and orders.is_del=0
+        WHERE appraise.is_del = 0 and appraise.id = #{appraiseId}
+    </select>
+    <select id="gradeInfo" resultType="com.meiyuan.catering.order.vo.AppraiseGradeVO">
+        SELECT
+            ROUND( ( sum( taste ) + sum( service ) + sum( pack ) ) / 3 / count( id ), 1 ) shopGrade,
+            ROUND( AVG(taste), 1 ) tasteGrade,
+            ROUND( AVG(service), 1 ) serviceGrade,
+            ROUND( AVG(pack), 1 ) packGrade
+        FROM
+	        catering_orders_appraise
+        WHERE
+	        is_del = 0 and store_id = #{shopId}
+    </select>
+    <select id="numberInfo" resultType="com.meiyuan.catering.order.vo.AppraiseNumberVO">
+        SELECT
+            count(id) totalNumber,
+            (SELECT count(id) FROM catering_orders_appraise WHERE is_del = 0 and is_show = 0 and `status` = 1 AND store_id = #{shopId}) praiseNumber,
+            0 negativeNumber,
+            (SELECT count(id) FROM catering_orders_appraise WHERE is_del = 0 and is_show = 0 and `status` != 3 and appraise_picture is not null AND store_id = #{shopId}) pictureNumber
+        FROM
+	        catering_orders_appraise
+        WHERE
+	        is_del = 0
+	        AND `status` != 3
+	        AND is_show = 0
+	        AND store_id = #{shopId}
+    </select>
+    <select id="pageList" resultType="com.meiyuan.catering.order.vo.AppraiseListVO">
+        SELECT
+         id,
+        CASE
+            is_anonymous
+            WHEN 0 THEN
+            user_nickname ELSE '匿名用户'
+            END AS userNickname,
+        CASE
+            is_anonymous
+            WHEN 0 THEN
+            user_avatar ELSE ''
+            END AS userAvatar,
+        appraise_level,
+        content,
+        reply,
+        appraise_picture,
+        create_time
+        FROM
+        catering_orders_appraise
+        where is_del = 0 and is_show = 0 and store_id = #{queryDTO.shopId} and status != 3
+        <if test="queryDTO.type != null and queryDTO.type == 2">
+            and status = 1
+        </if>
+        <if test="queryDTO.type != null and queryDTO.type == 4">
+            and status = 3
+        </if>
+        <if test="queryDTO.type != null and queryDTO.type == 3">
+            and appraise_picture is not null
+        </if>
+        order by create_time desc
+    </select>
+
+    <select id="queryPageAppraise" resultType="com.meiyuan.catering.order.vo.OrderAppraiseListVO">
+        SELECT
+            id,
+            order_id as orderId,
+            store_id as storeId,
+            store_name as storeName,
+            store_picture as storePicture,
+            CASE is_anonymous
+                WHEN 0 THEN '匿名用户'
+                ELSE user_nickname
+            END AS userNickname,
+            user_avatar as userAvatar,
+            content,
+            reply,
+            appraise_level as appraiseLevel,
+            appraise_picture as appraisePicture,
+            is_anonymous as anonymous,
+            is_show as canShow,
+            create_time as createTime,
+            DATE_FORMAT(create_time, '%c月%d日') as createTimeStr
+        FROM
+            catering_orders_appraise
+        <where>
+            and user_id =  #{dto.memberId}
+        </where>
+        ORDER BY create_time DESC
+    </select>
+</mapper>

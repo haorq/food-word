@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringCategoryMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringCategoryEntity" id="CateringCategoryMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="defaultCategory" column="default_category" jdbcType="INTEGER"/>
+        <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+        <result property="keywords" column="keywords" jdbcType="VARCHAR"/>
+        <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+        <result property="iconUrl" column="icon_url" jdbcType="VARCHAR"/>
+        <result property="categoryPicture" column="category_picture" jdbcType="VARCHAR"/>
+        <result property="sort" column="sort" jdbcType="INTEGER"/>
+        <result property="hierarchyId" column="hierarchy_id" jdbcType="VARCHAR"/>
+        <result property="categoryDescribe" column="category_describe" jdbcType="VARCHAR"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <resultMap type="com.meiyuan.catering.goods.dto.category.CategoryDTO" id="CategoryDTOMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+        <result property="categoryPicture" column="category_picture" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="column">
+        id, merchantId, defaultCategory, categoryName, keywords, parentId, iconUrl, categoryPicture, sort,
+        hierarchyId, categoryDescribe, del, createBy, createTime, updateBy, updateTime
+    </sql>
+
+    <select id="listForMerchant" resultMap="CategoryDTOMap">
+      SELECT
+         mc.id,
+         mc.category_name,
+         mc.category_picture
+        FROM
+        `catering_merchant_category` mc
+		LEFT JOIN catering_shop_goods_spu sg on sg.merchant_id = mc.merchant_id
+        WHERE mc.is_del = 0 and mc.merchant_id = #{merchantId}
+        GROUP BY mc.id
+        ORDER BY mc.default_category DESC,mc.create_time DESC
+    </select>
+
+    <select id="listLimit" resultType="com.meiyuan.catering.goods.dto.category.CategoryDTO">
+        select
+        category.id as id,
+        category.category_name AS categoryName,
+        category.category_picture AS categoryPicture,
+        category.category_describe AS categoryDescribe,
+        category.default_category as defaultCategory,
+        (
+        select
+        count(*)
+        from
+        catering_goods_category_relation cr
+        where
+        cr.category_id = category.id
+        ) as goodsCount
+        from
+        catering_category category
+        <where>
+            <if test=" dto.categoryName != null and dto.categoryName!='' ">
+                and ( category.category_name like concat('%', #{dto.categoryName}, '%') or
+                category.category_describe like concat('%', #{dto.categoryName}, '%') )
+            </if>
+        </where>
+        <if test=" dto.sortField != null and dto.sortField != '' and dto.sortOrder != null and dto.sortOrder != '' ">
+            order by category.${dto.sortField} ${dto.sortOrder}
+        </if>
+        <if test=" dto.sortField == null or dto.sortField == '' or dto.sortOrder == null or dto.sortOrder == '' ">
+            order by category.sort desc
+        </if>
+    </select>
+</mapper>

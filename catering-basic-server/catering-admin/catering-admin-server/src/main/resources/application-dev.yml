@@ -1,0 +1,124 @@
+catering:
+  # 对象存储配置
+  storage:
+    # 当前工作的对象存储模式，分别是aliyun
+    active: aliyun
+    # 阿里云对象存储配置信息
+    aliyun:
+      endpoint: http://oss-cn-shenzhen.aliyuncs.com
+      accessKeyId: LTAI4FpiF18xnmDnKggv4wDf
+      accessKeySecret: ADGeUIbMFUnLtgrkYbrbJ2O6VezNLO
+      bucketName: dev-my-common
+      domain: http://dev-my-common.meiy520.com/
+
+pagehelper:
+  helperDialect:  mysql
+  reasonable: true
+  supportMethodsArguments:  true
+  params: count=countSql
+
+spring:
+  datasource:
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      filter:
+        stat:
+          log-slow-sql: true
+          merge-sql: false
+          slow-sql-millis: 1000
+      initial-size: 10
+      max-active: 100
+      max-pool-prepared-statement-per-connection-size: 20
+      max-wait: 60000
+      min-evictable-idle-time-millis: 300000
+      min-idle: 10
+      pool-prepared-statements: true
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+      test-on-borrow: false
+      test-on-return: false
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      filters:  stat,wall
+      url: jdbc:mysql://192.168.98.81:3306/catering_cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: 163@.com
+  main:
+    allow-bean-definition-overriding: true
+
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  #实体扫描，多个package用逗号或者分号分隔
+  typeAliasesPackage: com.meiyuan.catering.goods.entity,com.meiyuan.catering.merchant.entity,com.meiyuan.catering.marketing.entity,com.meiyuan.catering.order.entity,com.meiyuan.catering.user.entity
+  type-handlers-package: com.meiyuan.catering.core.mybatis
+  global-config:
+    #数据库相关配置
+    db-config:
+      #主键类型  AUTO:"数据库ID自增", INPUT:"用户输入ID", ID_WORKER:"全局唯一ID (数字类型唯一ID)", UUID:"全局唯一ID UUID";
+      id-type: ID_WORKER
+      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+    banner: false
+  #原生配置
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
+
+jetcache:
+  statIntervalMinutes: 10
+  areaInCacheName: false
+  local:
+    default:
+      type: linkedhashmap
+      keyConvertor: fastjson
+  remote:
+    default:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 12
+      host: 192.168.98.81
+      password: Meiyuan123
+      port: 6379
+
+#消息中心
+message:
+  host: http://msg-dev.meiy520.com
+  loginUrl: ${message.host}/msg/api/openApiFacade/login
+  username: admin3
+  password: 123456
+  sendMsgUrl: ${message.host}/msg/api/openApiFacade/synSendMsg
+  aliShortMsgAppId: 10121
+
+#商品商户id
+goods:
+  merchant:
+    id: 1
+swagger:
+  enabled: true
+  docket:
+    finance:
+      title: 财务/积分
+      base-package: com.meiyuan.catering.admin.web.finance
+    goods:
+      title: 商品
+      base-package: com.meiyuan.catering.admin.web.goods
+    marketing:
+      title: 营销
+      base-package: com.meiyuan.catering.admin.web.marketing
+    merchant:
+      title: 商户
+      base-package: com.meiyuan.catering.admin.web.merchant
+    admin:
+      title: 管理员
+      base-package: com.meiyuan.catering.admin.web.admin
+

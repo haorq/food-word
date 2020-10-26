@@ -1,0 +1,3279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersEntity" id="CateringOrdersMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="merchantPhone" column="merchant_phone" jdbcType="VARCHAR"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="storePicture" column="store_picture" jdbcType="VARCHAR"/>
+        <result property="memberId" column="member_id" jdbcType="INTEGER"/>
+        <result property="memberNo" column="member_no" jdbcType="VARCHAR"/>
+        <result property="memberPhone" column="member_phone" jdbcType="VARCHAR"/>
+        <result property="memberName" column="member_name" jdbcType="VARCHAR"/>
+        <result property="memberType" column="member_type" jdbcType="VARCHAR"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="orderSource" column="order_source" jdbcType="INTEGER"/>
+        <result property="orderType" column="order_type" jdbcType="INTEGER"/>
+        <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="goodsAmount" column="goods_amount" jdbcType="OTHER"/>
+        <result property="deliveryPrice" column="delivery_price" jdbcType="OTHER"/>
+        <result property="packPrice" column="pack_price" jdbcType="OTHER"/>
+        <result property="discountBeforeFee" column="discount_before_fee" jdbcType="OTHER"/>
+        <result property="discountLaterFee" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="discountFee" column="discount_fee" jdbcType="OTHER"/>
+        <result property="orderAmount" column="order_amount" jdbcType="OTHER"/>
+        <result property="paidAmount" column="paid_amount" jdbcType="OTHER"/>
+        <result property="paidTime" column="paid_time" jdbcType="TIMESTAMP"/>
+        <result property="payWay" column="pay_way" jdbcType="INTEGER"/>
+        <result property="totalQuantity" column="total_quantity" jdbcType="INTEGER"/>
+        <result property="payDeadline" column="pay_deadline" jdbcType="TIMESTAMP"/>
+        <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+        <result property="referrerId" column="referrer_id" jdbcType="INTEGER"/>
+        <result property="referrerName" column="referrer_name" jdbcType="VARCHAR"/>
+        <result property="referrerPhone" column="referrer_phone" jdbcType="VARCHAR"/>
+        <result property="referrerBonuses" column="referrer_bonuses" jdbcType="OTHER"/>
+        <result property="offReason" column="off_reason" jdbcType="VARCHAR"/>
+        <result property="canPay" column="is_can_pay" jdbcType="INTEGER"/>
+        <result property="comment" column="is_comment" jdbcType="INTEGER"/>
+        <result property="afterSales" column="is_after_sales" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createName" column="create_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateName" column="update_name" jdbcType="VARCHAR"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersListAdminDTO" id="OrderListQueryAdminMap">
+        <result property="orderId" column="id" jdbcType="BIGINT"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+        <result property="orderWay" column="order_way" jdbcType="INTEGER"/>
+        <result property="orderSource" column="order_source" jdbcType="INTEGER"/>
+        <result property="takeAddress" column="take_address" jdbcType="VARCHAR"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="tableware" column="tableware" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+        <result property="orderAmount" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="consigneeName" column="member_name" jdbcType="VARCHAR"/>
+        <result property="consigneePhone" column="member_phone" jdbcType="VARCHAR"/>
+        <result property="payWay" column="pay_way" jdbcType="INTEGER"/>
+        <result property="paidTime" column="paid_time" jdbcType="TIMESTAMP"/>
+        <collection property="goodsInfo" column="order_number"
+                    select="com.meiyuan.catering.order.dao.CateringOrdersMapper.ordersListGoodsAdmin"
+                    ofType="com.meiyuan.catering.order.dto.query.admin.OrdersListGoodsAdminDTO"/>
+    </resultMap>
+    <select id="orderListQueryAdmin" resultMap="OrderListQueryAdminMap">
+        SELECT co.id, co.billing_time, co.order_number, co.delivery_way, co.store_id, co.store_name, co.status,
+        co.discount_later_fee, co.pay_way, co.paid_time,co.order_way,co.order_source,
+        cod.store_name AS take_address,cod.tableware,
+        co.member_name, co.member_phone
+        FROM catering_orders co
+        JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE co.is_del=0
+        <if test="dto.orderStatus != null">
+            and co.status = #{dto.orderStatus}
+        </if>
+        <if test="dto.payWay != null">
+            and co.pay_way = #{dto.payWay}
+        </if>
+        <if test="dto.deliveryWay != null">
+            and co.delivery_way = #{dto.deliveryWay}
+        </if>
+        <if test="dto.startTime != null">
+            and to_days(co.billing_time) &gt;= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            and to_days(co.billing_time) &lt;= to_days(#{dto.endTime})
+        </if>
+        <if test="dto.keyWord != null and dto.keyWord != ''">
+            and (
+            co.member_name like concat ('%',#{dto.keyWord},'%')
+            or co.member_phone like concat('%',#{dto.keyWord},'%')
+            or co.order_number like concat ('%',#{dto.keyWord},'%')
+            or co.store_name like concat ('%',#{dto.keyWord},'%')
+            or cod.store_name like concat ('%',#{dto.keyWord},'%')
+            or cod.order_number in(SELECT goods.order_number from catering_orders_goods goods where goods.goods_name
+            like concat ('%',#{dto.keyWord},'%'))
+            )
+        </if>
+        GROUP BY co.order_number
+        ORDER BY co.billing_time DESC
+    </select>
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersListGoodsAdminDTO" id="OrdersListGoodsAdminMap">
+        <result property="orderGoodsId" column="goods_id" jdbcType="INTEGER"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+        <result property="goodsSkuDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="ordersListGoodsAdmin" resultMap="OrdersListGoodsAdminMap">
+        SELECT goods.id as goods_id, goods.goods_name, goods.quantity, goods.goods_specification_desc
+        FROM catering_orders_goods goods
+        WHERE goods.order_number = #{orderNumber}
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.merchant.OrdersListMerchantDTO"
+               id="OrderListQueryMerchantMap">
+        <result property="orderId" column="id" jdbcType="BIGINT"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="deliveryTime" column="delivery_time" jdbcType="TIMESTAMP"/>
+        <result property="orderStatus" column="status" jdbcType="OTHER"/>
+        <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+        <result property="orderAmount" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+        <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+        <result property="estimateTime" column="estimate_time" jdbcType="VARCHAR"/>
+        <result property="estimateEndTime" column="estimate_end_time" jdbcType="VARCHAR"/>
+        <result property="immediateDeliveryTime" column="immediate_delivery_time" jdbcType="VARCHAR"/>
+        <result property="immediateDeliveryDate" column="immediateDeliveryDate" jdbcType="TIMESTAMP"/>
+        <result property="consigneeAddress" column="consignee_address" jdbcType="VARCHAR"/>
+        <result property="afterSales" column="is_after_sales" jdbcType="INTEGER"/>
+        <result property="refundId" column="refundId"/>
+        <result property="refundStatus" column="refund_status" jdbcType="INTEGER"/>
+        <result property="refundReasonList" column="refund_reason"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result property="mapCoordinate" column="mapCoordinate" jdbcType="VARCHAR"/>
+        <result property="shopMapCoordinate" column="shopMapCoordinate" jdbcType="VARCHAR"/>
+        <result property="estimateDate" column="estimate_date" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="orderListQueryMerchant" resultMap="OrderListQueryMerchantMap">
+        SELECT
+        orders.id, orders.order_number, orders.billing_time, orders.status, orders.delivery_way,
+        orders.discount_later_fee, orders.is_after_sales,
+        CASE delivery.consignee_sex
+        WHEN 1 THEN CONCAT(delivery.consignee_name, '（先生）')
+        ELSE CONCAT(delivery.consignee_name, '（女士）')
+        END consignee_name,
+        delivery.estimate_time delivery_time,
+        DATE_FORMAT(delivery.estimate_time , '%H:%i' ) estimate_time,
+        DATE_FORMAT(delivery.estimate_end_time , '%H:%i' ) estimate_end_time,
+        DATE_FORMAT(delivery.immediate_delivery_time,'%H:%i') immediate_delivery_time,
+        delivery.immediate_delivery_time immediateDeliveryDate,
+        if(to_days(IFNULL(delivery.estimate_time, delivery.immediate_delivery_time)) &lt; to_days(now()),
+        Date_format(IFNULL(delivery.estimate_time, delivery.immediate_delivery_time), '%c月%e日'),'') estimate_date,
+        delivery.consignee_phone,
+        CONCAT(delivery.consignee_area, delivery.consignee_address) consignee_address,
+        <!-- 目前退款只需要商家审核，所以这里直接返回退款表状态 -->
+        refund.refund_status, audit.refund_reason,refund.id refundId,
+        address.map_coordinate mapCoordinate,
+        shop.map_coordinate shopMapCoordinate
+        FROM catering_orders orders
+        left join catering_shop shop on shop.id=orders.store_id
+        JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        left join catering_address address on delivery.delivery_id = address.id
+        <!-- 目前只支持一次退款请求。所以这里退款表和审核表暂定是一对一的关系 -->
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        LEFT JOIN catering_orders_refund_audit audit ON audit.refund_id = refund.id
+        LEFT JOIN catering_orders_operation ope ON ope.order_id = orders.id AND ope.operation_phase = 3
+        WHERE orders.status != 1 and orders.status != 8 and orders.is_del=0
+        AND IF(orders.`status` = 6, ope.operation_type = 2, true)
+
+        <if test="dto.orderType!=null and dto.orderType!=3">
+            <choose>
+                <when test="dto.estimateTime != null and dto.estimateTime != ''">
+                    and to_days(IFNULL(delivery.immediate_delivery_time,delivery.estimate_time)) =
+                    to_days(#{dto.estimateTime})
+                </when>
+            </choose>
+        </if>
+
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.orderType != null">
+            <choose>
+                <when test="dto.orderType == 1">
+                    and orders.status = 3
+                </when>
+                <when test="dto.orderType == 2">
+                    and orders.status = 4
+                </when>
+                <when test="dto.orderType == 3 and dto.type!=2">
+                    and refund.refund_status = 1 and orders.is_after_sales = 1 and orders.store_id =
+                    #{dto.shopId}
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != '' and dto.orderType != 3">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.orderStatus != null">
+            <choose>
+                <when test="dto.orderStatus == 1">
+                    and (orders.status = 3 or orders.status = 4)
+                </when>
+                <when test="dto.orderStatus == 2">
+                    and orders.status = 5 and IF(orders.is_after_sales = 1, refund.refund_status=3, refund.refund_status
+                    is null)
+                </when>
+                <when test="dto.orderStatus == 3">
+                    and orders.status = 6 and ope.operation_type = 2
+                </when>
+                <when test="dto.orderStatus == 4">
+                    and orders.status = 7
+                </when>
+                <when test="dto.orderStatus == 5">
+                    and refund.refund_status = 1 and orders.is_after_sales = 1
+                </when>
+                <when test="dto.orderStatus == 6">
+                    and refund.refund_status = 2 and orders.is_after_sales = 1
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.keyWord != null and dto.keyWord != ''">
+            and (
+            orders.order_number like concat ('%',#{dto.keyWord},'%')
+            or delivery.consignee_phone like concat('%',#{dto.keyWord},'%')
+            )
+        </if>
+        <choose>
+            <when test="dto.orderType != null">
+                ORDER BY delivery.estimate_time ASC,orders.billing_time ASC
+            </when>
+            <otherwise>
+                ORDER BY orders.paid_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="orderTotalAmountMerchant" resultType="java.math.BigDecimal">
+        SELECT
+        SUM(orders.discount_later_fee) orderTotalAmount
+        FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        <!-- 目前只支持一次退款请求。所以这里退款表和审核表暂定是一对一的关系 -->
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        LEFT JOIN catering_orders_refund_audit audit ON audit.refund_id = refund.id
+        LEFT JOIN catering_orders_operation ope ON ope.order_id = orders.id AND ope.operation_phase = 3
+        WHERE orders.status != 1 and orders.status != 8 and orders.is_del=0
+        AND IF(orders.`status` = 6, ope.operation_type = 2, true)
+        <if test="dto.estimateTime != null and dto.estimateTime != ''">
+            and to_days(delivery.estimate_time) = to_days(#{dto.estimateTime})
+        </if>
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.orderStatus != null">
+            <choose>
+                <when test="dto.orderStatus == 1">
+                    and (orders.status = 3 or orders.status = 4)
+                </when>
+                <when test="dto.orderStatus == 2">
+                    and orders.status = 5 and IF(orders.is_after_sales = 1, refund.refund_status=3, refund.refund_status
+                    is null)
+                </when>
+                <when test="dto.orderStatus == 3">
+                    and orders.status = 6 and ope.operation_type = 2
+                </when>
+                <when test="dto.orderStatus == 4">
+                    and orders.status = 7
+                </when>
+                <when test="dto.orderStatus == 5">
+                    and refund.refund_status = 1 and orders.is_after_sales = 1
+                </when>
+                <when test="dto.orderStatus == 6">
+                    and refund.refund_status = 2 and orders.is_after_sales = 1
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.keyWord != null and dto.keyWord != ''">
+            and (
+            orders.order_number like concat ('%',#{dto.keyWord},'%')
+            or delivery.consignee_phone like concat('%',#{dto.keyWord},'%')
+            )
+        </if>
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.wx.OrdersListWxDTO" id="OrderListQueryWxMap">
+        <result property="orderId" column="id" jdbcType="BIGINT"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="tradingFlow" column="trading_flow" jdbcType="VARCHAR"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="shopId" column="store_id" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="storePicture" column="store_picture" jdbcType="VARCHAR"/>
+        <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+        <result property="orderType" column="order_type" jdbcType="INTEGER"/>
+        <result property="sellType" column="sell_type" jdbcType="INTEGER"/>
+        <result property="orderAmount" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="totalQuantity" column="total_quantity" jdbcType="INTEGER"/>
+        <result property="afterSales" column="is_after_sales" jdbcType="INTEGER"/>
+        <result property="refundStatus" column="refund_status" jdbcType="INTEGER"/>
+        <result property="comment" column="is_comment" jdbcType="INTEGER"/>
+        <collection property="goodsInfo" column="order_number"
+                    select="com.meiyuan.catering.order.dao.CateringOrdersMapper.ordersListGoodsWx"
+                    ofType="com.meiyuan.catering.order.dto.query.wx.OrdersListGoodsWxDTO"/>
+    </resultMap>
+    <select id="orderListQueryWx" resultMap="OrderListQueryWxMap">
+        SELECT
+        case co.order_type
+        when 4 then 1 else 2
+        end sell_type,
+        co.id, co.billing_time, co.order_number, co.trading_flow, co.merchant_id,co.store_id, co.store_name,
+        co.store_picture,
+        co.status,
+        co.discount_later_fee,
+        co.order_type, co.total_quantity, co.is_after_sales, co.is_comment, refund.refund_status
+        FROM catering_orders co
+        LEFT JOIN catering_orders_goods goods ON goods.order_id = co.id
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = co.id
+        WHERE co.member_id = #{dto.memberId} and co.is_del=0
+        <if test="dto.orderStatus != null">
+            <choose>
+                <when test="dto.orderStatus== 1">
+                    and co.status = 5 and co.is_comment = 0 and co.is_after_sales = 0
+                </when>
+                <when test="dto.orderStatus== 2">
+                    and co.is_after_sales = 1
+                </when>
+                <otherwise>
+                    and co.is_after_sales != 1
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.keyWord != null and dto.keyWord != ''">
+            and (
+            co.order_number like concat ('%',#{dto.keyWord},'%')
+            or goods.goods_number like concat ('%',#{dto.keyWord},'%')
+            or goods.goods_name like concat('%',#{dto.keyWord},'%')
+            )
+        </if>
+        GROUP BY co.order_number
+        ORDER BY co.billing_time DESC
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.wx.OrdersListGoodsWxDTO" id="OrdersListGoodsWxMap">
+        <result property="orderGoodsId" column="goods_id" jdbcType="INTEGER"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+    </resultMap>
+    <select id="ordersListGoodsWx" resultMap="OrdersListGoodsWxMap">
+        SELECT goods.id as goods_id, goods.goods_name, goods.quantity
+        FROM catering_orders_goods goods
+        WHERE goods.order_number = #{orderNumber} and goods.is_gifts = 0
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersDetailAdminDTO" id="OrderDetailQueryAdminMap">
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <association property="base" javaType="com.meiyuan.catering.order.dto.query.admin.OrdersDetailBaseAdminDTO">
+            <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+            <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+            <result property="shopId" column="store_id" jdbcType="INTEGER"/>
+            <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+            <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+            <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+            <result property="orderWay" column="order_way" jdbcType="INTEGER"/>
+            <result property="orderSource" column="order_source" jdbcType="INTEGER"/>
+            <result property="payWay" column="pay_way" jdbcType="INTEGER"/>
+            <result property="refundStatus" column="refund_status" jdbcType="INTEGER"/>
+            <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+            <result property="takeAddress" column="take_address" jdbcType="VARCHAR"/>
+            <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+            <result property="actualTime" column="actual_time" jdbcType="VARCHAR"/>
+            <result property="immediateDeliveryTime" column="immediate_delivery_time" jdbcType="VARCHAR"/>
+            <result property="paidAmount" column="paid_amount" jdbcType="OTHER"/>
+            <result property="paidTime" column="paid_time" jdbcType="TIMESTAMP"/>
+            <result property="tradingFlow" column="trading_flow" jdbcType="VARCHAR"/>
+            <result property="userName" column="consignee_name" jdbcType="VARCHAR"/>
+            <result property="userPhone" column="consignee_phone" jdbcType="VARCHAR"/>
+            <result property="offReason" column="offReason" jdbcType="VARCHAR"/>
+            <result property="orderCancelTime" column="orderCancelTime" jdbcType="TIMESTAMP"/>
+        </association>
+        <association property="detailDelivery"
+                     javaType="com.meiyuan.catering.order.dto.query.admin.OrdersDetailDeliveryAdminDTO">
+            <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+            <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+            <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+            <result property="memberType" column="member_type" jdbcType="INTEGER"/>
+            <result property="tableware" column="tableware" jdbcType="INTEGER"/>
+            <result property="consigneeArea" column="consignee_area" jdbcType="VARCHAR"/>
+            <result property="consigneeAddress" column="consignee_address" jdbcType="VARCHAR"/>
+        </association>
+        <association property="fee" javaType="com.meiyuan.catering.order.dto.query.admin.OrdersDetailFeeAdminDTO">
+            <result property="deliveryPrice" column="delivery_price" jdbcType="OTHER"/>
+            <result property="deliveryPriceOriginal" column="delivery_price_original" jdbcType="OTHER"/>
+            <result property="deliveryPriceFree" column="delivery_price_free" jdbcType="OTHER"/>
+            <result property="paidAmount" column="paid_amount" jdbcType="OTHER"/>
+            <result property="shouldPayAmount" column="order_amount" jdbcType="OTHER"/>
+            <result property="discountBeforeFee" column="discount_before_fee" jdbcType="OTHER"/>
+            <result property="packPriceTotal" column="pack_price" jdbcType="OTHER"/>
+        </association>
+        <collection property="activity"
+                    ofType="com.meiyuan.catering.order.dto.query.admin.OrdersDetailActivityAdminDTO">
+            <result property="activityId" column="activity_id" jdbcType="INTEGER"/>
+            <result property="sendTicketParty" column="send_ticket_party" jdbcType="INTEGER"/>
+            <result property="discountName" column="discount_name" jdbcType="VARCHAR"/>
+            <result property="discountType" column="discount_type" jdbcType="INTEGER"/>
+            <result property="usefulCondition" column="useful_condition" jdbcType="INTEGER"/>
+            <result property="describe" column="discount_describe" jdbcType="VARCHAR"/>
+            <result property="number" column="discount_total" jdbcType="INTEGER"/>
+            <result property="activityDiscount" column="discount_amount" jdbcType="OTHER"/>
+            <result property="ticketAmount" column="ticket_amount" jdbcType="OTHER"/>
+            <result property="consumeCondition" column="consume_condition" jdbcType="OTHER"/>
+            <result property="activityName" column="activityName" jdbcType="VARCHAR"/>
+        </collection>
+        <collection property="goods" ofType="com.meiyuan.catering.order.dto.query.admin.OrdersDetailGoodsAdminDTO">
+            <result property="orderGoodsId" column="goods_id" jdbcType="INTEGER"/>
+            <result property="goodsPicture" column="goods_picture" jdbcType="VARCHAR"/>
+            <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+            <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+            <result property="goodsType" column="goods_type" jdbcType="INTEGER"/>
+            <result property="storePrice" column="store_price" jdbcType="OTHER"/>
+            <result property="salesPrice" column="sales_price" jdbcType="OTHER"/>
+            <result property="discountBeforeFee" column="goods_discount_before_fee" jdbcType="OTHER"/>
+            <result property="discountLaterFee" column="goods_discount_later_fee" jdbcType="OTHER"/>
+            <result property="goodsSpecificationDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+            <result property="gifts" column="is_gifts" jdbcType="INTEGER"/>
+            <result property="discountLimit" column="discount_limit" jdbcType="INTEGER"/>
+        </collection>
+    </resultMap>
+    <select id="orderDetailQueryAdmin" resultMap="OrderDetailQueryAdminMap">
+        SELECT co.id order_id,co.merchant_id,co.store_id, co.order_number, co.billing_time, co.status, co.delivery_way, co.pay_way, co.remarks, co.member_type,
+        co.paid_amount,  co.paid_time,  flow.trading_flow, shop.shop_name as store_name,co.order_way,co.order_source,cod.consignee_name,cod.consignee_phone,
+        co.order_amount ,if(coo.operation_type=3,co.off_reason,coo.operation_explain) as offReason,co.delivery_price_original,if(refund.refund_status=2,1,0) refund_status,
+        co.delivery_price_free,co.pack_price,DATE_FORMAT(cod.immediate_delivery_time, '%Y-%m-%d %H:%i' ) immediate_delivery_time,
+        case co.status
+        when 5 then DATE_FORMAT(cod.actual_time, '%Y-%m-%d %H:%i')
+        else CONCAT(CONCAT(DATE_FORMAT(cod.estimate_time, '%Y-%m-%d %H:%i' ), ' - '), DATE_FORMAT(cod.estimate_end_time , '%H:%i' ))
+        end actual_time,
+        cod.store_name AS take_address,
+        CASE cod.consignee_sex
+        WHEN 1 THEN CONCAT(cod.consignee_name, '（先生）')
+        ELSE CONCAT(cod.consignee_name, '（女士）')
+        END consignee_name,
+        cod.consignee_phone, cod.consignee_area, cod.consignee_address,cod.tableware,
+        co.goods_amount, co.delivery_price, co.discount_later_fee order_amount,co.discount_before_fee, co.paid_amount, user_ticket.ticket_id activity_id, dis.discount_name,
+        dis.discount_amount, dis.useful_condition, dis.discount_describe, dis.discount_total, dis.discount_type,ticket.send_ticket_party,
+        ticket.consume_condition,ticket.amount ticket_amount,
+        goods.id goods_id, goods.goods_picture, goods.goods_name, goods.quantity, goods.discount_before_fee goods_discount_before_fee,
+        goods.discount_later_fee goods_discount_later_fee, goods.goods_specification_desc, goods.is_gifts, goods.goods_type, goods.store_price,
+        goods.sales_price,
+        goods.discount_limit,
+        IFNULL(cma.name,cmta.activity_name) AS activityName,
+		coo.operation_time as orderCancelTime
+        FROM catering_orders co
+        left join catering_shop shop on shop.id=co.store_id
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        LEFT JOIN catering_orders_discounts dis ON dis.order_id = co.id
+        left join catering_user_ticket user_ticket on user_ticket.id=dis.discount_id
+        left join catering_marketing_ticket ticket on ticket.id=user_ticket.ticket_id
+        LEFT JOIN catering_marketing_activity cma ON cma.id=user_ticket.ticket_activity_id
+        LEFT JOIN catering_marketing_ticket_activity cmta ON cmta.id=user_ticket.ticket_activity_id
+        LEFT JOIN catering_orders_goods goods ON goods.order_id = co.id
+        LEFT JOIN catering_orders_transaction_flow flow ON flow.order_id = co.id
+        left join catering_orders_refund refund on refund.order_id = co.id and co.is_after_sales=1
+        left join catering_orders_operation coo on coo.order_id = co.id and coo.operation_phase = 3
+        WHERE co.id = #{orderId} and co.is_del=0
+    </select>
+    <resultMap type="com.meiyuan.catering.order.dto.query.merchant.OrdersDetailMerchantDTO"
+               id="OrderDetailQueryMerchantMap">
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="shopDeliveryFlag" column="shop_delivery_flag" jdbcType="INTEGER"/>
+        <result property="shopId" column="store_id" jdbcType="INTEGER"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+        <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+        <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+        <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+        <result property="consigneeAddress" column="consignee_address" jdbcType="VARCHAR"/>
+        <result property="estimateTimeWithTime" column="estimate_time_with_time" jdbcType="OTHER"/>
+        <result property="estimateTime" column="estimate_time" jdbcType="VARCHAR"/>
+        <result property="estimateEndTime" column="estimate_end_time" jdbcType="VARCHAR"/>
+        <result property="immediateDeliveryTime" column="immediate_delivery_time" jdbcType="VARCHAR"/>
+        <result property="immediateDeliveryDate" column="immediateDeliveryDate" jdbcType="TIMESTAMP"/>
+        <result property="actualTime" column="actual_time" jdbcType="VARCHAR"/>
+        <result property="deliveryDate" column="delivery_date" jdbcType="VARCHAR"/>
+        <result property="deliveryPrice" column="delivery_price" jdbcType="OTHER"/>
+        <result property="deliveryPriceOriginal" column="delivery_price_original" jdbcType="OTHER"/>
+        <result property="orderAmount" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="discountFee" column="discount_fee" jdbcType="OTHER"/>
+        <result property="packPrice" column="pack_price" jdbcType="OTHER"/>
+        <result property="takeAddress" column="take_address" jdbcType="VARCHAR"/>
+        <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+        <result property="tableware" column="tableware" jdbcType="INTEGER"/>
+        <result property="afterSales" column="is_after_sales" jdbcType="INTEGER"/>
+        <result property="refundId" column="refundId"/>
+        <result property="refundStatus" column="refund_status" jdbcType="INTEGER"/>
+        <result property="refundReasonList" column="refund_reason"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result property="refundRemark" column="refund_remark" jdbcType="VARCHAR"/>
+        <result property="refundNumber" column="refund_number" jdbcType="VARCHAR"/>
+        <result property="refundEvidence" column="refund_evidence"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result property="cargoStatus" column="cargo_status" jdbcType="VARCHAR"/>
+        <result property="mapCoordinate" column="mapCoordinate" jdbcType="VARCHAR"/>
+        <result property="shopMapCoordinate" column="shopMapCoordinate" jdbcType="VARCHAR"/>
+        <result property="shopName" column="shop_name" jdbcType="VARCHAR"/>
+        <result property="shopCity" column="address_city" jdbcType="VARCHAR"/>
+        <result property="deliveryType" column="delivery_type" jdbcType="INTEGER"/>
+        <result property="estimateDate" column="estimate_date" jdbcType="VARCHAR"/>
+        <collection property="ordersGoods"
+                    ofType="com.meiyuan.catering.order.dto.query.merchant.OrdersGoodsMerchantDTO">
+            <result property="goodsSpecificationDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+            <result property="goodsSpecType" column="goods_spec_type" jdbcType="INTEGER"/>
+            <result property="orderGoodsId" column="goods_id" jdbcType="INTEGER"/>
+            <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+            <result property="goodsType" column="goods_type" jdbcType="INTEGER"/>
+            <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+            <result property="storePrice" column="goods_store_price" jdbcType="OTHER"/>
+            <result property="transactionPrice" column="transaction_price" jdbcType="OTHER"/>
+            <result property="gifts" column="is_gifts" jdbcType="INTEGER"/>
+        </collection>
+        <collection property="orderDeliveryStatusList"
+                    ofType="com.meiyuan.catering.order.dto.order.OrderDeliveryStatusDto">
+            <result property="orderId" column="order_status_order_id" jdbcType="INTEGER"></result>
+            <result property="orderStatus" column="order_status_delivery" jdbcType="INTEGER"></result>
+            <result property="cancelReason" column="cancel_reason" jdbcType="VARCHAR"></result>
+            <result property="cancelFrom" column="cancel_from" jdbcType="INTEGER"></result>
+            <result property="updateTime" column="update_time_delivery" jdbcType="OTHER"></result>
+            <result property="dmId" column="dm_id" jdbcType="INTEGER"></result>
+            <result property="dmName" column="dm_name" jdbcType="VARCHAR"></result>
+            <result property="dmMobile" column="dm_mobile" jdbcType="VARCHAR"></result>
+            <result property="createTime" column="create_time_delivery" jdbcType="OTHER"></result>
+        </collection>
+    </resultMap>
+
+    <select id="orderDetailQueryMerchant" resultMap="OrderDetailQueryMerchantMap">
+        SELECT co.id order_id,co.store_id, co.order_number, co.billing_time, co.status, co.delivery_way, co.remarks,
+        co.delivery_price, co.discount_later_fee, co.is_after_sales, co.discount_fee,co.pack_price,co.merchant_id,
+        cod.store_name AS take_address,co.delivery_price_original,co.shop_delivery_flag,
+        CASE cod.consignee_sex
+        WHEN 1 THEN CONCAT(cod.consignee_name, '（先生）')
+        ELSE CONCAT(cod.consignee_name, '（女士）')
+        END consignee_name,
+        cod.consignee_phone,
+        CONCAT(cod.consignee_area, cod.consignee_address) consignee_address,
+        cod.estimate_time estimate_time_with_time,
+        DATE_FORMAT(cod.estimate_time , '%H:%i' ) estimate_time,
+        DATE_FORMAT(cod.estimate_end_time , '%H:%i' ) estimate_end_time,
+        cod.immediate_delivery_time immediateDeliveryDate,
+        Date_format(cod.immediate_delivery_time, '%H:%i') immediate_delivery_time,
+        if(to_days(co.billing_time)&lt;to_days(now()),Date_format(cod.estimate_time, '%c月%e日'),'') estimate_date,
+        DATE_FORMAT(cod.actual_time , '%Y-%m-%d %H:%i' ) actual_time,
+        DATE_FORMAT(cod.estimate_time , '%Y-%m-%d' ) delivery_date,
+        cod.tableware tableware,
+        <!-- 目前退款只需要商家审核，所以这里直接返回退款表状态 -->
+        refund.refund_status,refund.id refundId,audit.refund_reason, audit.refund_remark, audit.refund_number,
+        audit.refund_evidence,
+        audit.cargo_status,
+        goods.goods_specification_desc,
+        mge.goods_spec_type,
+        goods.store_price * goods.quantity as goods_store_price,
+        goods.discount_later_fee as transaction_price,
+        goods.id goods_id, goods.goods_name, goods.goods_type, goods.quantity, goods.is_gifts,
+        address.map_coordinate mapCoordinate,
+        shop.map_coordinate shopMapCoordinate,
+        shop.shop_name,
+        shop.address_city,
+        shop.delivery_type,
+        delivery_status.order_status order_status_delivery,
+        delivery_status.cancel_reason,
+        delivery_status.cancel_from,
+        delivery_status.update_time update_time_delivery,
+        delivery_status.dm_id,
+        delivery_status.dm_name,
+        delivery_status.dm_mobile,
+        delivery_status.create_time create_time_delivery,
+        delivery_status.order_id order_status_order_id
+        FROM catering_orders co
+        left join catering_shop shop on shop.id=co.store_id
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        left join catering_address address on cod.delivery_id=address.id
+        LEFT JOIN catering_orders_goods goods ON goods.order_id = co.id
+        <!-- 目前只支持一次退款请求。所以这里退款表和审核表暂定是一对一的关系 -->
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = co.id
+        LEFT JOIN catering_orders_refund_audit audit ON audit.refund_id = refund.id
+        left join catering_orders_delivery_status_history delivery_status on co.id=delivery_status.order_id
+        left join `catering_merchant_goods_extend` mge on mge.merchant_id = co.merchant_id and goods.goods_id =
+        mge.goods_id
+        WHERE co.id = #{orderId} and co.is_del=0
+    </select>
+
+    <select id="listOrderDetailQueryMerchant" resultMap="OrderDetailQueryMerchantMap">
+        SELECT co.id order_id, co.order_number, co.billing_time, co.status, co.delivery_way, co.remarks,
+        co.delivery_price, co.discount_later_fee, co.is_after_sales, co.discount_fee,co.pack_price,co.merchant_id,
+        cod.store_name AS take_address,co.delivery_price_original,
+        CASE cod.consignee_sex
+        WHEN 1 THEN CONCAT(cod.consignee_name, '（先生）')
+        ELSE CONCAT(cod.consignee_name, '（女士）')
+        END consignee_name,
+        cod.consignee_phone,
+        CONCAT(cod.consignee_area, cod.consignee_address) consignee_address,
+        DATE_FORMAT(cod.estimate_time , '%H:%i' ) estimate_time,
+        DATE_FORMAT(cod.estimate_end_time , '%H:%i' ) estimate_end_time,
+        cod.immediate_delivery_time immediateDeliveryDate,
+        Date_format(cod.immediate_delivery_time, '%H:%i') immediate_delivery_time,
+        if(to_days(co.billing_time)&lt;to_days(now()),Date_format(cod.estimate_time, '%c月%e日'),'') estimate_date,
+        DATE_FORMAT(cod.actual_time , '%Y-%m-%d %H:%i' ) actual_time,
+        DATE_FORMAT(cod.estimate_time , '%Y-%m-%d' ) delivery_date,
+        cod.tableware tableware,
+        <!-- 目前退款只需要商家审核，所以这里直接返回退款表状态 -->
+        refund.refund_status,refund.id refundId,audit.refund_reason, audit.refund_remark, audit.refund_number,
+        audit.refund_evidence,
+        audit.cargo_status,
+        goods.goods_specification_desc,
+        mge.goods_spec_type,
+        goods.store_price * goods.quantity as goods_store_price,
+        goods.discount_later_fee as transaction_price,
+        goods.id goods_id, goods.goods_name, goods.goods_type, goods.quantity, goods.is_gifts,
+        address.map_coordinate mapCoordinate,
+        shop.map_coordinate shopMapCoordinate,
+        shop.shop_name,
+        delivery_status.order_status order_status_delivery,
+        delivery_status.cancel_reason,
+        delivery_status.cancel_from,
+        delivery_status.update_time update_time_delivery,
+        delivery_status.dm_id,
+        delivery_status.dm_name,
+        delivery_status.dm_mobile,
+        delivery_status.create_time create_time_delivery,
+        delivery_status.order_id order_status_order_id
+        FROM catering_orders co
+        left join catering_shop shop on shop.id=co.store_id
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        left join catering_address address on cod.delivery_id=address.id
+        LEFT JOIN catering_orders_goods goods ON goods.order_id = co.id
+        <!-- 目前只支持一次退款请求。所以这里退款表和审核表暂定是一对一的关系 -->
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = co.id
+        LEFT JOIN catering_orders_refund_audit audit ON audit.refund_id = refund.id
+        left join catering_orders_delivery_status_history delivery_status on co.id=delivery_status.order_id
+        left join `catering_merchant_goods_extend` mge on mge.merchant_id = co.merchant_id and goods.goods_id =
+        mge.goods_id
+        WHERE
+        co.is_del=0
+        and
+        co.id in
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.wx.OrdersDetailWxDTO" id="OrderDetailQueryWxMap">
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="shopId" column="store_id" jdbcType="INTEGER"/>
+        <result property="sellType" column="sell_type" jdbcType="INTEGER"/>
+        <result property="shareBillNo" column="activity_no" jdbcType="VARCHAR"/>
+        <association property="base" javaType="com.meiyuan.catering.order.dto.query.wx.OrdersDetailBaseWxDTO">
+            <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+            <result property="tradingFlow" column="trading_flow" jdbcType="VARCHAR"/>
+            <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+            <result property="payDeadline" column="pay_deadline" jdbcType="TIMESTAMP"/>
+            <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+            <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+            <result property="storePicture" column="store_picture" jdbcType="VARCHAR"/>
+            <result property="merchantPhone" column="merchant_phone" jdbcType="VARCHAR"/>
+            <result property="orderType" column="order_type" jdbcType="INTEGER"/>
+            <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+            <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+            <result property="memberType" column="member_type" jdbcType="VARCHAR"/>
+            <result property="deliveryPrice" column="delivery_price" jdbcType="OTHER"/>
+            <result property="packPrice" column="pack_price" jdbcType="OTHER"/>
+            <result property="deliveryPriceOriginal" column="delivery_price_original" jdbcType="OTHER"/>
+            <result property="discountFee" column="discount_fee" jdbcType="OTHER"/>
+            <result property="orderAmount" column="discount_later_fee" jdbcType="OTHER"/>
+            <result property="paidAmount" column="paid_amount" jdbcType="OTHER"/>
+            <result property="offReason" column="off_reason" jdbcType="VARCHAR"/>
+            <result property="comment" column="is_comment" jdbcType="INTEGER"/>
+            <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+            <result property="tableware" column="tableware" jdbcType="INTEGER"/>
+            <result property="canAfterSales" column="is_can_after_sales" jdbcType="INTEGER"/>
+        </association>
+        <association property="detailDelivery"
+                     javaType="com.meiyuan.catering.order.dto.query.wx.OrdersDetailDeliveryWxDTO">
+            <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+            <result property="storeId" column="delivery_store_id" jdbcType="INTEGER"/>
+            <result property="storeName" column="take_address" jdbcType="VARCHAR"/>
+            <result property="storeManager" column="store_manager" jdbcType="VARCHAR"/>
+            <result property="storePhone" column="store_phone" jdbcType="VARCHAR"/>
+            <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+            <result property="consigneeCode" column="consignee_code" jdbcType="VARCHAR"/>
+            <result property="consigneeSex" column="consignee_sex" jdbcType="INTEGER"/>
+            <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+            <result property="consigneeArea" column="consignee_area" jdbcType="VARCHAR"/>
+            <result property="consigneeAddress" column="consignee_address" jdbcType="VARCHAR"/>
+            <result property="consigneeTime" column="consignee_time" jdbcType="VARCHAR"/>
+            <result property="immediateDeliveryTime" column="immediate_delivery_time" jdbcType="VARCHAR"/>
+            <result property="immediateDeliveryTime" column="immediateDeliveryDate" jdbcType="TIMESTAMP"/>
+            <result property="estimateTime" column="estimate_time" jdbcType="TIMESTAMP"/>
+            <result property="actualTime" column="actual_time" jdbcType="TIMESTAMP"/>
+        </association>
+        <collection property="goods" ofType="com.meiyuan.catering.order.dto.query.wx.OrdersDetailGoodsWxDTO">
+            <result property="orderGoodsId" column="order_goods_id" jdbcType="INTEGER"/>
+            <result property="goodsId" column="goods_id" jdbcType="INTEGER"/>
+            <result property="goodsPicture" column="goods_picture" jdbcType="VARCHAR"/>
+            <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+            <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+            <result property="goodsType" column="goods_type" jdbcType="INTEGER"/>
+            <result property="storePrice" column="store_price" jdbcType="OTHER"/>
+            <result property="salesPrice" column="sales_price" jdbcType="OTHER"/>
+            <result property="goodsStorePrice" column="goods_store_price" jdbcType="OTHER"/>
+            <result property="discountBeforeFee" column="goods_discount_before_fee" jdbcType="OTHER"/>
+            <result property="discountLaterFee" column="goods_discount_later_fee" jdbcType="OTHER"/>
+            <result property="gifts" column="is_gifts" jdbcType="INTEGER"/>
+            <result property="giftsActivityId" column="gifts_activity_id" jdbcType="INTEGER"/>
+            <result property="goodsSpecType" column="goods_spec_type" jdbcType="INTEGER"/>
+            <result property="goodsSpecificationDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+            <result property="shareBillUserId" column="share_bill_user_id" jdbcType="INTEGER"/>
+            <result property="shareBillUserName" column="share_bill_user_name" jdbcType="VARCHAR"/>
+            <result property="shareBillUserAvatar" column="share_bill_user_avatar" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+    <select id="orderDetailQueryWx" resultMap="OrderDetailQueryWxMap">
+        SELECT
+        case co.order_type
+        when 4 then 1 else 2
+        end sell_type,
+        co.delivery_price_original,
+        co.id order_id, co.merchant_id ,co.store_id, co.order_number, co.trading_flow, co.billing_time, co.member_type, co.order_type, co.status, co.delivery_way, co.merchant_id,
+        co.store_name,co.store_picture, co.merchant_phone, co.delivery_price,co.pack_price, co.discount_fee, co.discount_later_fee, co.paid_amount, co.is_can_after_sales,
+        co.remarks, co.off_reason, co.is_comment, co.pay_deadline, cod.store_name AS take_address, cod.consignee_name, cod.consignee_sex,
+        cod.consignee_phone, cod.consignee_area,cod.consignee_code, cod.consignee_address, cod.actual_time,activity.activity_no,
+        cod.tableware, cod.store_id delivery_store_id, cod.store_manager, cod.store_phone,
+        if(IFNULL(cod.immediate_delivery_time,0) = 0,CONCAT(DATE_FORMAT(cod.estimate_time , '%c月%e日' ),
+            CASE DAYOFWEEK(cod.estimate_time)
+            WHEN 1 THEN '（周日）'
+            WHEN 2 THEN '（周一）'
+            WHEN 3 THEN '（周二）'
+            WHEN 4 THEN '（周三）'
+            WHEN 5 THEN '（周四）'
+            WHEN 6 THEN '（周五）'
+            WHEN 7 THEN '（周六）'
+            END,
+            DATE_FORMAT(cod.estimate_time , '%H:%i' ),
+            '-',
+            DATE_FORMAT(cod.estimate_end_time , '%H:%i' )
+        ),'立即送达') consignee_time,
+        DATE_FORMAT(cod.immediate_delivery_time,'%H:%i') immediate_delivery_time,goods.id order_goods_id, goods.goods_id, goods.goods_name, goods.quantity, goods.goods_picture, goods.store_price, goods.sales_price,
+        goods.store_price * goods.quantity as goods_store_price, goods.goods_type,
+        goods.discount_before_fee goods_discount_before_fee, goods.discount_later_fee goods_discount_later_fee,
+        goods.goods_specification_desc,mge.goods_spec_type, goods.is_gifts, goods.gifts_activity_id, goods.share_bill_user_id, goods.share_bill_user_name, goods.share_bill_user_avatar
+        FROM catering_orders co
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        LEFT JOIN catering_orders_activity activity ON activity.relation_id = co.id and activity.activity_type = 3
+        LEFT JOIN catering_orders_goods goods ON goods.order_id = co.id
+        left join `catering_merchant_goods_extend` mge on mge.merchant_id = co.merchant_id and goods.goods_id = mge.goods_id
+        WHERE co.id = #{orderId} and co.is_del=0
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.TopUpConsumeListAdminDTO" id="TopUpConsumeListAdminMap">
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="paidTime" column="paid_time" jdbcType="TIMESTAMP"/>
+        <result property="discountBeforeFee" column="discount_before_fee"/>
+        <result property="discountLaterFee" column="discount_later_fee"/>
+        <result property="orderAmount" column="order_amount" jdbcType="OTHER"/>
+        <result property="discountFee" column="discount_fee" jdbcType="OTHER"/>
+        <result property="paidAmount" column="paid_amount" jdbcType="OTHER"/>
+        <result property="account" column="account" jdbcType="VARCHAR"/>
+        <collection property="goodsInfo" column="order_number"
+                    select="com.meiyuan.catering.order.dao.CateringOrdersMapper.ordersListGoodsAdmin"
+                    ofType="com.meiyuan.catering.order.dto.query.admin.OrdersListGoodsAdminDTO"/>
+    </resultMap>
+    <select id="topUpConsumeListQueryAdmin" resultMap="TopUpConsumeListAdminMap">
+        SELECT co.order_number, co.paid_time, co.discount_before_fee,co.discount_later_fee,co.order_amount,
+        co.discount_fee, co.paid_amount, '充值账户' as account
+        FROM catering_orders co
+        WHERE co.pay_way = 1 and co.is_del=0
+        and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 7 or co.status = 8)
+        and co.member_id = #{dto.memberId}
+        <if test="dto.paidTime != null">
+            and to_days(co.paid_time) = to_days(#{dto.paidTime})
+        </if>
+        ORDER BY co.paid_time DESC
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.OrdersDetailDTO" id="OrderDetailMap">
+        <result property="orderNumber" column="order_number"/>
+        <result property="discountLaterFee" column="discount_later_fee"/>
+        <result property="status" column="status"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="memberId" column="member_id" jdbcType="INTEGER"/>
+        <result property="memberType" column="member_type" jdbcType="INTEGER"/>
+        <collection property="goods" ofType="com.meiyuan.catering.order.dto.query.OrdersDetailGoodsDTO">
+            <result property="goodsName" column="goods_name"/>
+            <result property="goodsSkuCode" column="goods_sku_code"/>
+            <result property="orderGoodsId" column="order_goods_id" jdbcType="INTEGER"/>
+            <result property="goodsId" column="goods_id" jdbcType="INTEGER"/>
+            <result property="seckillEventId" column="skill_event_id" jdbcType="INTEGER"/>
+            <result property="goodsType" column="goods_type" jdbcType="INTEGER"/>
+            <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+            <result property="transactionPrice" column="transaction_price"/>
+            <result property="discountLaterFee" column="discount_later_fee_goods"/>
+            <result property="packPrice" column="pack_price"/>
+            <result property="gifts" column="is_gifts" jdbcType="INTEGER"/>
+            <result property="giftsActivityId" column="gifts_activity_id" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time"/>
+        </collection>
+    </resultMap>
+    <select id="orderDetail" resultMap="OrderDetailMap">
+        SELECT co.order_number,
+               co.discount_later_fee,
+               co.status,
+               co.merchant_id,
+               co.member_type,
+               co.store_id,
+               co.id                    order_id,
+               co.member_id,
+               goods.id                 order_goods_id,
+               goods.goods_id           goods_id,
+               goods.goods_type,
+               goods.quantity,
+               goods.transaction_price,
+               goods.is_gifts,
+               goods.gifts_activity_id,
+               goods.goods_name,
+               goods.goods_sku_code,
+               goods.create_time,
+               goods.discount_later_fee discount_later_fee_goods,
+               goods.pack_price,
+               goods.skill_event_id
+        FROM   catering_orders co
+               LEFT JOIN catering_orders_goods goods
+                      ON goods.order_id = co.id
+        WHERE  co.id = #{orderId} and co.is_del=0
+    </select>
+
+    <select id="getDiscountName" resultType="java.lang.String">
+        SELECT discounts.discount_name
+        FROM catering_orders_discounts discounts
+        WHERE discounts.order_number = #{orderNumber}
+    </select>
+    <select id="getOrderInfoByMerchantInfo" resultMap="CateringOrdersMap">
+        SELECT orders.*
+        FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        WHERE orders.is_del=0
+        and (orders.status =3 or orders.status =4)
+        <if test="dto.code!=null">
+            and delivery.consignee_code = #{dto.code}
+        </if>
+        <if test="dto.orderId != null">
+            and orders.id = #{dto.orderId}
+        </if>
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.merchant.OrdersDistributionDTO" id="OrderDistributionMap">
+        <result property="estimateTime" column="estimate_time"/>
+        <result property="flag" column="flag"/>
+    </resultMap>
+    <select id="orderDistribution" resultMap="OrderDistributionMap">
+        SELECT
+        date_format(ifnull(delivery.estimate_time,delivery.immediate_delivery_time), '%Y-%m-%d') estimate_time,
+        1 as flag
+        FROM catering_orders co
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = co.id
+        WHERE (co.status = 3 or co.status = 4) and co.is_del=0
+        <if test="dto.estimateTime != null and dto.estimateTime != ''">
+            and date_format(ifnull( delivery.estimate_time, delivery.immediate_delivery_time ),'%Y-%m') =
+            #{dto.estimateTime}
+        </if>
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        group by date_format(ifnull( delivery.estimate_time, delivery.immediate_delivery_time ), '%Y-%m-%d')
+    </select>
+    <resultMap type="com.meiyuan.catering.order.dto.query.merchant.OrdersCountMerchantDTO" id="OrdersCountMerchantMap">
+        <result property="receivableAmount" column="receivableAmount"/>
+        <result property="actualAmount" column="actualAmount"/>
+    </resultMap>
+    <select id="orderTotalCountMerchantWithToday" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*) AS orderTotal
+        FROM catering_orders co
+        LEFT JOIN catering_orders_operation ope ON ope.order_id = co.id AND ope.operation_phase = 3
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE co.status != 1 and co.status != 8 and co.is_del=0
+        AND IF(co.`status` = 6, ope.operation_type = 2, true)
+        and to_days(co.billing_time) = to_days(now())
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        group by to_days(now())
+    </select>
+    <select id="orderTotalCountMerchantWithYesterday" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*) AS orderTotal
+        FROM catering_orders co
+        LEFT JOIN catering_orders_operation ope ON ope.order_id = co.id AND ope.operation_phase = 3
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE co.status != 1 and co.status != 8 and co.is_del=0
+        AND IF(co.`status` = 6, ope.operation_type = 2, true)
+        and to_days(co.billing_time) = to_days(now())-1
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        group by to_days(now())
+    </select>
+    <select id="ordersAmountCountMerchantWithToday" resultMap="OrdersCountMerchantMap">
+        SELECT
+        SUM(IFNULL(co.discount_before_fee, 0)) AS receivableAmount,
+        SUM(IFNULL(co.paid_amount, 0)) AS actualAmount
+        FROM catering_orders co
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE co.status in(3,4,5,7) and co.is_del=0
+        and to_days(co.billing_time) = to_days(now())
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+    </select>
+    <select id="ordersAmountCountMerchantWithTodayRefund" resultMap="OrdersCountMerchantMap">
+        SELECT
+        SUM(IFNULL(co.discount_before_fee, 0) + ifnull(co.delivery_price_original,0)) AS receivableAmount,
+        SUM(IFNULL(co.paid_amount, 0)) AS actualAmount
+        FROM catering_orders co
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id,
+        catering_orders_refund refund
+        WHERE
+        co.is_del=0
+        and refund.order_id = co.id
+        and co.status in(3,4,5,7)
+        and co.`is_after_sales` = 1
+        and refund.refund_status =2
+        and to_days(refund.create_time)=to_days(now())
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+    </select>
+    <select id="ordersAmountCountMerchantWithYesterdayRefund" resultMap="OrdersCountMerchantMap">
+        SELECT
+        SUM(IFNULL(co.discount_before_fee, 0) + ifnull(co.delivery_price_original,0)) AS receivableAmount,
+        SUM(IFNULL(co.paid_amount, 0)) AS actualAmount
+        FROM catering_orders co
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id,
+        catering_orders_refund refund
+        WHERE
+        refund.order_id = co.id
+        and co.is_del=0
+        and co.status in(3,4,5,7)
+        and co.`is_after_sales` = 1
+        and refund.refund_status =2
+        and to_days(refund.create_time)=to_days(now())-1
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        group by To_days(refund.create_time)
+    </select>
+    <select id="ordersAmountCountMerchantWithYesterday" resultMap="OrdersCountMerchantMap">
+        SELECT
+        SUM(IFNULL(co.discount_before_fee, 0) + ifnull(co.delivery_price_original,0)) AS receivableAmount,
+        SUM(IFNULL(co.paid_amount, 0)) AS actualAmount
+        FROM catering_orders co
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE co.status in(3,4,5,7) and co.is_del=0
+        and to_days(co.billing_time) = to_days(now())-1
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+    </select>
+    <select id="refundOrderCountMerchant" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*)
+        FROM catering_orders co
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = co.id
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE refund.refund_status = 2 and co.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        and to_days(co.paid_time) = to_days(now())
+        group by to_days(now())
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.query.merchant.OrdersStatusCountDTO"
+               id="OrdersStatusCountMerchantMap">
+        <result property="unfinished" column="unfinished"/>
+        <result property="finished" column="finished"/>
+        <result property="cancel" column="cancel"/>
+        <result property="failure" column="failure"/>
+        <result property="unRefund" column="unRefund"/>
+        <result property="refund" column="refund"/>
+    </resultMap>
+
+    <select id="unfinishedNum" resultType="java.lang.Integer">
+        SELECT count(*) AS unfinished FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        WHERE (orders.`status` = 3 OR orders.`status` = 4) and orders.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="finishedNum" resultType="java.lang.Integer">
+        SELECT count(*) AS finished FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        WHERE orders.`status` = 5
+        and orders.is_del=0
+        and IF(orders.is_after_sales = 1, refund.refund_status=3, refund.refund_status is
+        null)
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="cancelNum" resultType="java.lang.Integer">
+        SELECT count(*) AS unfinished FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        LEFT JOIN catering_orders_operation ope ON ope.order_id = orders.id AND ope.operation_phase = 3
+        WHERE orders.`status` = 6 and ope.operation_type = 2 and orders.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="failureNum" resultType="java.lang.Integer">
+        SELECT count(*) AS unfinished FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        WHERE orders.`status` = 7 and orders.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="unRefundNum" resultType="java.lang.Integer">
+        SELECT count(*) AS unRefund FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        WHERE orders.`is_after_sales` = 1 and refund.`refund_status` = 1 and orders.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="refundNum" resultType="java.lang.Integer">
+        SELECT count(*) AS refund FROM catering_orders orders
+        LEFT JOIN catering_orders_delivery delivery ON delivery.order_id = orders.id
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        WHERE orders.is_after_sales = 1 AND refund.refund_status = 2 and orders.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and delivery.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (delivery.store_id = #{dto.shopId} or orders.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and orders.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <if test="dto.deliveryWay != null">
+            <choose>
+                <when test="dto.deliveryWay == 1">
+                    and orders.delivery_way = 1
+                </when>
+                <when test="dto.deliveryWay == 2">
+                    and orders.delivery_way = 2
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="dto.billingTime != null and dto.billingTime != ''">
+            <choose>
+                <when test='dto.billingTime=="today"'>
+                    and to_days(orders.billing_time) = to_days(now())
+                </when>
+                <when test='dto.billingTime=="yesterday"'>
+                    and to_days(now()) - to_days(orders.billing_time) = 1
+                </when>
+                <otherwise>
+                    and to_days(orders.billing_time) = to_days(#{dto.billingTime})
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+    <select id="merchantOrderTotal" resultType="java.lang.Integer">
+        select
+        count(*)
+        from catering_orders orders
+        where (orders.status = 5 or orders.status = 7)
+        and orders.is_del=0
+        and date_sub(curdate(), INTERVAL 30 DAY) &lt;= date(orders.billing_time)
+        and orders.store_id = #{shopId}
+    </select>
+
+    <resultMap type="com.meiyuan.catering.order.dto.goods.GoodsMonthSalesDTO"
+               id="GoodsMonthSalesMap">
+        <result property="time" column="paid_time"/>
+        <result property="goodsId" column="goods_id"/>
+        <result property="skuCode" column="goods_sku_code"/>
+        <result property="number" column="quantity"/>
+        <result property="merchantId" column="merchant_id"/>
+        <result property="goodsType" column="goods_type"/>
+        <result property="shopId" column="store_id"/>
+    </resultMap>
+    <!--获取商品销量数据根据天数-->
+    <select id="goodsSalesByDays" resultMap="GoodsMonthSalesMap">
+        SELECT orders.merchant_id,
+        orders.store_id,
+        orders.paid_time,
+        IF(goods.goods_type = 1 or goods.goods_type = 4, goods.goods_id, marketing_goods.goods_id) goods_id,
+        goods.goods_sku_code,
+        sum(goods.quantity) as quantity,
+        goods.goods_type
+        FROM catering_orders orders
+        LEFT JOIN catering_orders_goods goods ON goods.order_id = orders.id
+        LEFT JOIN catering_marketing_goods marketing_goods
+        ON goods.goods_id = marketing_goods.id
+        WHERE goods.goods_type in (1,2,3,4)
+        and orders.is_del=0
+        <if test="shopId != null">
+            and orders.store_id = #{shopId}
+        </if>
+        and (orders.status = 5 or orders.status = 7)
+        <if test="days != null">
+            and DATE_FORMAT(orders.billing_time,'%Y-%m-%d') &gt;= DATE_ADD(DATE_FORMAT(now(),'%Y-%m-%d'),INTERVAL
+            -${days} DAY)
+            and DATE_FORMAT(orders.billing_time,'%Y-%m-%d') &lt;= DATE_FORMAT(now(),'%Y-%m-%d')
+        </if>
+        GROUP BY orders.store_id,goods.goods_id,goods.goods_sku_code
+        order by orders.billing_time
+    </select>
+    <select id="shopIdList" resultType="java.lang.Long">
+        select
+        orders.store_id
+        from catering_orders orders where orders.is_del=0
+        group by orders.store_id
+    </select>
+
+    <update id="updateBatchStatus" parameterType="java.util.List">
+        update catering_orders orders
+        set orders.status =
+        case orders.delivery_way
+        when 1 then 3
+        else 4
+        end
+        where orders.status = 8
+        and orders.order_number in
+        <foreach collection="orderNos" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="refundMessage" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*)
+        FROM catering_orders orders
+        LEFT JOIN catering_orders_refund refund ON refund.order_id = orders.id
+        WHERE orders.is_after_sales = 1 AND refund.refund_status = 1
+        AND orders.store_id = #{param.shopId} and orders.is_del=0
+    </select>
+    <!--订单数据导出-->
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersListAdminDTO" id="OrderListExcelAdminMap">
+        <result property="orderId" column="id" jdbcType="BIGINT"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="deliveryWay" column="delivery_way" jdbcType="INTEGER"/>
+        <result property="takeAddress" column="take_address" jdbcType="VARCHAR"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="shopCode" column="shop_code" jdbcType="VARCHAR"/>
+        <result property="merchantName" column="merchant_name" jdbcType="VARCHAR"/>
+        <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+        <result property="orderAmount" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+        <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+        <result property="payWay" column="pay_way" jdbcType="INTEGER"/>
+        <result property="paidTime" column="paid_time" jdbcType="TIMESTAMP"/>
+        <result property="actualTime" column="actual_time" jdbcType="TIMESTAMP"/>
+        <collection property="goodsInfo"
+                    ofType="com.meiyuan.catering.order.dto.query.admin.OrdersListGoodsAdminDTO">
+            <result property="orderGoodsId" column="goods_id" jdbcType="INTEGER"/>
+            <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+            <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+            <result property="goodsSkuDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+    <select id="listForExcel" resultMap="OrderListExcelAdminMap">
+        SELECT co.id, co.billing_time, co.order_number, co.delivery_way, co.store_id, co.store_name, co.status,
+        co.discount_later_fee, co.paid_time,shop.shop_code,merchant.merchant_name,
+        IFNULL(co.pay_way, -1) pay_way,
+        cod.store_name AS take_address,
+        case co.status
+        when 5 then DATE_FORMAT(cod.actual_time, '%Y-%m-%d %H:%i')
+        else CONCAT(CONCAT(DATE_FORMAT(cod.estimate_time, '%Y-%m-%d %H:%i' ), ' - '), DATE_FORMAT(cod.estimate_end_time
+        , '%H:%i' ))
+        end actual_time,
+        cod.consignee_name, cod.consignee_phone, goods.id as goods_id, goods.goods_name, goods.quantity,
+        goods.goods_specification_desc
+        FROM catering_orders co
+        JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        JOIN catering_orders_goods goods ON co.id = goods.order_id
+        join catering_shop shop on co.store_id=shop.id
+        join catering_merchant merchant on co.merchant_id=merchant.id
+        WHERE co.is_del=0
+        <if test="dto.orderStatus != null">
+            and co.status = #{dto.orderStatus}
+        </if>
+        <if test="dto.payWay != null">
+            and co.pay_way = #{dto.payWay}
+        </if>
+        <if test="dto.deliveryWay != null">
+            and co.delivery_way = #{dto.deliveryWay}
+        </if>
+        <if test="dto.startTime != null">
+            and to_days(co.billing_time) &gt;= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            and to_days(co.billing_time) &lt;= to_days(#{dto.endTime})
+        </if>
+        <if test="dto.keyWord != null and dto.keyWord != ''">
+            and (
+            co.member_name like concat ('%',#{dto.keyWord},'%')
+            or co.member_phone like concat('%',#{dto.keyWord},'%')
+            or co.order_number like concat ('%',#{dto.keyWord},'%')
+            or cod.store_name like concat ('%',#{dto.keyWord},'%')
+            )
+        </if>
+        ORDER BY co.billing_time DESC
+    </select>
+
+
+    <!--订单备餐表数据导出-->
+    <resultMap type="com.meiyuan.catering.order.dto.query.admin.OrdersGoodsExcelListAdminDTO"
+               id="OrderGoodsExcelAdminMap">
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="goodsSkuDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+        <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+        <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+        <result property="orderStatus" column="status" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="actualTime" column="actual_time" jdbcType="VARCHAR"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="listOrderGoodsExcel" resultMap="OrderGoodsExcelAdminMap">
+        SELECT co.billing_time, co.order_number, co.status,
+        case co.status
+        when 5 then DATE_FORMAT(cod.actual_time, '%Y-%m-%d %H:%i')
+        else CONCAT(CONCAT(DATE_FORMAT(cod.estimate_time, '%Y-%m-%d %H:%i' ), ' - '), DATE_FORMAT(cod.estimate_end_time
+        , '%H:%i' ))
+        end actual_time,
+        cod.store_name, cod.consignee_name, cod.consignee_phone, goods.goods_name, goods.quantity,
+        goods.goods_specification_desc
+        FROM catering_orders co
+        JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        JOIN catering_orders_goods goods ON co.id = goods.order_id
+        WHERE goods.is_gifts = 0 and co.is_del=0
+        and (co.status = 3 or co.status = 4)
+        ORDER BY co.billing_time DESC
+    </select>
+    <select id="orderListByStatus" resultType="com.meiyuan.catering.order.vo.OrderBaseVo">
+        SELECT co.`merchant_id` AS merchantId,co.`id` AS orderId,co.`order_number` AS orderNumber,co.delivery_way deliveryWay
+        FROM `catering_orders` co
+        LEFT JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        WHERE
+        cod.estimate_time &lt;  #{estimateTime}
+        and co.status in (3,4) and co.is_del=0
+        and co.id not in (SELECT DISTINCT order_id
+            FROM   catering_orders_delivery_status_history)
+    </select>
+
+    <!--待核销商品明细-->
+    <resultMap type="com.meiyuan.catering.order.vo.DeliveryGoodsVo" id="deliveryGoodsMap">
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="goodsSkuDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+    </resultMap>
+    <select id="deliveryGoodsInfo" resultMap="deliveryGoodsMap">
+        SELECT
+        sum(goods.quantity) quantity, goods.goods_name, goods.goods_specification_desc
+        FROM catering_orders co
+        JOIN catering_orders_delivery cod ON cod.order_id = co.id
+        JOIN catering_orders_goods goods ON co.id = goods.order_id
+        where
+        goods.is_gifts = 0 AND (co.status = 3 or co.status = 4) and co.is_del=0
+        <choose>
+            <when test="dto.type==2">
+                and cod.store_id = #{dto.shopId}
+            </when>
+            <when test="dto.type==3">
+                and (cod.store_id = #{dto.shopId} or co.store_id = #{dto.shopId})
+            </when>
+            <otherwise>
+                and co.store_id = #{dto.shopId}
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="dto.time==1">
+                AND TO_DAYS(ifnull(cod.immediate_delivery_time,cod.estimate_time))-TO_DAYS(NOW()) = 1
+            </when>
+            <otherwise>
+                AND TO_DAYS(ifnull(cod.immediate_delivery_time,cod.estimate_time)) = TO_DAYS(now())
+            </otherwise>
+        </choose>
+        GROUP BY goods.goods_sku_code
+    </select>
+
+
+    <select id="isShopHavePendingOrder" resultType="int">
+        SELECT Count(orders.id)
+        FROM   catering_orders orders
+               LEFT JOIN catering_orders_refund orders_refund
+                      ON orders_refund.order_id = orders.id
+                         AND orders_refund.refund_status = 1
+        WHERE  orders.store_id = #{shopId}
+           AND orders.status IN( 3, 4 ) and orders.is_del=0
+    </select>
+
+
+    <select id="isSelfPickShopHavePendingOrder" resultType="int">
+        SELECT Count(orders.id)
+        FROM   catering_orders orders,
+               catering_orders_delivery orders_delivery
+               LEFT JOIN catering_orders_refund orders_refund
+                      ON orders_refund.order_id = orders_delivery.order_id
+                         AND orders_refund.refund_status = 1
+        WHERE  orders_delivery.store_id = #{shopId} and orders.is_del=0
+        and orders_delivery.order_id=orders.id
+           AND orders.status IN( 3, 4 )
+    </select>
+
+
+    <select id="listOrderDiscountIds" resultType="long">
+        select discount_id from catering_orders_discounts where order_id=#{orderId}
+    </select>
+
+    <select id="isFirstOrder" resultType="int">
+        SELECT Count(1)
+        FROM   catering_orders
+        WHERE  member_id = #{userId} and store_id = #{shopId} and is_del=0
+    </select>
+
+
+    <select id="isFirstOrderWithMerchant" resultType="int">
+        SELECT Count(1)
+        FROM   catering_orders
+        WHERE  member_id = #{userId} and merchant_id = #{merchantId} and status in(7,5) and is_del=0
+    </select>
+
+
+    <resultMap id="ticketRecordMap" type="com.meiyuan.catering.order.dto.submit.OrderTicketUsedRecordDTO">
+        <result property="orderId" column="id"/>
+        <result property="merchantId" column="merchant_id"/>
+        <result property="shopId" column="store_id"/>
+        <result property="orderAmount" column="paid_amount"/>
+        <result property="discountBeforeFee" column="discount_before_fee"/>
+        <result property="newMember" column="newMember"/>
+        <result property="userId" column="member_id"/>
+        <collection property="ticketIds" ofType="java.lang.Long">
+            <result column="discount_id"/>
+        </collection>
+    </resultMap>
+    <select id="findTicketRecord" resultMap="ticketRecordMap">
+        SELECT
+        o.id,
+        o.merchant_id,
+        o.store_id,
+        o.discount_before_fee,
+        o.paid_amount,
+        IF
+        ( ( SELECT count( id ) FROM catering_orders WHERE is_del=0 and member_id = o.member_id and store_id =
+        o.store_id) > 1, 0, 1 )
+        AS newMember ,
+        od.discount_id,
+        o.member_id
+        FROM
+        catering_orders o
+        LEFT JOIN catering_orders_discounts od ON o.id = od.order_id
+        WHERE
+        o.is_del = 0
+        and od.discount_type = 1
+        and o.id in
+        <foreach collection="orderId" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="listForMerchantPc" resultType="com.meiyuan.catering.order.dto.order.OrderForMerchantPcDTO">
+        SELECT
+        co.id orderId,
+        co.order_number orderNumber,
+        co.delivery_way deliveryWay,
+        co.status orderStatus,
+        co.discount_before_fee totalPrice,
+        co.discount_fee discountPrice,
+        co.discount_later_fee payPrice,
+        co.store_name shopName,
+        co.billing_time billingTime,
+        cor.refund_status refundStatus
+        FROM catering_orders co
+        LEFT join catering_orders_refund cor
+        ON co.id = cor.order_id
+        left join catering_orders_delivery cod on cod.order_id = co.id
+        WHERE co.is_del=0
+        <if test="dto.shopId!=null">
+            and co.store_id=#{dto.shopId}
+        </if>
+        <if test="dto.merchantId!=null">
+            and co.merchant_id=#{dto.merchantId}
+        </if>
+        <choose>
+            <when test="dto.orderStartDate!=null and dto.orderEndDate!=null">
+                and to_days(co.billing_time) between to_days(#{dto.orderStartDate}) and to_days(#{dto.orderEndDate})
+            </when>
+            <otherwise>
+                and to_days(co.billing_time)=to_days(now())
+            </otherwise>
+        </choose>
+        <if test="dto.orderStatus!=null and dto.orderStatus!=''">
+            and co.status=#{dto.orderStatus}
+        </if>
+        <if test="dto.orderType!=null and dto.orderType!=''">
+            and co.delivery_way=#{dto.orderType}
+        </if>
+        <if test="dto.keyWord!=null and dto.keyWord!=''">
+            and (co.order_number like concat('%', #{dto.keyWord} , '%') or cod.consignee_phone like concat('%',
+            #{dto.keyWord} , '%') or cod.consignee_name like concat('%', #{dto.keyWord} , '%'))
+        </if>
+        order by co.billing_time desc
+    </select>
+
+
+    <select id="listForMerchantPcWithOutPage" resultType="com.meiyuan.catering.order.dto.order.OrderForMerchantPcDTO">
+        SELECT co.order_number orderNumber,
+        co.delivery_way deliveryWay,
+        co.status orderStatus,
+        co.discount_before_fee totalPrice,
+        co.discount_fee discountPrice,
+        co.discount_later_fee payPrice,
+        co.store_name shopName,
+        co.billing_time billingTime,
+        co.goods_amount goodsAmount,
+        co.delivery_price deliveryPrice,
+        co.pack_price packPrice,
+        co.paid_time paidTime,
+        co.paid_amount paidAmount,
+        cotf.trading_flow as paidTradeNo,
+        ifnull(cora.business_audit_status,cora.platform_audit_status) refundAuditStatus,
+        co.pay_way payWay,
+        co.is_after_sales afterSales,
+        cor.refund_status refundStatus,
+        cor.refund_amount refundAmount
+        FROM catering_orders co
+        LEFT join catering_orders_refund cor ON co.id = cor.order_id
+        left join catering_orders_refund_audit cora on cor.id = cora.refund_id
+        left join catering_orders_transaction_flow cotf on co.id = cotf.order_id and if(co.status=6,
+        cotf.type=2,cotf.type=1)
+        left join catering_orders_delivery cod on cod.order_id = co.id
+        WHERE co.is_del=0
+        <if test="dto.shopId!=null">
+            and co.store_id=#{dto.shopId}
+        </if>
+        <if test="dto.merchantId!=null">
+            and co.merchant_id=#{dto.merchantId}
+        </if>
+        <choose>
+            <when test="dto.orderStartDate!=null and dto.orderEndDate!=null">
+                and to_days(co.billing_time) between to_days(#{dto.orderStartDate}) and to_days(#{dto.orderEndDate})
+            </when>
+            <otherwise>
+                and to_days(co.billing_time)=to_days(now())
+            </otherwise>
+        </choose>
+        <if test="dto.orderType!=null and dto.orderType!=''">
+            and co.delivery_way=#{dto.orderType}
+        </if>
+        <if test="dto.orderStatus!=null and dto.orderStatus!=''">
+            and co.status=#{dto.orderStatus}
+        </if>
+        <if test="dto.keyWord!=null and dto.keyWord!=''">
+            and (co.order_number like concat('%', #{dto.keyWord} , '%') or cod.consignee_phone like concat('%',
+            #{dto.keyWord} , '%') or cod.consignee_name like concat('%', #{dto.keyWord} , '%'))
+        </if>
+        order by co.billing_time desc
+    </select>
+
+    <select id="getFirstOrderId" resultType="java.lang.Long">
+        SELECT id FROM catering_orders WHERE member_id = #{userId} and is_del = 0 ORDER BY create_time ASC LIMIT 1
+    </select>
+    <resultMap id="operatingReportMap" type="com.meiyuan.catering.merchant.dto.merchant.MerchantReportDto">
+        <result property="id" column="id"/>
+        <result property="merchantId" column="merchant_id"/>
+        <result property="discountBeforeFee" column="discount_before_fee"/>
+        <result property="paidAmount" column="paid_amount"/>
+        <result property="discountFee" column="discount_fee"/>
+        <result property="otherDiscountFee" column="other_discount_fee"/>
+        <result property="deliveryWay" column="delivery_way"/>
+        <result property="paidTime" column="paid_time"/>
+        <result property="status" column="status"/>
+        <result property="updateName" column="update_name"/>
+        <result property="operationType" column="operation_type"/>
+        <result property="orderType" column="order_type"/>
+        <result property="goodsDiscount" column="goodsDiscount"/>
+        <result property="goodsType" column="goods_type"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    <select id="getOrderListMerchant" resultMap="operatingReportMap">
+        SELECT DISTINCT
+        t1.id,t1.merchant_id,t1.discount_before_fee,t1.paid_amount,t1.discount_fee,t1.delivery_way,t1.update_time,t1.paid_time,
+        <!--  IFNULL( IFNULL(t1.discount_fee,0) + IFNULL(t1.delivery_price,0) - IFNULL(t1.pack_price,0) - IFNULL(t1.delivery_price_original,0), 0 ) AS other_discount_fee -->
+        IFNULL(t1.delivery_price_original,0) as delivery_discounts,
+        t1.status,t1.update_name,t1.order_type,t2.operation_type,
+        IFNULL(t3.discount_fee,0) goodsDiscount,t3.goods_type
+        FROM catering_orders t1
+        left join catering_orders_operation t2 on t1.id = t2.order_id
+        left join catering_orders_goods t3 on t3.order_id = t1.id
+        <where>
+            <if test="shopId !=null">
+                and store_id = #{shopId}
+            </if>
+            <if test="merchantId !=null">
+                and merchant_id = #{merchantId}
+            </if>
+            and t1.paid_time is not null
+            and t1.is_del=0
+        </where>
+    </select>
+    <resultMap id="orderRefundMap" type="com.meiyuan.catering.order.dto.OrderRefundDTO">
+        <result property="orderId" column="id"/>
+        <result property="refundType" column="refund_type"/>
+        <result property="refundAmount" column="refund_amount"/>
+        <result property="deliveryWay" column="delivery_way"/>
+    </resultMap>
+    <select id="listOrderRefund" resultType="com.meiyuan.catering.order.dto.OrderRefundDTO">
+        SELECT r.order_id,r.refund_type,r.refund_amount,o.delivery_way
+        FROM catering_orders_refund r
+        LEFT JOIN catering_orders o on r.order_id = o.id and o.is_del=0
+        WHERE r.refund_status = 2
+        <if test="shopId!=null">
+            and o.store_id = #{shopId}
+        </if>
+        <if test="merchantId!=null">
+            and o.merchant_id = #{merchantId}
+        </if>
+        <if test="startTime != null and endTime != null">
+            and r.update_time <![CDATA[ >= ]]> #{startTime} and r.update_time <![CDATA[ <= ]]>
+            #{endTime}
+        </if>
+    </select>
+    <resultMap id="historyTrendMap" type="com.meiyuan.catering.order.dto.OrderHistoryTrendDTO">
+        <result property="id" column="id"/>
+        <result property="turnover" column="turnover"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="businessDay" column="business_day"/>
+    </resultMap>
+    <select id="historyTrendBusiness" resultType="com.meiyuan.catering.order.dto.OrderHistoryTrendDTO">
+        SELECT
+        DATE_FORMAT( paid_time, '%Y-%m-%d' ) business_day,
+        COUNT( id ) order_num,
+        IFNULL(SUM(IFNULL(discount_before_fee,0)) ,0) turnover
+        FROM catering_orders
+        <where>
+            <if test="shopId!=null">
+                and store_id = #{shopId}
+            </if>
+            <if test="merchantId !=null">
+                and merchant_id = #{merchantId}
+            </if>
+            <if test="startTime!=null and endTime!=null">
+                and unix_timestamp(paid_time) between unix_timestamp(#{startTime}) and
+                unix_timestamp(#{endTime})
+            </if>
+            and paid_time is not null
+            and is_del=0
+        </where>
+        GROUP BY business_day;
+    </select>
+
+    <select id="goodsSellListQuery" resultType="com.meiyuan.catering.order.dto.goods.GoodsSaleDTO">
+        SELECT
+        temp.sku_code as goodsSkuCode,
+        if(temp.goods_spec_type =
+        2,CONCAT(temp.merchant_goods_name,'(',temp.property_value,')'),temp.merchant_goods_name) AS goods_name,
+        temp.category_name,
+        temp.category_name AS goods_group_name,
+        temp.goods_id,
+        temp.shop_id,
+        temp.merchant_id,
+        IFNULL( SUM( order_temp.quantity ), 0 ) AS goodsSaleNum,
+        IFNULL( SUM( order_temp.discount_before_fee ), 0 ) AS goodsSaleAmout,
+        IFNULL( SUM( order_temp.discount_later_fee ), 0 ) AS afterDiscountFee
+        FROM
+        (
+        SELECT
+        mge.goods_id,
+        sgs.shop_id,
+        sgs.merchant_id,
+        mge.category_name,
+        mge.merchant_goods_name,
+        g_sku.property_value,
+        g_sku.sku_code,
+        mge.goods_spec_type
+        FROM
+        catering_merchant_goods_extend mge
+        LEFT JOIN catering_shop_goods_spu sgs ON ( mge.goods_id = sgs.goods_id AND mge.merchant_id = sgs.merchant_id )
+        LEFT JOIN catering_shop_goods_sku g_sku ON sgs.id = g_sku.shop_goods_spu_id
+        <where>
+            (g_sku.is_del = 0
+            <if test="param.startTime != null and param.endTime != null">
+                OR (g_sku.is_del = 1 and g_sku.update_time &gt;= #{param.startTime} and g_sku.update_time &lt;=
+                #{param.endTime})
+            </if>
+            )
+            <if test="param.goodsType != null and param.goodsType != ''">
+                and mge.category_id = #{param.goodsType}
+            </if>
+            <if test="param.goodsName !=null">
+                and mge.merchant_goods_name like concat('%', #{param.goodsName}, '%')
+            </if>
+            <if test="param.merchantId !=null">
+                and sgs.merchant_id = #{param.merchantId}
+            </if>
+            <if test="param.shopId !=null">
+                and sgs.shop_id = #{param.shopId}
+            </if>
+        </where>
+        GROUP BY
+        g_sku.sku_code
+        ) AS temp
+        JOIN (
+        SELECT
+        g.quantity,
+        g.discount_before_fee,
+        g.discount_later_fee,
+        g.goods_sku_code
+        FROM
+        catering_orders o
+        LEFT JOIN catering_orders_goods g ON o.id = g.order_id
+        WHERE
+        o.paid_time is not null and
+        o.`status` IN ( 2, 3, 4, 5, 6, 7, 8 )
+        and o.is_del=0
+        <if test="param.startTime != null and param.endTime!=null">
+            and o.create_time &gt;= #{param.startTime} and o.create_time &lt;= #{param.endTime}
+        </if>
+        <if test="param.merchantId !=null">
+            and o.merchant_id = #{param.merchantId}
+        </if>
+        <if test="param.shopId !=null">
+            and o.store_id = #{param.shopId}
+        </if>
+        ) AS order_temp ON temp.sku_code = order_temp.goods_sku_code
+        GROUP BY
+        temp.sku_code
+        <if test="param.orderField !=null and param.orderField != ''">
+            order by ${param.orderField} DESC,temp.sku_code
+        </if>
+    </select>
+
+    <select id="getPrintInfo" resultType="com.meiyuan.catering.order.vo.PrintOutPaperVO"
+            parameterType="com.meiyuan.catering.order.dto.order.PrintPaperDTO">
+        SELECT co.store_name AS shopName,cod.estimate_time,cod.estimate_end_time,cod.consignee_name,cod.consignee_phone,cod.consignee_address,
+co.goods_amount,co.delivery_price,co.pack_price,co.discount_fee,co.order_amount,co.paid_amount,co.remarks,co.create_time as billingTime,co.order_number,cod.store_name as takeAddress,
+co.delivery_way
+ FROM (SELECT * FROM catering_orders WHERE is_del=0 and id=#{orderId}) co LEFT JOIN catering_orders_delivery cod
+ON co.id = cod.order_id
+    </select>
+
+    <select id="getGoodsList" resultType="com.meiyuan.catering.order.vo.PrintOutPaperGoodsVO"
+            parameterType="java.lang.Long">
+SELECT goods_name,quantity,store_price,sales_price,transaction_price,discount_before_fee,discount_later_fee FROM catering_orders_goods where order_id=#{orderId}
+    </select>
+
+    <sql id="select_order_platformDiscount">
+        SELECT temp.order_id,SUM(temp.discount_amount*(IF(temp.bear_duty IS NULL,100,temp.bear_duty )/100)) AS platformDiscount FROM (
+        SELECT cod.order_id,cod.discount_name,cod.discount_amount,cut.ticket_id,cut.ticket_activity_id,cut.order_id AS cud_order_id,
+        cmt.activity_id,cmt.ticket_type,cmt.amount,cmt.send_ticket_party,cma.bear_duty
+	FROM (SELECT * FROM catering_orders_discounts)cod
+        LEFT JOIN catering_user_ticket cut ON cod.discount_id=cut.id
+        INNER JOIN (SELECT * FROM catering_marketing_ticket WHERE send_ticket_party IN(1,2))cmt ON cmt.id=cut.ticket_id
+        LEFT JOIN catering_marketing_activity cma ON cut.ticket_activity_id=cma.id
+        ) temp
+        GROUP BY temp.order_id
+    </sql>
+    <sql id="order_condition">
+        <if test="dto.startTime != null">
+            AND to_days(paid_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(paid_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+    </sql>
+    <select id="listBillShop" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDTO"
+            resultType="com.meiyuan.catering.merchant.vo.shop.bill.ShopListBillVo">
+        SELECT
+        cs.id as shopId,cs.shop_name as shopName,cs.merchant_id as merchantId,cs.shop_status,cs.is_del as
+        del,cm.merchant_name AS
+        merchantName,
+        cm.create_time AS merchantCreateTime,temp.*
+        FROM
+        (select id,shop_name,merchant_id,shop_status,is_del from catering_shop where 1=1
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        ) cs left join
+        (
+        SELECT
+        store_id,
+        SUM(co_id)-SUM(coo_id)-SUM(cof_id) AS orderCount,
+        SUM(orderAmount) AS orderAmount,
+        SUM(paid_amount) AS orderIncome,
+        SUM(refund_amount) AS refundAmount,
+        SUM(platformDiscount) AS platformDiscount,
+        SUM(merchantDiscount) AS merchantDiscount,
+        SUM(merchantIncome) AS merchantIncome
+        FROM
+
+        (
+        SELECT
+        coi.discount_before_fee AS orderAmount,
+        coi.paid_amount AS paid_amount,
+        IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0) AS merchantDiscount,
+        IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0) AS merchantIncome,
+        ctdr.platformDiscount AS platformDiscount,0 AS refund_amount,0 AS cof_id,0 AS coo_id,1 AS co_id,coi.store_id
+        FROM
+        (SELECT * FROM catering_orders WHERE is_del=0
+        <include refid="order_condition"/>
+        ) coi
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr
+        ON coi.id=ctdr.order_id
+
+        UNION ALL
+
+        SELECT (coi.discount_before_fee)*-1 AS
+        orderAmount,coi.paid_amount*-1 AS paid_amount,
+        (IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0))*-1 AS merchantDiscount,
+        (IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0))*-1 AS merchantIncome,
+        (ctdr.platformDiscount*(-1)) AS platformDiscount,cori.refund_amount AS refund_amount,1 AS cof_id,0 AS coo_id,0
+        AS co_id,coi.store_id
+        FROM
+        (SELECT id,order_id,refund_amount FROM catering_orders_refund WHERE refund_status = 2 and is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(update_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(update_time) &lt; to_days(#{dto.endTime})
+        </if>
+        ) cori
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON cori.order_id=ctdr.order_id
+        INNER JOIN (select * from catering_orders where is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        ) coi
+        ON cori.order_id=coi.id
+
+        UNION ALL
+
+        SELECT (coi.discount_before_fee)*-1 AS
+        orderAmount,coi.paid_amount*-1 AS paid_amount,
+        (IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0))*-1 AS merchantDiscount,
+        (IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0))*-1 AS merchantIncome,
+        ctdr.platformDiscount*(-1) AS platformDiscount, coi.paid_amount AS refund_amount,0 AS cof_id,1 AS coo_id,0 AS
+        co_id,coi.store_id
+        FROM (
+        SELECT id,order_id FROM catering_orders_operation WHERE operation_phase = 4
+        <if test="dto.startTime != null">
+            AND to_days(operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        group by order_id
+        ) cooi
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON cooi.order_id=ctdr.order_id
+        INNER JOIN (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        ) coi ON cooi.order_id=coi.id
+        ) total_orders
+
+        GROUP BY total_orders.store_id
+        ) temp
+        on cs.id=temp.store_id
+        LEFT JOIN catering_merchant cm
+        ON cs.merchant_id=cm.id
+    </select>
+
+    <select id="totalOrderIncomeAndFound" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDTO"
+            resultType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillTotalDTO">
+        SELECT
+        COALESCE(SUM(temp.orderCount),0) AS totalOrderCount,
+        COALESCE(SUM(temp.orderIncome),0) AS totalOrderIncome,
+        COALESCE(SUM(temp.refundAmount),0) AS totalRefundAmount,
+        COALESCE(SUM(temp.merchantDiscount),0) AS totalMerchantDiscount,
+        COALESCE(SUM(temp.refundCount),0) AS totalRefundCount,
+        COALESCE(SUM(temp.platformDiscount),0) AS totalPlatformDiscount,
+        COALESCE(SUM(temp.merchantDiscount),0) AS totalMerchantDiscount,
+        COALESCE(SUM(temp.merchantIncome),0) AS totalMerchantIncome
+        FROM
+        (select id,shop_name,merchant_id,shop_status from catering_shop where 1=1
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        ) cs left join
+        (
+        SELECT
+        store_id,
+        SUM(co_id)-SUM(coo_id)-SUM(cof_id) AS orderCount,
+        SUM(orderAmount) AS orderAmount,
+        SUM(paid_amount) AS orderIncome,
+        SUM(refund_amount) AS refundAmount,
+        SUM(cof_id)+SUM(coo_id) AS refundCount,
+        SUM(platformDiscount) AS platformDiscount,
+        SUM(merchantDiscount) AS merchantDiscount,
+        SUM(merchantIncome) AS merchantIncome
+        FROM
+
+        (
+        SELECT
+        coi.discount_before_fee AS orderAmount,
+        coi.paid_amount AS paid_amount,
+        IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0) AS merchantDiscount,
+        IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0) AS merchantIncome,
+        ctdr.platformDiscount AS platformDiscount,0 AS refund_amount,0 AS cof_id,0 AS coo_id,1 AS co_id,coi.store_id
+        FROM
+        (SELECT * FROM catering_orders WHERE is_del=0
+        <include refid="order_condition"/>
+        ) coi
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON coi.id=ctdr.order_id
+
+        UNION ALL
+
+        SELECT (coi.discount_before_fee)*-1 AS
+        orderAmount,coi.paid_amount*-1 AS paid_amount,
+        (IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0))*-1 AS merchantDiscount,
+        (IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0))*-1 AS merchantIncome,
+        (ctdr.platformDiscount*(-1)) AS platformDiscount,cori.refund_amount AS refund_amount,1 AS cof_id,0 AS coo_id,0
+        AS co_id,coi.store_id
+        FROM
+        (SELECT id,order_id,refund_amount FROM catering_orders_refund WHERE refund_status = 2 and is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(update_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(update_time) &lt; to_days(#{dto.endTime})
+        </if>
+        ) cori
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON cori.order_id=ctdr.order_id
+
+        INNER JOIN (select * from catering_orders where is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        ) coi
+        ON cori.order_id=coi.id
+
+        UNION ALL
+
+        SELECT (coi.discount_before_fee)*-1 AS
+        orderAmount,coi.paid_amount*-1 AS paid_amount,
+        (IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0))*-1 AS merchantDiscount,
+        (IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0))*-1 AS merchantIncome,
+        ctdr.platformDiscount*(-1) AS platformDiscount, coi.paid_amount AS refund_amount,0 AS cof_id,1 AS coo_id,0 AS
+        co_id,coi.store_id
+        FROM (
+        SELECT id,order_id FROM catering_orders_operation WHERE operation_phase = 4
+        <if test="dto.startTime != null">
+            AND to_days(operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        group by order_id
+        ) cooi
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON cooi.order_id=ctdr.order_id
+        INNER JOIN (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        ) coi ON cooi.order_id=coi.id
+        ) total_orders
+
+        GROUP BY total_orders.store_id
+        ) temp
+        on cs.id=temp.store_id
+        LEFT JOIN catering_merchant cm
+        ON cs.merchant_id=cm.id
+
+
+    </select>
+
+
+    <select id="billShopDetailQuery" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDTO"
+            resultType="com.meiyuan.catering.merchant.vo.shop.bill.ShopBillDetailVo">
+        <include refid="billShopDetail"></include>
+    </select>
+    <sql id="billShopDetail">
+        select
+        total_orders.id as orderId,
+        total_orders.store_id as shopId,
+        total_orders.merchant_id as merchantId,
+        total_orders.order_number as orderNumber,
+        cs.shop_name as shopName,
+        IFNULL(total_orders.discount_before_fee,0)
+        as orderAmount,
+        IFNULL(total_orders.paid_amount,0) as paidAmount,
+        IFNULL(ctdr.platformDiscount,0) as platformDiscount,
+        (IFNULL(total_orders.discount_fee,0) - IFNULL(ctdr.platformDiscount,0)) as merchantDiscount,
+        IFNULL(total_orders.delivery_price,0) as deliveryFee,
+        (IFNULL(total_orders.paid_amount,0) + IFNULL(ctdr.platformDiscount,0)) as merchantIncome,
+        IFNULL(cof.refund_amount,0) + IFNULL(coo.paid_amount,0) as refundAmount,
+        total_orders.status as orderStatus,
+        total_orders.pay_way as payWay,
+        total_orders.paid_time as paidTime,
+        total_orders.trading_flow as tradingFlow,
+        total_orders.delivery_way as deliveryWay
+        from
+        (
+        SELECT
+        coi.id,coi.store_id,coi.merchant_id,coi.order_number,coi.store_name,coi.discount_before_fee,coi.delivery_price_original,
+        coi.delivery_price,coi.paid_amount,coi.discount_fee,coi.status,coi.pay_way,coi.paid_time,coi.trading_flow,coi.delivery_way
+        FROM
+        catering_orders coi
+        WHERE coi.is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(coi.paid_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(coi.paid_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND coi.store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND coi.merchant_id = #{dto.merchantId}
+        </if>
+        UNION
+        SELECT
+        coi2.id,coi2.store_id,coi2.merchant_id,coi2.order_number,coi2.store_name,coi2.discount_before_fee,coi2.delivery_price_original,
+        coi2.delivery_price,coi2.paid_amount,coi2.discount_fee,coi2.status,coi2.pay_way,coi2.paid_time,coi2.trading_flow,coi2.delivery_way
+        FROM catering_orders coi2,catering_orders_refund cof WHERE coi2.id=cof.order_id
+        AND cof.refund_status=2 and coi2.is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(cof.update_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(cof.update_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND coi2.store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND coi2.merchant_id = #{dto.merchantId}
+        </if>
+        UNION
+        SELECT
+        coi3.id,coi3.store_id,coi3.merchant_id,coi3.order_number,coi3.store_name,coi3.discount_before_fee,coi3.delivery_price_original,
+        coi3.delivery_price,coi3.paid_amount,coi3.discount_fee,coi3.status,coi3.pay_way,coi3.paid_time,coi3.trading_flow,coi3.delivery_way
+        FROM catering_orders coi3,(select order_id,operation_phase,operation_time
+        from catering_orders_operation WHERE operation_phase = 4 group by order_id) cop where cop.order_id= coi3.id
+        and coi3.is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(cop.operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(cop.operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND coi3.store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND coi3.merchant_id = #{dto.merchantId}
+        </if>
+        ) total_orders
+        left join
+
+        (
+        select coi.*,cori.id as cori_id,cori.order_id as order_id,cori.refund_amount,ctdr.platformDiscount from (
+        select * from catering_orders_refund where refund_status = 2 and is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(update_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(update_time) &lt; to_days(#{dto.endTime})
+        </if>
+        ) cori
+        left join (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr on cori.order_id=ctdr.order_id
+        left join catering_orders coi
+        on cori.order_id=coi.id and coi.is_del=0
+        ) cof
+        ON total_orders.id = cof.order_id
+
+        LEFT JOIN (
+        SELECT coi.*,ctdr.platformDiscount,cooi.order_id FROM (
+        SELECT * FROM catering_orders_operation WHERE operation_phase = 4
+        <if test="dto.startTime != null">
+            AND to_days(operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        group by order_id
+        ) cooi
+        left join (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr on cooi.order_id=ctdr.order_id
+        LEFT JOIN catering_orders coi ON cooi.order_id=coi.id and coi.is_del=0
+        ) coo
+        ON total_orders.id = coo.order_id
+
+        left join
+        (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr
+        on total_orders.id = ctdr.order_id
+
+        left join catering_shop cs on total_orders.store_id = cs.id
+        order by total_orders.paid_time desc
+    </sql>
+    <select id="billShopDetailQueryExport" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDetailDTO"
+            resultType="com.meiyuan.catering.merchant.vo.shop.bill.ShopBillDetailVo">
+        <include refid="billShopDetail"></include>
+    </select>
+
+    <select id="getBillShopCityCode" resultType="com.meiyuan.catering.merchant.vo.shop.bill.ShopBillCityVo">
+    select address_city_code as cityCode,address_city as cityName,count(address_city_code) as shopCount
+    from catering_shop where catering_shop.shop_type IN(1,2)  group by address_city_code
+</select>
+
+    <select id="getBillGeneral" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDTO"
+            resultType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillTotalDTO">
+        SELECT
+        COALESCE(SUM(temp.orderCount),0) AS totalOrderCount,
+        COALESCE(SUM(temp.orderIncome),0) as totalOrderIncome,
+        COALESCE(SUM(temp.refundAmount),0) as totalRefundAmount,
+        COALESCE(SUM(temp.merchantDiscount),0) as totalMerchantDiscount,
+        COALESCE(SUM(temp.refundCount),0) AS totalRefundCount,
+
+        COALESCE(SUM(temp.platformDiscount),0) AS totalPlatformDiscount,
+        COALESCE(SUM(temp.merchantDiscount),0) AS totalMerchantDiscount,
+        COALESCE(SUM(temp.merchantIncome),0) AS totalMerchantIncome,
+        COALESCE(SUM(temp.sellGoodsCount),0) AS totalShopSellGoods,
+        COALESCE((SELECT COUNT(*) FROM catering_shop cs WHERE 1=1
+        <if test="dto.startTime != null">
+            AND to_days(cs.create_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(cs.create_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND cs.id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id=#{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND address_city_code = #{dto.cityCode}
+        </if>
+        ),0) as totalNewShop,
+        COALESCE(
+        (SELECT COUNT(*) FROM catering_shop where 1=1
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id=#{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND address_city_code = #{dto.cityCode}
+        </if>
+        ),0) as countShop
+        FROM
+        (select * from catering_shop where 1=1
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND id = #{dto.shopId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND address_city_code = #{dto.cityCode}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id=#{dto.merchantId}
+        </if>
+        ) cs
+        left join
+        (
+        SELECT
+        store_id,
+        SUM(co_id)-SUM(coo_id)-SUM(cof_id) AS orderCount,
+        SUM(orderAmount) AS orderAmount,
+        SUM(paid_amount) AS orderIncome,
+        SUM(refund_amount) AS refundAmount,
+        SUM(cof_id)+SUM(coo_id) AS refundCount,
+        SUM(platformDiscount) AS platformDiscount,
+        SUM(merchantDiscount) AS merchantDiscount,
+        SUM(merchantIncome) AS merchantIncome,
+        SUM(total_quantity) AS sellGoodsCount
+        FROM
+
+        (
+        SELECT
+        coi.discount_before_fee AS orderAmount,
+        coi.paid_amount AS paid_amount,
+        IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0) AS merchantDiscount,
+        IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0) AS merchantIncome,
+        ctdr.platformDiscount AS platformDiscount,0 AS refund_amount,0 AS cof_id,0 AS coo_id,1 AS
+        co_id,coi.store_id,coi.total_quantity
+        FROM
+        (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(paid_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(paid_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) coi
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+
+        ) ctdr
+        ON coi.id=ctdr.order_id
+
+        UNION ALL
+
+        SELECT (coi.discount_before_fee)*-1 AS
+        orderAmount,coi.paid_amount*-1 AS paid_amount,
+        (IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0))*-1 AS merchantDiscount,
+        (IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0))*-1 AS merchantIncome,
+        (ctdr.platformDiscount*(-1)) AS platformDiscount,cori.refund_amount AS refund_amount,1 AS cof_id,0 AS coo_id,0
+        AS co_id,coi.store_id,0 AS total_quantity
+        FROM
+        (SELECT id,order_id,refund_amount FROM catering_orders_refund WHERE refund_status = 2
+        <if test="dto.startTime != null">
+            AND to_days(update_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(update_time) &lt; to_days(#{dto.endTime})
+        </if>
+        ) cori
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON cori.order_id=ctdr.order_id
+        INNER JOIN (select * from catering_orders where is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) coi
+        ON cori.order_id=coi.id
+
+        UNION ALL
+
+        SELECT (coi.discount_before_fee)*-1 AS
+        orderAmount,coi.paid_amount*-1 AS paid_amount,
+        (IFNULL(coi.discount_fee,0) - IFNULL(ctdr.platformDiscount,0))*-1 AS merchantDiscount,
+        (IFNULL(coi.paid_amount,0)+IFNULL(ctdr.platformDiscount,0))*-1 AS merchantIncome,
+        ctdr.platformDiscount*(-1) AS platformDiscount, coi.paid_amount AS refund_amount,0 AS cof_id,1 AS coo_id,0 AS
+        co_id,coi.store_id,coi.total_quantity*-1
+        FROM (
+        SELECT id,order_id FROM catering_orders_operation WHERE operation_phase = 4
+        <if test="dto.startTime != null">
+            AND to_days(operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        group by order_id
+        ) cooi
+        LEFT JOIN (
+        <include refid="select_order_platformDiscount"/>
+        ) ctdr ON cooi.order_id=ctdr.order_id
+        INNER JOIN (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) coi ON cooi.order_id=coi.id
+        ) total_orders
+
+        GROUP BY total_orders.store_id
+        ) temp
+        on cs.id=temp.store_id
+        LEFT JOIN
+        catering_merchant cm
+        ON cs.merchant_id=cm.id
+    </select>
+
+    <select id="getBillGoodsTopTen" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDTO"
+            resultType="com.meiyuan.catering.merchant.dto.shop.bill.BillTopTenDTO">
+
+        SELECT temp.goods_id,temp.goods_name,SUM(temp.quantity) AS goodsQuantity,cs.shop_name FROM
+        (
+
+        SELECT co.id,store_id,merchant_id,temp.goods_id,temp.goods_name,temp.quantity FROM
+        (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(paid_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(paid_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) co
+        LEFT JOIN (
+        SELECT cogi.* FROM (
+        SELECT IFNULL(IFNULL(cmg1.goods_id,cmg2.goods_id),cog.goods_id) AS
+        goods_id,cog.goods_type,cog.goods_name,cog.quantity,cog.order_id FROM
+        catering_orders_goods cog
+        LEFT JOIN catering_merchant_goods cmg1 ON cog.goods_id=cmg1.goods_id
+        LEFT JOIN catering_marketing_goods cmg2 ON cog.goods_id=cmg2.id
+        ) cogi WHERE cogi.goods_id IS NOT NULL
+
+        ) temp ON co.id=temp.order_id
+
+        UNION ALL
+
+        SELECT co.id,co.store_id,co.merchant_id,temp.goods_id,temp.goods_name,temp.quantity*-1
+        FROM
+        (SELECT order_id FROM catering_orders_operation WHERE operation_phase = 4
+        <if test="dto.startTime != null">
+            AND to_days(operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        group by order_id
+        ) cop
+        INNER JOIN (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) co ON cop.order_id=co.id
+        LEFT JOIN (
+        SELECT cogi.* FROM (
+        SELECT IFNULL(IFNULL(cmg1.goods_id,cmg2.goods_id),cog.goods_id) AS
+        goods_id,cog.goods_type,cog.goods_name,cog.quantity,cog.order_id FROM
+        catering_orders_goods cog
+        LEFT JOIN catering_merchant_goods cmg1 ON cog.goods_id=cmg1.goods_id
+        LEFT JOIN catering_marketing_goods cmg2 ON cog.goods_id=cmg2.id
+        ) cogi WHERE cogi.goods_id IS NOT NULL
+        ) temp ON co.id=temp.order_id
+
+        )temp
+        LEFT JOIN catering_shop cs ON temp.store_id=cs.id
+        GROUP BY temp.goods_id,store_id order by goodsQuantity desc limit 0,10
+    </select>
+
+    <select id="getBillShopTopTen" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.ShopBillDTO"
+            resultType="com.meiyuan.catering.merchant.dto.shop.bill.BillTopTenDTO">
+        SELECT
+        co.store_id AS shopId,cs.shop_name,
+        SUM(co.shopAmount) as shopAmount
+        FROM
+        (
+        SELECT
+        store_id,merchant_id,IFNULL(paid_amount,0) AS
+        shopAmount
+        FROM catering_orders WHERE is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(paid_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(paid_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        UNION ALL
+        SELECT
+        coi.store_id,coi.merchant_id,(IFNULL(coi.paid_amount,0))*-1
+        AS shopAmount
+        FROM
+        (SELECT id,order_id,refund_amount FROM catering_orders_refund WHERE refund_status = 2 and is_del=0
+        <if test="dto.startTime != null">
+            AND to_days(update_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(update_time) &lt; to_days(#{dto.endTime})
+        </if>
+        ) cori
+        INNER JOIN (select * from catering_orders where is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) coi ON cori.order_id=coi.id
+
+        UNION ALL
+        SELECT
+        coi.store_id,coi.merchant_id,(IFNULL(coi.paid_amount,0))*-1
+        AS shopAmount
+        FROM (
+        SELECT id,order_id FROM catering_orders_operation WHERE operation_phase = 4
+        <if test="dto.startTime != null">
+            AND to_days(operation_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(operation_time) &lt; to_days(#{dto.endTime})
+        </if>
+        group by order_id
+        ) cooi
+        INNER JOIN (SELECT * FROM catering_orders WHERE is_del=0
+        <if test="dto.shopId != null and dto.shopId !=''">
+            AND store_id = #{dto.shopId}
+        </if>
+        <if test="dto.merchantId != null and dto.merchantId !=''">
+            AND merchant_id = #{dto.merchantId}
+        </if>
+        <if test="dto.cityCode != null and dto.cityCode !=''">
+            AND store_id in (select id from catering_shop where address_city_code=#{dto.cityCode})
+        </if>
+        ) coi ON cooi.order_id=coi.id
+        ) co
+        LEFT JOIN catering_shop cs ON co.store_id=cs.id
+        group by co.store_id
+        ORDER BY shopAmount DESC LIMIT 0,10
+    </select>
+
+    <select id="getMerchant" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.BillMerchantInfoDTO"
+            resultType="com.meiyuan.catering.merchant.vo.shop.bill.BillMerchantInfoVo">
+        select id as merchantId,merchant_name as merchantName from catering_merchant where 1=1
+        <if test="dto.name != null and dto.name !=''">
+            AND (
+            merchant_name like concat('%', REPLACE(REPLACE(#{dto.name,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+            or
+            merchant_code like concat('%', REPLACE(REPLACE(#{dto.name,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+            )
+        </if>
+    </select>
+    <select id="getShop" parameterType="com.meiyuan.catering.merchant.dto.shop.bill.BillMerchantInfoDTO"
+            resultType="com.meiyuan.catering.merchant.vo.shop.bill.BillMerchantInfoVo">
+        select id as shopId,shop_name as shopName from catering_shop where 1=1 and catering_shop.shop_type IN(1,2)
+        <if test="dto.name != null and dto.name !=''">
+            AND shop_name like concat('%', REPLACE(REPLACE(#{dto.name,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+        </if>
+    </select>
+
+    <select id="bizData"
+            resultType="com.meiyuan.catering.order.dto.order.BizDataForMerchantDTO">
+        SELECT Sum(totalPrice) totalPrice,
+        Sum(refundOrderTotalAmount) refundOrderTotalAmount,
+        Sum(refundTotalPrice) refundTotalPrice,
+        Sum(orderTotalAmount) orderTotalAmount,
+        Sum(actualTotalPrice)
+        + ifnull(Sum(discountAmountWithPlat),0) actualTotalPrice,
+        ifnull(Sum(discountAmount),0) - ifnull(Sum(discountAmountWithPlat),0) discountTotalPrice,
+        sum(refundTotalPriceWithShop) refundTotalPriceWithShop,
+        sum(refundTotalPriceWithClient) refundTotalPriceWithClient
+        FROM (SELECT
+        co.discount_before_fee totalPrice,
+        0 refundOrderTotalAmount,
+        0 refundTotalPrice,
+        Count(distinct co.id)
+        orderTotalAmount,
+        co.paid_amount
+        actualTotalPrice,
+        co.discount_fee discountAmount,
+        sum(if(cmt.send_ticket_party=3,0,Ifnull(cma.bear_duty, 100)) / 100 * cod.discount_amount)
+        discountAmountWithPlat,
+        0 refundTotalPriceWithShop,
+        0 refundTotalPriceWithClient
+        FROM catering_orders co
+        left join catering_orders_discounts cod
+        on co.id = cod.order_id
+        LEFT JOIN catering_user_ticket cut
+        ON cut.id = cod.discount_id
+        LEFT JOIN catering_marketing_activity cma
+        ON cut.ticket_activity_id = cma.id
+        left join catering_marketing_ticket cmt
+        on cmt.id = cut.ticket_id
+        WHERE co.store_id = #{shopId}
+        and co.is_del=0
+        AND co.paid_time IS NOT NULL
+        <if test="orderDate!=null">
+            and to_days(co.paid_time) = to_days(#{orderDate})
+        </if>
+        <if test="orderStartDate!=null and orderEndDate!=null">
+            and to_days(co.paid_time) between to_days(#{orderStartDate}) and to_days(#{orderEndDate})
+        </if>
+        GROUP BY co.id
+        UNION ALL
+        SELECT 0
+        totalPrice,
+        Count(distinct co.id)
+        refundOrderTotalAmount,
+        cor.refund_amount refundTotalPrice ,
+        0 orderTotalAmount,
+        co.paid_amount * -1 actualTotalPrice ,
+        co.discount_fee*-1 discountAmount,
+        sum(if(cmt.send_ticket_party=3,0,Ifnull(cma.bear_duty, 100)) / 100 * cod.discount_amount *-1)
+        discountAmountWithPlat,
+        0 refundTotalPriceWithShop,
+        cor.refund_amount refundTotalPriceWithClient
+        FROM catering_orders_refund cor,
+        catering_orders co
+        left join catering_orders_discounts cod
+        on co.id = cod.order_id
+        LEFT JOIN catering_user_ticket cut
+        ON cut.id = cod.discount_id
+        LEFT JOIN catering_marketing_activity cma
+        ON cut.ticket_activity_id = cma.id
+        left join catering_marketing_ticket cmt
+        on cmt.id = cut.ticket_id
+        WHERE co.store_id = #{shopId}
+        AND cor.order_id = co.id
+        and co.is_del=0
+        AND cor.refund_status = 2
+        <if test="orderDate!=null">
+            and to_days(cor.update_time) = to_days(#{orderDate})
+        </if>
+        <if test="orderStartDate!=null and orderEndDate!=null">
+            and to_days(cor.update_time) between to_days(#{orderStartDate}) and to_days(#{orderEndDate})
+        </if>
+        GROUP BY co.id
+        UNION ALL
+        SELECT 0
+        totalPrice,
+        Count(distinct co.id)
+        refundOrderTotalAmount,
+        co.paid_amount
+        refundTotalPrice
+        ,
+        0
+        orderTotalAmount,
+        co.paid_amount * -1
+        actualTotalPrice
+        ,
+        co.discount_fee*-1 discountAmount,
+        sum(if(cmt.send_ticket_party=3,0,Ifnull(cma.bear_duty, 100)) / 100 * cod.discount_amount *-1)
+        discountAmountWithPlat,
+        co.paid_amount refundTotalPriceWithShop,
+        0 refundTotalPriceWithClient
+        FROM catering_orders_operation coo,
+        catering_orders co
+        left join catering_orders_discounts cod
+        on co.id = cod.order_id
+        LEFT JOIN catering_user_ticket cut
+        ON cut.id = cod.discount_id
+        LEFT JOIN catering_marketing_activity cma
+        ON cut.ticket_activity_id = cma.id
+        left join catering_marketing_ticket cmt
+        on cmt.id = cut.ticket_id
+        WHERE co.store_id = #{shopId}
+        AND coo.order_id = co.id
+        and co.is_del=0
+        AND coo.operation_phase = 4
+        <if test="orderDate!=null">
+            and to_days(coo.operation_time) = to_days(#{orderDate})
+        </if>
+        <if test="orderStartDate!=null and orderEndDate!=null">
+            and to_days(coo.operation_time) between to_days(#{orderStartDate}) and to_days(#{orderEndDate})
+        </if>
+        GROUP BY co.id) x
+    </select>
+    <select id="bizDataWithTime"
+            resultType="com.meiyuan.catering.order.dto.order.BizDataForMerchantDTO">
+        SELECT Sum(totalPrice) totalPrice,
+        Sum(refundOrderTotalAmount) refundOrderTotalAmount,
+        Sum(refundTotalPrice) refundTotalPrice,
+        Sum(orderTotalAmount) orderTotalAmount,
+        Sum(actualTotalPrice)
+        + ifnull(Sum(discountAmountWithPlat),0) actualTotalPrice,
+        ifnull(Sum(discountAmount),0) - ifnull(Sum(discountAmountWithPlat),0) discountTotalPrice,
+        sum(refundTotalPriceWithShop) refundTotalPriceWithShop,
+        sum(refundTotalPriceWithClient) refundTotalPriceWithClient
+        FROM (SELECT
+        co.discount_before_fee totalPrice,
+        0
+        refundOrderTotalAmount,
+        0
+        refundTotalPrice,
+        Count(distinct co.id)
+        orderTotalAmount,
+        co.paid_amount
+        actualTotalPrice,
+        co.discount_fee discountAmount,
+        sum(if(cmt.send_ticket_party=3,0,Ifnull(cma.bear_duty, 100)) / 100 * cod.discount_amount)
+        discountAmountWithPlat,
+        0 refundTotalPriceWithShop,
+        0 refundTotalPriceWithClient
+        FROM catering_orders co
+        left join catering_orders_discounts cod
+        on co.id = cod.order_id
+        LEFT JOIN catering_user_ticket cut
+        ON cut.id = cod.discount_id
+        LEFT JOIN catering_marketing_activity cma
+        ON cut.ticket_activity_id = cma.id
+        left join catering_marketing_ticket cmt
+        on cmt.id = cut.ticket_id
+        WHERE co.is_del=0
+        <if test="merchantId!=null">
+            and co.merchant_id=#{merchantId}
+        </if>
+        <if test="shopId!=null">
+            and co.store_id = #{shopId}
+        </if>
+        AND co.paid_time IS NOT NULL
+        <if test="orderStartDate!=null and orderEndDate!=null">
+            and unix_timestamp(co.paid_time) between unix_timestamp(#{orderStartDate}) and
+            unix_timestamp(#{orderEndDate})
+        </if>
+        GROUP BY co.id
+        UNION ALL
+        SELECT 0
+        totalPrice,
+        Count(distinct co.id)
+        refundOrderTotalAmount,
+        cor.refund_amount
+        refundTotalPrice
+        ,
+        0
+        orderTotalAmount,
+        co.paid_amount * -1
+        actualTotalPrice
+        ,
+        co.discount_fee*-1 discountAmount,
+        sum(if(cmt.send_ticket_party=3,0,Ifnull(cma.bear_duty, 100)) / 100 * cod.discount_amount *-1)
+        discountAmountWithPlat,
+        0 refundTotalPriceWithShop,
+        cor.refund_amount refundTotalPriceWithClient
+        FROM catering_orders_refund cor,
+        catering_orders co
+        left join catering_orders_discounts cod
+        on co.id = cod.order_id
+        LEFT JOIN catering_user_ticket cut
+        ON cut.id = cod.discount_id
+        LEFT JOIN catering_marketing_activity cma
+        ON cut.ticket_activity_id = cma.id
+        left join catering_marketing_ticket cmt
+        on cmt.id = cut.ticket_id
+        WHERE co.is_del=0
+        <if test="merchantId!=null">
+            and co.merchant_id=#{merchantId}
+        </if>
+        <if test="shopId!=null">
+            and co.store_id = #{shopId}
+        </if>
+        AND cor.order_id = co.id
+        AND cor.refund_status = 2
+        <if test="orderStartDate!=null and orderEndDate!=null">
+            and unix_timestamp(cor.update_time) between unix_timestamp(#{orderStartDate}) and
+            unix_timestamp(#{orderEndDate})
+        </if>
+        GROUP BY co.id
+        UNION ALL
+        SELECT 0
+        totalPrice,
+        Count(distinct co.id)
+        refundOrderTotalAmount,
+        co.paid_amount
+        refundTotalPrice
+        ,
+        0
+        orderTotalAmount,
+        co.paid_amount * -1
+        actualTotalPrice
+        ,
+        co.discount_fee*-1 discountAmount,
+        sum(if(cmt.send_ticket_party=3,0,Ifnull(cma.bear_duty, 100)) / 100 * cod.discount_amount *-1)
+        discountAmountWithPlat,
+        IF(co.update_by=1 or co.update_by=2 or co.update_by=3 ,co.paid_amount,0) refundTotalPriceWithShop,
+        co.paid_amount-IF(co.update_by=1 or co.update_by=2 or co.update_by=3 ,co.paid_amount,0)
+        refundTotalPriceWit0hClient
+        FROM catering_orders_operation coo,
+        catering_orders co
+        left join catering_orders_discounts cod
+        on co.id = cod.order_id
+        LEFT JOIN catering_user_ticket cut
+        ON cut.id = cod.discount_id
+        LEFT JOIN catering_marketing_activity cma
+        ON cut.ticket_activity_id = cma.id
+        left join catering_marketing_ticket cmt
+        on cmt.id = cut.ticket_id
+        WHERE co.is_del=0
+        <if test="merchantId!=null">
+            and co.merchant_id=#{merchantId}
+        </if>
+        <if test="shopId!=null">
+            and co.store_id = #{shopId}
+        </if>
+        AND coo.order_id = co.id
+        AND coo.operation_phase = 4
+        <if test="orderStartDate!=null and orderEndDate!=null">
+            and unix_timestamp(coo.operation_time) between unix_timestamp(#{orderStartDate}) and
+            unix_timestamp(#{orderEndDate})
+        </if>
+        GROUP BY co.id) x
+    </select>
+
+
+    <select id="listOrderIdByOrderNumber" resultType="long">
+        SELECT id
+        FROM catering_orders
+        WHERE is_del=0 and order_number in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getExGrouponOrder" resultType="com.meiyuan.catering.core.dto.pay.Order">
+       SELECT
+        o.*
+        FROM `catering_orders_activity` oa
+
+        left JOIN catering_orders o on oa.relation_id = o.id and o.is_del=0
+
+        WHERE
+        o.order_type = 2
+        and
+         o.`status` = 8
+        and
+        oa.activity_type = 2
+        and oa.relation_dimension = 1
+        and now() > oa.activity_end_time
+    </select>
+    <select id="goodsSellListExcel" resultType="com.meiyuan.catering.order.dto.goods.GoodsSaleDTO">
+        SELECT
+        temp.sku_code,
+        if(temp.goods_spec_type =
+        2,CONCAT(temp.merchant_goods_name,'(',temp.property_value,')'),temp.merchant_goods_name) AS goods_name,
+        temp.category_name,
+        temp.category_name AS goods_group_name,
+        temp.goods_id,
+        temp.shop_id,
+        temp.merchant_id,
+        IFNULL( SUM( order_temp.quantity ), 0 ) AS goodsSaleNum,
+        IFNULL( SUM( order_temp.discount_before_fee ), 0 ) AS goodsSaleAmout,
+        IFNULL( SUM( order_temp.discount_later_fee ), 0 ) AS afterDiscountFee
+        FROM
+        (
+        SELECT
+        mge.goods_id,
+        sgs.shop_id,
+        sgs.merchant_id,
+        mge.category_name,
+        mge.merchant_goods_name,
+        g_sku.property_value,
+        g_sku.sku_code,
+        mge.goods_spec_type
+        FROM
+        catering_merchant_goods_extend mge
+        LEFT JOIN catering_shop_goods_spu sgs ON ( mge.goods_id = sgs.goods_id AND mge.merchant_id = sgs.merchant_id )
+        LEFT JOIN catering_shop_goods_sku g_sku ON sgs.id = g_sku.shop_goods_spu_id
+        <where>
+            (g_sku.is_del = 0
+            <if test="param.startTime != null and param.endTime != null">
+                OR (g_sku.is_del = 1 and g_sku.update_time &gt;= #{param.startTime} and g_sku.update_time &lt;=
+                #{param.endTime})
+            </if>
+            )
+            <if test="param.goodsType != null and param.goodsType != ''">
+                and mge.category_id = #{param.goodsType}
+            </if>
+            <if test="param.goodsName !=null">
+                and mge.merchant_goods_name like concat('%', #{param.goodsName}, '%')
+            </if>
+            <if test="param.merchantId !=null">
+                and sgs.merchant_id = #{param.merchantId}
+            </if>
+            <if test="param.shopId !=null">
+                and sgs.shop_id = #{param.shopId}
+            </if>
+        </where>
+        GROUP BY
+        g_sku.sku_code
+        ) AS temp
+        LEFT JOIN (
+        SELECT
+        g.quantity,
+        g.discount_before_fee,
+        g.discount_later_fee,
+        g.goods_sku_code
+        FROM
+        catering_orders o
+        LEFT JOIN catering_orders_goods g ON o.id = g.order_id
+        WHERE
+        o.paid_time is not null and
+        o.`status` IN ( 2, 3, 4, 5, 6, 7, 8 )
+        <if test="param.startTime != null and param.endTime!=null">
+            and o.create_time &gt;= #{param.startTime} and o.create_time &lt;= #{param.endTime}
+        </if>
+        <if test="param.merchantId !=null">
+            and o.merchant_id = #{param.merchantId}
+        </if>
+        <if test="param.shopId !=null">
+            and o.store_id = #{param.shopId}
+        </if>
+        ) AS order_temp ON temp.sku_code = order_temp.goods_sku_code
+        GROUP BY
+        temp.sku_code
+        <if test="param.orderField !=null and param.orderField != ''">
+            order by ${param.orderField} DESC,temp.sku_code
+        </if>
+    </select>
+    <select id="goodsSellTotalAmount" resultType="java.math.BigDecimal">
+        SELECT
+        IFNULL( SUM( order_temp.discount_before_fee ), 0 )
+        FROM
+        (
+        SELECT
+        g_sku.sku_code
+        FROM
+        catering_merchant_goods_extend mge
+        LEFT JOIN catering_shop_goods_spu sgs ON ( mge.goods_id = sgs.goods_id AND mge.merchant_id = sgs.merchant_id )
+        LEFT JOIN catering_shop_goods_sku g_sku ON sgs.id = g_sku.shop_goods_spu_id
+        <where>
+            (g_sku.is_del = 0
+            <if test="param.startTime != null and param.endTime != null">
+                OR (g_sku.is_del = 1 and g_sku.update_time &gt;= #{param.startTime} and g_sku.update_time &lt;=
+                #{param.endTime})
+            </if>
+            )
+            <if test="param.goodsType != null and param.goodsType != ''">
+                and mge.category_id = #{param.goodsType}
+            </if>
+            <if test="param.goodsName !=null">
+                and mge.merchant_goods_name like concat('%', #{param.goodsName}, '%')
+            </if>
+            <if test="param.merchantId !=null">
+                and sgs.merchant_id = #{param.merchantId}
+            </if>
+            <if test="param.shopId !=null">
+                and sgs.shop_id = #{param.shopId}
+            </if>
+        </where>
+        GROUP BY
+        g_sku.sku_code
+        ) AS temp
+        JOIN (
+        SELECT
+        g.discount_before_fee,
+        g.goods_sku_code
+        FROM
+        catering_orders o
+        LEFT JOIN catering_orders_goods g ON o.id = g.order_id
+        WHERE
+        o.paid_time is not null and
+        o.`status` IN ( 2, 3, 4, 5, 6, 7, 8 )
+        <if test="param.startTime != null and param.endTime!=null">
+            and o.create_time &gt;= #{param.startTime} and o.create_time &lt;= #{param.endTime}
+        </if>
+        <if test="param.merchantId !=null">
+            and o.merchant_id = #{param.merchantId}
+        </if>
+        <if test="param.shopId !=null">
+            and o.store_id = #{param.shopId}
+        </if>
+        ) AS order_temp ON temp.sku_code = order_temp.goods_sku_code
+    </select>
+
+    <select id="goodsSellListQueryGoods" resultType="com.meiyuan.catering.order.dto.goods.GoodsSaleDTO">
+        SELECT
+        mge.goods_id,
+        sgs.shop_id,
+        sgs.merchant_id,
+        mge.category_name AS goods_group_name,
+        if(mge.goods_spec_type =
+        2,CONCAT(mge.merchant_goods_name,'(',g_sku.property_value,')'),mge.merchant_goods_name) AS goods_name,
+        g_sku.sku_code as goodsSkuCode,
+        '0' as goodsSaleNum,
+        '0' as goodsSaleAmout,
+        '0' as totalDiscountFee,
+        '0' as afterDiscountFee
+        FROM
+        catering_merchant_goods_extend mge
+        LEFT JOIN catering_shop_goods_spu sgs ON ( mge.goods_id = sgs.goods_id AND mge.merchant_id = sgs.merchant_id )
+        LEFT JOIN catering_shop_goods_sku g_sku ON sgs.id = g_sku.shop_goods_spu_id
+        <where>
+            (g_sku.is_del = 0
+            <if test="param.startTime != null and param.endTime != null">
+                OR (g_sku.is_del = 1 and g_sku.update_time &gt;= #{param.startTime} and g_sku.update_time &lt;=
+                #{param.endTime})
+            </if>
+            )
+            <if test="param.goodsType != null and param.goodsType != ''">
+                and mge.category_id = #{param.goodsType}
+            </if>
+            <if test="param.goodsName !=null ">
+                and mge.merchant_goods_name like concat('%', #{param.goodsName}, '%')
+            </if>
+            <if test="param.merchantId !=null">
+                and sgs.merchant_id = #{param.merchantId}
+            </if>
+            <if test="param.shopId !=null">
+                and sgs.shop_id = #{param.shopId}
+            </if>
+            <if test="param.exlGoodsSku != null and param.exlGoodsSku.size > 0">
+                and g_sku.sku_code not in
+                <foreach collection="param.exlGoodsSku" open="(" separator="," close=")" item="item" index="index">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY
+        g_sku.sku_code
+    </select>
+    <select id="countGoodsPages" resultType="java.lang.Long">
+        SELECT
+        count(0)
+        FROM
+        (
+        SELECT
+        mge.goods_id,
+        sgs.shop_id,
+        sgs.merchant_id,
+        mge.category_name AS goods_group_name,
+        if(mge.goods_spec_type =
+        2,CONCAT(mge.merchant_goods_name,'(',g_sku.property_value,')'),mge.merchant_goods_name) AS goods_name,
+        g_sku.sku_code as goodsSkuCode,
+        '0' as goodsSaleNum,
+        '0' as goodsSaleAmout,
+        '0' as totalDiscountFee,
+        '0' as afterDiscountFee
+        FROM
+        catering_merchant_goods_extend mge
+        LEFT JOIN catering_shop_goods_spu sgs ON ( mge.goods_id = sgs.goods_id AND mge.merchant_id = sgs.merchant_id )
+        LEFT JOIN catering_shop_goods_sku g_sku ON sgs.id = g_sku.shop_goods_spu_id
+        <where>
+            (g_sku.is_del = 0
+            <if test="param.startTime != null and param.endTime != null">
+                OR (g_sku.is_del = 1 and g_sku.update_time &gt;= #{param.startTime} and g_sku.update_time &lt;=
+                #{param.endTime})
+            </if>
+            )
+            <if test="param.goodsType != null and param.goodsType != ''">
+                and mge.category_id = #{param.goodsType}
+            </if>
+            <if test="param.goodsName !=null">
+                and mge.merchant_goods_name like concat('%', #{param.goodsName}, '%')
+            </if>
+            <if test="param.merchantId !=null">
+                and sgs.merchant_id = #{param.merchantId}
+            </if>
+            <if test="param.shopId !=null">
+                and sgs.shop_id = #{param.shopId}
+            </if>
+        </where>
+        GROUP BY
+        g_sku.sku_code
+        ) TOTAL
+    </select>
+    <select id="getOrderSubsidyAmount" resultType="java.math.BigDecimal">
+        SELECT
+            SUM(ma.bear_duty * 0.01 * od.discount_amount) as subsidyAmount
+        FROM
+            catering_orders_discounts od
+            LEFT JOIN catering_user_ticket ut ON od.discount_id = ut.id
+            JOIN catering_marketing_activity ma ON ma.id = ut.ticket_activity_id
+	    WHERE
+	        od.order_id = #{id}
+    </select>
+
+
+    <select id="listWaitDeliveryTakeOutInnerHour" resultType="java.lang.Long">
+        SELECT
+            co.id
+        FROM   catering_orders co,
+        catering_orders_delivery cod
+        WHERE  co.delivery_way = 1
+        AND co.shop_delivery_flag = 1
+        AND co.status = 3
+        AND co.id = cod.order_id
+        AND cod.estimate_time IS NOT NULL
+        AND cod.estimate_time &gt; Now()
+        and co.id not in(select distinct order_id from catering_orders_delivery_no where DATE_SUB(CURDATE(), INTERVAL 30 DAY) &lt;= date(create_time))
+    </select>
+
+    <update id="delOrdersLogicByMerchantId">
+        update catering_orders set is_del=1 where merchant_id=#{merchantId}
+    </update>
+    <update id="recoverOrdersLogicByMerchantId">
+        update catering_orders set is_del=0 where merchant_id=#{merchantId}
+    </update>
+
+</mapper>

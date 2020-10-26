@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersDiscountsMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersDiscountsEntity" id="CateringOrdersDiscountsMap">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+                    <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+                    <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+                    <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+                    <result property="discountType" column="discount_type" jdbcType="INTEGER"/>
+                    <result property="discountChildType" column="discount_child_type" jdbcType="INTEGER"/>
+                    <result property="discountId" column="discount_id" jdbcType="INTEGER"/>
+                    <result property="discountNumber" column="discount_number" jdbcType="VARCHAR"/>
+                    <result property="discountName" column="discount_name" jdbcType="VARCHAR"/>
+                    <result property="discountRate" column="discount_rate" jdbcType="OTHER"/>
+                    <result property="discountScore" column="discount_score" jdbcType="INTEGER"/>
+                    <result property="discountAmount" column="discount_amount" jdbcType="OTHER"/>
+                    <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+                    <result property="del" column="is_del" jdbcType="INTEGER"/>
+                    <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+                    <result property="createName" column="create_name" jdbcType="VARCHAR"/>
+                    <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                    <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+                    <result property="updateName" column="update_name" jdbcType="VARCHAR"/>
+                    <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            </resultMap>
+
+</mapper>

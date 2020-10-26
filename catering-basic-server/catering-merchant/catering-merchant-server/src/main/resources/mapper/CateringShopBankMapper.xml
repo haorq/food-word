@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringShopBankMapper">
+
+        <!-- 通用查询映射结果 -->
+        <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.entity.CateringShopBankEntity">
+                    <id column="id" property="id" />
+                    <result column="shop_id" property="shopId" />
+                    <result column="bank_name" property="bankName" />
+                    <result column="user_name" property="userName" />
+                    <result column="id_card" property="idCard" />
+                    <result column="phone" property="phone" />
+                    <result column="bank_card_no" property="bankCardNo" />
+                    <result column="bank_card_pro" property="bankCardPro" />
+                    <result column="bank_city_no" property="bankCityNo" />
+                    <result column="branch_bank_name" property="branchBankName" />
+                    <result column="union_bank" property="unionBank" />
+                    <result column="audit_status" property="auditStatus" />
+                    <result column="is_del" property="del" />
+                    <result column="create_time" property="createTime" />
+                    <result column="update_time" property="updateTime" />
+        </resultMap>
+
+        <!-- 通用查询结果列 -->
+        <sql id="Base_Column_List">
+        id, shop_id, bank_name, user_name, id_card, phone, bank_card_no, bank_card_pro, bank_city_no, branch_bank_name, union_bank, audit_status, is_del, create_time, update_time
+    </sql>
+    <select id="getShopBankInfo" resultType="com.meiyuan.catering.merchant.vo.shop.bank.ShopBankInfoVo">
+        SELECT
+                sb.id,
+                sb.shop_id shop_id,
+                sb.bank_name bankName,
+                sb.user_name userName,
+                sb.id_card idCard,
+                sb.phone phone,
+                sb.bank_card_no bankCardNo,
+                sb.audit_status auditStatus,
+                se.sign_status signStatus
+        FROM catering_shop_bank sb
+        LEFT JOIN catering_shop_ext se ON se.shop_id = sb.shop_id
+        where  sb.shop_id = #{shopId} and sb.is_del = false
+    </select>
+
+</mapper>

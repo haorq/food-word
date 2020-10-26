@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingActivityMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.marketing.entity.CateringMarketingActivityEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="merchant_id" jdbcType="BIGINT" property="merchantId"/>
+        <result column="activity_number" jdbcType="VARCHAR" property="activityNumber"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="begin_time" jdbcType="TIMESTAMP" property="beginTime"/>
+        <result column="end_time" jdbcType="TIMESTAMP" property="endTime"/>
+        <result column="target_type" jdbcType="INTEGER" property="targetType"/>
+        <result column="target" jdbcType="INTEGER" property="target"/>
+        <result column="activity_type" jdbcType="INTEGER" property="activityType"/>
+        <result column="release_conditions" jdbcType="INTEGER" property="releaseConditions"/>
+        <result column="is_points" jdbcType="BOOLEAN" property="points"/>
+        <result column="is_ticket" jdbcType="BOOLEAN" property="ticket"/>
+        <result column="bear_duty" jdbcType="DECIMAL" property="bearDuty"/>
+        <result column="state" jdbcType="INTEGER" property="state"/>
+        <result column="is_del" jdbcType="BOOLEAN" property="del"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="create_by" jdbcType="BIGINT" property="createBy"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="update_by" jdbcType="BIGINT" property="updateBy"/>
+    </resultMap>
+
+    <resultMap id="VoResultMap" type="com.meiyuan.catering.marketing.vo.activity.ActivityDetailsVO">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="begin_time" jdbcType="TIMESTAMP" property="beginTime"/>
+        <result column="end_time" jdbcType="TIMESTAMP" property="endTime"/>
+        <result column="target_type" jdbcType="INTEGER" property="targetType"/>
+        <result column="target" jdbcType="INTEGER" property="target"/>
+        <result column="activity_type" jdbcType="INTEGER" property="activityType"/>
+        <result column="release_conditions" jdbcType="INTEGER" property="releaseConditions"/>
+        <result column="is_points" jdbcType="BOOLEAN" property="points"/>
+        <result column="is_ticket" jdbcType="BOOLEAN" property="ticket"/>
+        <result column="bear_duty" jdbcType="DECIMAL" property="bearDuty"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="create_by" jdbcType="BIGINT" property="createBy"/>
+        <result column="createByStr" jdbcType="VARCHAR" property="createByStr"/>
+        <result column="state" jdbcType="INTEGER" property="state"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        activity.id AS id,
+        activity.merchant_id AS merchantId,
+        activity.activity_number AS activityNumber,
+        activity.`name` AS `name`,
+        activity.begin_time AS beginTime,
+        activity.end_time AS endTime,
+        activity.target_type AS targetType,
+        activity.target AS target,
+        activity.activity_type AS activityType,
+        activity.release_conditions AS releaseConditions,
+        activity.is_points AS points,
+        activity.is_ticket AS ticket,
+        activity.bear_duty AS bearDuty,
+        activity.`state` AS `state`,
+        activity.is_del AS is_del,
+        activity.create_time AS createTime,
+        activity.create_by AS createBy,
+        activity.update_time AS updateTime,
+        activity.update_by AS updateBy
+    </sql>
+
+
+    <insert id="insertH5Record">
+      insert into catering_h5_record(id,user_phone,activity_id,ticket_ids) values (#{dto.id},#{dto.phone},#{dto.activityId},#{dto.ticketIds})
+    </insert>
+    <update id="updateH5Record">
+        update catering_h5_record set is_get = 1 where user_phone = #{phone} and activity_id = #{activityId}
+    </update>
+
+    <select id="getPreviousOne" resultType="java.lang.String">
+        select activity_number from catering_marketing_activity
+        order by activity_number desc
+    </select>
+
+    <select id="queryDetailsById" resultMap="VoResultMap">
+        SELECT
+            activity.id,
+            activity.`name`,
+            activity.begin_time,
+            activity.end_time,
+            activity.target_type,
+            activity.target,
+            activity.activity_type,
+            activity.release_conditions,
+            activity.is_points,
+            activity.is_ticket,
+            activity.bear_duty,
+            activity.`state`,
+            activity.is_del,
+            activity.create_time,
+            activity.create_by,
+            (SELECT `username` FROM catering_admin where id = activity.create_by LIMIT 1) as createByStr
+        FROM
+            catering_marketing_activity activity
+        <where>
+            and activity.is_del = 0
+            and activity.id = #{id}
+        </where>
+    </select>
+
+    <select id="queryPageList" resultType="com.meiyuan.catering.marketing.vo.activity.ActivityPageVO">
+        SELECT
+        activity.id AS id,
+        activity.activity_number AS activityNumber,
+        activity.`name` AS `name`,
+        activity.begin_time AS beginTime,
+        activity.end_time AS endTime,
+        activity.activity_type AS activityType,
+        activity.is_points AS points,
+        activity.is_ticket AS ticket,
+        activity.create_time AS createTime,
+        activity.state
+        FROM
+        catering_marketing_activity activity
+        <where>
+            and activity.is_del = 0
+            <if test="null != dto.name and '' != dto.name">
+                and (activity.`name` like concat('%',#{dto.name},'%') or activity.activity_number like concat('%',#{dto.name},'%'))
+            </if>
+            <if test="null != dto.activityType">
+                and activity.activity_type = #{dto.activityType}
+            </if>
+            <if test="null != dto.beginTime">
+                and activity.create_time <![CDATA[ >= ]]> #{dto.beginTime}
+            </if>
+            <if test="null != dto.endTime">
+                and activity.create_time <![CDATA[ <= ]]> #{dto.endTime}
+            </if>
+            <if test="'4'.toString() == dto.activityState">
+                and activity.state = #{downStatus}
+            </if>
+            <if test="'3'.toString() == dto.activityState">
+                and activity.end_time &lt; now()
+                and activity.state != #{downStatus}
+            </if>
+            <if test="'2'.toString() == dto.activityState">
+                and activity.begin_time &lt; now()
+                and activity.end_time &gt; now()
+                and activity.state != #{downStatus}
+            </if>
+            <if test="'1'.toString() == dto.activityState">
+                and activity.begin_time &gt; now()
+                and activity.state != #{downStatus}
+            </if>
+        </where>
+        order by activity.create_time desc
+    </select>
+
+
+    <resultMap id="platFormActivityConventMap" type="com.meiyuan.catering.marketing.dto.ticket.MarketingTicketConventDTO">
+        <result property="id" column="id"/>
+        <result property="ticketType" column="ticket_type"/>
+        <result property="ticketCode" column="ticket_code"/>
+        <result property="ticketName" column="ticket_name"/>
+        <result property="childType" column="child_type"/>
+        <result property="ticketDesc" column="ticket_desc"/>
+        <result property="amount" column="amount"/>
+        <result property="usefulCondition" column="useful_condition"/>
+        <result property="indateType" column="indate_type"/>
+        <result property="useDays" column="use_days"/>
+        <result property="useBeginTime" column="use_begin_time"/>
+        <result property="useEndTime" column="use_end_time"/>
+        <result property="consumeCondition" column="consume_condition"/>
+        <result property="objectLimit" column="object_limit"/>
+        <result property="sendTicketParty" column="send_ticket_party"/>
+        <result property="goodsLimit" column="is_goods_limit"/>
+        <result property="exclusion" column="is_exclusion"/>
+        <result property="useChannels" column="use_channels"/>
+        <result property="publishQuantity" column="publish_quantity"/>
+        <result property="limitQuantity" column="limit_quantity"/>
+        <collection property="goodsItem" ofType="com.meiyuan.catering.marketing.dto.MarketingGoodsTransferDTO">
+            <result property="goodsId" column="goods_id"/>
+            <result property="code" column="code"/>
+            <result property="goodsName" column="goods_name"/>
+            <result property="goodsType" column="goods_type"/>
+            <result property="sku" column="sku"/>
+            <result property="goodsPicture" column="goods_picture"/>
+            <result property="goodsDesc" column="goods_desc"/>
+            <result property="skuValue" column="sku_value"/>
+            <result property="categoryName" column="goods_category_name"/>
+            <result property="categoryId" column="goods_category_id"/>
+        </collection>
+    </resultMap>
+    <!--平台活动关联优惠券-->
+    <select id="findActivityTicketByActivityId"
+            resultMap="platFormActivityConventMap">
+        SELECT
+            t3.id,
+            t3.ticket_type,
+            t3.ticket_code,
+            t3.ticket_name,
+            t3.child_type,
+            t3.ticket_desc,
+            t3.amount,
+            t3.useful_condition,
+            t3.indate_type,
+            t3.use_days,
+            t3.use_begin_time,
+            t3.use_end_time,
+            t3.consume_condition,
+            t3.object_limit,
+            t3.send_ticket_party,
+            t3.is_goods_limit,
+            t3.is_exclusion,
+            t3.use_channels,
+            t2.quantity as publish_quantity,
+            t1.receive_restrict as limit_quantity,
+            t4.goods_id,
+            t4.code,
+            t4.goods_name,
+            t4.goods_type,
+            t4.sku,
+            t4.goods_picture,
+            t4.goods_desc,
+            t4.sku_value,
+            (select goods_category_id from catering_marketing_goods_category where m_goods_id = t4.id and is_del = false ) as goods_category_id,
+            (select goods_category_name from catering_marketing_goods_category where m_goods_id = t4.id and is_del = false ) as goods_category_name
+        FROM
+            catering_marketing_activity_rule t1
+                LEFT JOIN catering_marketing_rule_ticket_relation t2 ON t1.id = t2.activity_rule_id
+                LEFT JOIN catering_marketing_ticket t3 ON t3.id = t2.ticket_id
+                LEFT JOIN catering_marketing_goods t4 ON t3.id = t4.of_id
+        WHERE t1.activity_id = #{activityId}
+    </select>
+
+    <select id="queryActivityMerchant" resultType="com.meiyuan.catering.marketing.vo.activity.ActivityMerchantPageVO">
+        SELECT
+            act.id,
+            tkAct.merchant_id as merchantId,
+            tkAct.create_time as createTime,
+            mch.merchant_name as merchantName,
+            mch.merchant_attribute as merchantAttribute,
+            (CASE mch.merchant_attribute WHEN 1 THEN '自营'
+            WHEN 2 THEN '非自营' END) as merchantAttributeStr
+        FROM
+            catering_marketing_activity act
+        LEFT JOIN catering_marketing_ticket_activity tkAct ON act.id = tkAct.p_activity_id
+        LEFT JOIN catering_merchant mch ON tkAct.merchant_id = mch.id
+        <where>
+            and act.is_del = 0
+            and act.id = #{dto.id}
+        </where>
+    </select>
+
+    <select id="listForActivityId" resultType="com.meiyuan.catering.marketing.dto.ticket.PushTicketToUserDTO">
+        SELECT
+            t3.id as ticketId,
+            t3.ticket_name,
+            t2.quantity as publishQuantity,
+            t2.id as ticketRuleRecordId,
+            if(t1.target_type=1,t1.target,0) as objectLimit,
+            t3.use_end_time,
+            t3.use_days,
+            t3.indate_type,
+            t1.begin_time,
+            t1.id,
+            t1.state as upDownStatus,
+            t1.end_time
+        FROM
+            catering_marketing_activity t1
+                LEFT JOIN catering_marketing_rule_ticket_relation t2 ON t2.activity_id = t1.id
+                LEFT JOIN catering_marketing_ticket t3 ON t3.id = t2.ticket_id
+        WHERE
+            t1.id = #{activityId} AND t1.is_del = 0
+    </select>
+
+    <select id="listActivityForType" resultType="com.meiyuan.catering.marketing.dto.activity.ActivityInfoDTO">
+        SELECT
+        t1.id,
+        t4.id AS ticketId,
+        t4.ticket_name,
+        (select residual_inventory from catering_marketing_repertory where of_id = t3.ticket_id and ticket_rule_record_id = t3.id) AS publishQuantity,
+        t1.target AS objectLimit,
+        t4.use_begin_time,
+        t4.use_end_time,
+        t4.use_days,
+        t4.indate_type,
+        t4.amount,
+        t4.consume_condition,
+        t1.begin_time,
+        t1.end_time,
+        t1.is_points as points,
+        t1.is_ticket as ticket,
+        t1.activity_type as activityType,
+        t2.give_points,
+        t2.id as aRuleId,
+        t3.id as ticketRuleRecordId,
+        t2.receive_restrict as limitQuantity,
+        t2.evaluate_rule as evaluateRule,
+        (select residual_inventory from catering_marketing_repertory where ticket_rule_record_id = t3.id) as residual_inventory
+        FROM
+        catering_marketing_activity t1
+        LEFT JOIN catering_marketing_activity_rule t2 ON t1.id = t2.activity_id
+        LEFT JOIN catering_marketing_rule_ticket_relation t3 ON t2.id = t3.activity_rule_id
+        LEFT JOIN catering_marketing_ticket t4 ON t3.ticket_id = t4.id
+        <where>
+            t1.is_del = 0 AND t1.state = 2 AND t1.begin_time &lt;= now() AND t1.end_time &gt; now()
+            <if test="activityType!=null and activityType.size()>0">
+                AND t1.activity_type in
+                <foreach collection="activityType" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="conditionsRule!=null">
+                AND t2.conditions_rule = #{conditionsRule}
+            </if>
+            <if test="evaluateRule!=null">
+                AND t2.evaluate_rule = #{evaluateRule}
+            </if>
+            <if test="userType!=null">
+                AND (t1.target = #{userType} or t1.target = 0)
+            </if>
+        </where>
+
+
+    </select>
+
+    <select id="queryActivitySubsidyEffect" resultType="com.meiyuan.catering.marketing.vo.activity.ActivityEffectVO">
+        SELECT
+            id,
+            `name`,
+            bear_duty AS bearDuty,
+            IFNULL(ordersRelationTotal,0) as ordersRelationTotal,
+            IFNULL(goodsAmountTotal,0) as goodsAmountTotal,
+            IFNULL(manageAmountTotal,0) as manageAmountTotal,
+            IFNULL(( amountTotal - manageAmountTotal ),0) AS merchantCostTotal
+        FROM
+        (
+            SELECT
+                act.id,
+                act.`name`,
+                act.bear_duty,
+                count( tkRd.order_id ) AS ordersRelationTotal,
+                sum( tkRd.order_amount ) AS goodsAmountTotal,
+                sum( tk.amount ) AS amountTotal,
+                ( sum( tk.amount ) * act.bear_duty / 100 ) AS manageAmountTotal
+            FROM
+                catering_marketing_activity act
+            LEFT JOIN catering_marketing_ticket_activity tkAt on act.id = tkAt.p_activity_id
+            LEFT JOIN catering_ticket_data_record tkRd ON tkAt.id = tkRd.ticket_activtiy_id
+            LEFT JOIN catering_marketing_ticket tk ON tkRd.ticket_id = tk.id
+            <where>
+                and act.id = #{id}
+                and act.is_del = 0
+                and act.is_ticket = 1
+                and tkRd.order_status = 1
+            </where>
+            GROUP BY act.id
+        ) tableTotal
+    </select>
+
+    <select id="queryActivityEffect" resultType="com.meiyuan.catering.marketing.vo.activity.ActivityEffectVO">
+        SELECT
+            id,
+            `name`,
+            bear_duty AS bearDuty,
+            IFNULL( count( tableTotal.order_id ), 0 ) AS ordersRelationTotal,
+            IFNULL( sum( goodsAmountTotal ), 0 ) AS goodsAmountTotal,
+            IFNULL( ( sum( tkAmount ) * bear_duty / 100 ), 0 ) AS manageAmountTotal,
+            IFNULL(( sum( tkAmount ) - ( sum( tkAmount ) * bear_duty / 100 ) ), 0 ) AS merchantCostTotal
+        FROM
+        (
+            SELECT
+                newAct.id,
+                newAct.`name`,
+                newAct.bear_duty,
+                IF(newAct.goods_amount <![CDATA[ < ]]>  tk.amount, newAct.goods_amount,tk.amount) as tkAmount,
+                newAct.order_id,
+                sum( newAct.order_amount ) AS goodsAmountTotal
+            FROM
+            (
+                SELECT DISTINCT
+                    tkRd.order_id,
+                    tkRd.order_amount,
+                    tkRd.ticket_id,
+                    act.id,
+                    act.`name`,
+                    act.bear_duty,
+                    orders.goods_amount
+                FROM
+                    catering_marketing_activity act
+                LEFT JOIN catering_ticket_data_record tkRd ON act.id = tkRd.ticket_activtiy_id
+                LEFT JOIN catering_orders orders on tkRd.order_id = orders.id and orders.is_del=0
+                <where>
+                    and act.id = #{id}
+                    and act.is_del = 0
+                    and act.is_ticket = 1
+                    and tkRd.order_status = 1
+                </where>
+            ) AS newAct
+            LEFT JOIN catering_marketing_ticket tk ON newAct.ticket_id = tk.id
+            GROUP BY newAct.order_id
+        ) tableTotal
+        GROUP BY tableTotal.id
+    </select>
+
+    <select id="queryActivityOrdersId" resultType="com.meiyuan.catering.marketing.vo.activity.ActivityOrdersPageVO">
+
+        SELECT
+            DISTINCT order_id as id,
+            IFNULL(( tkAmount - ( tkAmount * bear_duty / 100 ) ),0) AS merchantCost,
+            IFNULL(( tkAmount * bear_duty / 100 ),0) as manageAmount
+        FROM
+        (
+            SELECT
+                act.id,
+                act.`name`,
+                act.bear_duty,
+                tkRd.order_id,
+                tk.amount,
+                IF(orders.goods_amount  <![CDATA[ < ]]>  tk.amount, orders.goods_amount,tk.amount) as tkAmount
+            FROM
+                catering_marketing_activity act
+            LEFT JOIN catering_ticket_data_record tkRd ON act.id = tkRd.ticket_activtiy_id
+            LEFT JOIN catering_marketing_ticket tk ON tkRd.ticket_id = tk.id
+            LEFT JOIN catering_orders orders on tkRd.order_id = orders.id and orders.is_del=0
+            <where>
+                and act.id = #{dto.id}
+                and act.is_del = 0
+                and act.is_ticket = 1
+                and tkRd.order_status = 1
+            </where>
+        ) as newTable
+    </select>
+    <select id="listRecommendActivity"
+            resultType="com.meiyuan.catering.marketing.dto.activity.ActivityInfoDTO">
+        SELECT
+        t1.id,
+        t4.id AS ticketId,
+        t4.ticket_name,
+        t2.conditions_rule,
+        t3.quantity AS publishQuantity,
+        t1.target AS objectLimit,
+        t4.use_end_time,
+        t4.use_days,
+        t4.indate_type,
+        t4.amount,
+        t1.begin_time,
+        t1.end_time,
+        t1.is_points as points,
+        t1.is_ticket as ticket,
+        t2.give_points
+        FROM
+        catering_marketing_activity t1
+        LEFT JOIN catering_marketing_activity_rule t2 ON t1.id = t2.activity_id
+        LEFT JOIN catering_marketing_rule_ticket_relation t3 ON t2.id = t3.activity_rule_id
+        LEFT JOIN catering_marketing_ticket t4 ON t3.ticket_id = t4.id
+        <where>
+            t1.is_del = 0 AND t1.state = 2 AND t1.target_type = 1 AND t1.begin_time &lt;= now() AND t1.end_time &gt; now()
+            AND t1.activity_type = 2
+            <if test="userType!=null">
+                AND t1.target = #{userType}
+            </if>
+        </where>
+    </select>
+    <select id="findPlatFormActivityTicket"
+            resultType="com.meiyuan.catering.marketing.dto.ticket.PushTicketToUserDTO">
+
+        SELECT
+            t1.id,
+            t1.state as upDownStatus,
+            t1.end_time,
+            t2.receive_restrict
+        FROM
+            catering_marketing_activity t1
+                LEFT JOIN catering_marketing_activity_rule t2 ON t2.activity_id = t1.id
+        WHERE
+            t1.id = #{activityId} AND t1.is_del = 0 and t1.activity_type = 5
+
+    </select>
+    <select id="listMarketingTicketByOrderId"
+            resultType="com.meiyuan.catering.marketing.vo.marketing.MarketingSubsidyVo">
+
+        SELECT * FROM  (
+            SELECT DISTINCT order_id AS id, use_channels, send_ticket_party AS sendTicketParty, is_goods_limit AS goodsLimit,
+            IFNULL(( amount - manageAmount ),0) AS merchantCost,
+            IFNULL( manageAmount, 0 ) AS manageAmount,amount,target_type,bear_duty,ticket_activtiy_id
+            FROM(
+                SELECT
+                act.id,
+                act.`name`,
+                act.bear_duty,
+                tkRd.order_id,
+                tkRd.ticket_activtiy_id,
+                act.target_type,
+                tk.amount,
+                tk.use_channels,
+                tk.is_goods_limit,
+                tk.send_ticket_party,
+                ( tk.amount * act.bear_duty / 100 ) AS manageAmount
+                FROM
+                catering_marketing_activity act
+                LEFT JOIN catering_ticket_data_record tkRd ON act.id = tkRd.ticket_activtiy_id
+                LEFT JOIN catering_marketing_ticket tk ON tkRd.ticket_id = tk.id
+                <where>
+                    act.is_del = 0
+                    AND act.is_ticket = 1
+                    AND act.is_del = 0
+                    AND act.is_ticket = 1
+                    <if test="shopId!=null">
+                        and tkRd.shop_id = #{shopId}
+                    </if>
+                    <if test="merchantId!=null">
+                        and act.merchant_id = #{merchantId}
+                    </if>
+                </where>
+            ) AS newTable
+            UNION ALL
+            SELECT tkRd.order_id as id, use_channels,1,1, 0,tk.amount as manageAmount,amount,1,100,tkRd.ticket_activtiy_id
+            FROM catering_ticket_data_record tkRd
+            LEFT JOIN catering_marketing_ticket tk on tkRd.ticket_id = tk.id
+                WHERE tkRd.ticket_activtiy_id is null
+        ) as temp
+            <where>
+                <if test="ids.size()>0">
+                    and
+                    <foreach collection="ids" item="item" open="(" separator="or" close=")">
+                        id in
+                        <foreach item="item2" index="index" collection="item" open="(" close=")" separator=",">
+                            #{item2}
+                        </foreach>
+                    </foreach>
+                </if>
+            </where>
+    </select>
+    <select id="listMerchantTicketByOrderId" resultType="java.math.BigDecimal">
+
+        SELECT IFNULL(SUM(t2.amount),0) as merchantDiscounts
+        FROM catering_ticket_data_record t1
+        LEFT JOIN catering_marketing_ticket t2 on t1.ticket_id = t2.id
+        LEFT JOIN catering_marketing_ticket_activity t3 on t2.activity_id = t3.id
+        lEFT JOIN catering_marketing_ticket_activity_shop t4 on t4.activity_id = t3.id
+        <where>
+            and (t3.activity_type = 1 or t3.activity_type = 2)
+            AND t1.order_status = 0
+            <if test="merchantId!=null">
+                and t1.merchant_id = #{merchantId}
+            </if>
+            <if test="shopId !=null">
+                and t4.shop_id = #{shopId}
+            </if>
+            <if test="ids.size()>0">
+                and
+                <foreach collection="ids" item="item" open="(" separator="or" close=")">
+                    t1.order_id in
+                    <foreach item="item2" index="index" collection="item" open="(" close=")" separator=",">
+                        #{item2}
+                    </foreach>
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="countMarketDiscounts" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(mt.amount),0) as amount FROM catering_user_ticket ut
+        LEFT JOIN catering_marketing_ticket mt ON ut.ticket_id = mt.id
+        LEFT JOIN catering_marketing_activity ma ON ut.ticket_activity_id = ma.id
+        <where>
+            and mt.is_goods_limit = 2
+            <if test="ids.size()>0">
+                and ut.order_id in
+                <foreach collection="ids" index="index" item="item" open = "(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="findActivityTicketInfo"
+            resultType="com.meiyuan.catering.marketing.dto.activity.ActivityInfoDTO">
+        SELECT
+        t1.id,
+        t4.id AS ticketId,
+        t4.ticket_name,
+        (select residual_inventory from catering_marketing_repertory where of_id = t3.ticket_id and ticket_rule_record_id = t3.id) AS publishQuantity,
+        t1.target AS objectLimit,
+        t4.use_begin_time,
+        t4.use_end_time,
+        t4.use_days,
+        t4.indate_type,
+        t4.amount,
+        t4.consume_condition,
+        t1.begin_time,
+        t1.end_time,
+        t1.is_points as points,
+        t1.is_ticket as ticket,
+        t1.activity_type as activityType,
+        t1.state,
+        t1.is_del as del,
+        t2.give_points,
+        t2.id as aRuleId,
+        t3.id as ticketRuleRecordId,
+        t2.receive_restrict as limitQuantity,
+        t2.evaluate_rule as evaluateRule,
+        (select residual_inventory from catering_marketing_repertory where ticket_rule_record_id = t3.id) as residual_inventory
+        FROM
+        catering_marketing_activity t1
+        LEFT JOIN catering_marketing_activity_rule t2 ON t1.id = t2.activity_id
+        LEFT JOIN catering_marketing_rule_ticket_relation t3 ON t2.id = t3.activity_rule_id
+        LEFT JOIN catering_marketing_ticket t4 ON t3.ticket_id = t4.id
+        WHERE
+         t1.id = #{activityId}
+    </select>
+    <select id="getH5Record" resultType="com.meiyuan.catering.marketing.dto.activity.ActivityH5RecordDTO">
+        select id,
+               user_phone as phone,
+               activity_id as activityId,
+               is_get as `get`,
+               ticket_ids as ticketIds
+        from catering_h5_record
+        where user_phone = #{phone}
+        and is_del = 0
+        and activity_id = #{activityId}
+    </select>
+    <select id="listH5Record" resultType="com.meiyuan.catering.marketing.dto.activity.ActivityH5RecordDTO">
+        select id,
+               user_phone as phone,
+               activity_id as activityId,
+               is_get as `get`,
+               ticket_ids as ticketIds
+        from catering_h5_record
+        where user_phone = #{phone}
+          and is_del = 0
+          and is_get = 0
+    </select>
+
+</mapper>

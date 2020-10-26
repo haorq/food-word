@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringUserMapper">
+
+    <resultMap type="com.meiyuan.catering.user.entity.CateringUserEntity" id="CateringUserMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userCompanyId" column="user_company_id" jdbcType="BIGINT"/>
+        <result property="groundPusherId" column="ground_pusher_id" jdbcType="BIGINT"/>
+        <result property="pullNewUser" column="pull_new_user" jdbcType="INTEGER"/>
+        <result property="userName" column="user_name" jdbcType="VARCHAR"/>
+        <result property="gender" column="gender" jdbcType="INTEGER"/>
+        <result property="phone" column="phone" jdbcType="VARCHAR"/>
+        <result property="firstPhone" column="first_phone" jdbcType="VARCHAR"/>
+        <result property="registerIp" column="register_ip" jdbcType="VARCHAR"/>
+        <result property="openId" column="open_id" jdbcType="VARCHAR"/>
+        <result property="unionId" column="union_id" jdbcType="VARCHAR"/>
+        <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+        <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
+        <result property="area" column="area" jdbcType="VARCHAR"/>
+        <result property="saasUserId" column="saas_user_id" jdbcType="BIGINT"/>
+        <result property="saasUserCode" column="saas_user_code" jdbcType="BIGINT"/>
+        <result property="saasMerchantCode" column="saas_merchant_code" jdbcType="VARCHAR"/>
+        <result property="userType" column="user_type" jdbcType="INTEGER"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="userLevel" column="user_level" jdbcType="INTEGER"/>
+        <result property="registerTime" column="register_time" jdbcType="TIMESTAMP"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+        <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <select id="selectIdsByKeyword" resultType="java.lang.Long">
+        SELECT
+        id
+        FROM
+        catering_user
+        <where>
+            is_del = 0 and status = 1
+            <if test="keyword != null and keyword != ''">
+                and (user_name like concat('%',#{keyword} , '%') or phone like concat('%',#{keyword} , '%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="queryByUserId" resultMap="CateringUserMap">
+         SELECT
+          u.*
+        FROM
+        catering_user u left join catering_user_company uc on u.user_company_id=uc.id
+        where uc.account= #{account}
+    </select>
+
+
+    <select id="getUcInfo" resultType="com.meiyuan.catering.core.dto.base.UserCompanyInfo">
+        SELECT
+             id,
+             user_name name,
+             phone,
+            (CASE
+                WHEN id = #{uidOrCid}  THEN 2
+                WHEN user_company_id = #{uidOrCid} then 1
+            END) userType
+        FROM
+            `catering_user`
+        WHERE
+        is_del = 0
+        and(id = #{uidOrCid} OR user_company_id = #{uidOrCid})
+
+    </select>
+    <select id="getListUcInfo" resultType="com.meiyuan.catering.core.dto.base.UserCompanyInfo">
+        SELECT
+        id,
+        user_name name,
+        phone,
+        2 userType
+        FROM
+        `catering_user`
+        <where>
+            is_del = 0
+         <if test="uidOrCids != null and uidOrCids.size() != 0">
+             and id in
+             <foreach collection="uidOrCids" item="item" separator="," open="(" close=")">
+                 #{item}
+             </foreach>
+         </if>
+        </where>
+    </select>
+    <select id="getUserIdByPhone" resultType="java.lang.Long">
+        select id from catering_user where phone=#{phone} and is_del = 0
+    </select>
+</mapper>

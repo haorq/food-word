@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingGoodsMapper">
+
+    <resultMap type="com.meiyuan.catering.marketing.entity.CateringMarketingGoodsEntity" id="CateringMarketingGoodsMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="ofId" column="of_id" jdbcType="BIGINT"/>
+        <result property="ofType" column="of_type" jdbcType="INTEGER"/>
+        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="goodsType" column="goods_type" jdbcType="INTEGER"/>
+        <result property="limitQuantity" column="limit_quantity" jdbcType="INTEGER"/>
+        <result property="sku" column="sku" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+        <result property="minQuantity" column="min_quantity" jdbcType="INTEGER"/>
+        <result property="activityPrice" column="activity_price" jdbcType="OTHER"/>
+        <result property="storePrice" column="store_price" jdbcType="OTHER"/>
+        <result property="minGrouponQuantity" column="min_group_quantity" jdbcType="INTEGER"/>
+        <result property="goodsPicture" column="goods_picture" jdbcType="VARCHAR"/>
+        <result property="goodsDesc" column="goods_desc" jdbcType="VARCHAR"/>
+        <result property="skuValue" column="sku_value" jdbcType="VARCHAR"/>
+        <result property="goodsLabel" column="goods_label" jdbcType="VARCHAR"/>
+        <result property="goodsStatus" column="goods_status" jdbcType="INTEGER"/>
+        <result property="goodsSort" column="goods_sort" jdbcType="INTEGER"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+    <update id="updateDelByIds">
+        update catering_marketing_goods set is_del = #{delStatus} where
+        id in
+        <foreach collection="ids" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateGoodsUpDownByMerchantId">
+        update catering_marketing_goods set goods_status = #{upDown}
+        where merchant_id = #{merchantId} and goods_id = #{goodsId} and (of_type = 1 or of_type = 3)
+    </update>
+
+    <update id="updateGoodsUpdownByMarketingIds">
+        update catering_marketing_goods set goods_status = #{upDown}
+        where goods_id = #{goodsId} and of_id in
+        <foreach collection="marketingIdList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="myUpdateById">
+        update catering_marketing_goods set goods_name = #{entity.goodsName}, store_price = #{entity.storePrice}, goods_picture = #{entity.goodsPicture},
+        goods_desc = #{entity.goodsDesc}, goods_label = #{entity.goodsLabel}
+        where id = #{entity.id}
+    </update>
+
+    <update id="updateSkuValueById">
+        update catering_marketing_goods set sku_value = #{newSkuValue}, update_time = #{now} where id = #{id}
+    </update>
+
+    <update id="goodsDelAndCancelSync">
+        update catering_marketing_goods set is_del = 1 where goods_id = #{goodsId} and of_type != 4
+        <if test="merchantId != null">
+            and merchant_id = #{merchantId}
+        </if>
+    </update>
+
+    <update id="updateDelByMarketIds">
+        update catering_marketing_goods set is_del = #{delStatus}
+        where of_id in
+        <foreach collection="marketingIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="logicDelSeckillGoods">
+        update catering_marketing_goods as cmg, catering_marketing_seckill as cms set cmg.is_del = 1
+        where cms.id = cmg.of_id and cmg.goods_id = #{goodsId} and cms.is_del = 0 and <![CDATA[ #{now} >= cms.begin_time]]>
+        <if test="merchantId != null">
+            and cmg.merchant_id = #{merchantId}
+        </if>
+    </update>
+
+    <update id="logicDelGrouponGoods">
+        update catering_marketing_goods as cmg, catering_marketing_groupon as cmgr set cmg.is_del = 1
+        where cmgr.id = cmg.of_id and cmg.goods_id = #{goodsId} and cmgr.is_del = 0 and <![CDATA[ #{now} >= cmgr.begin_time]]>
+        <if test="merchantId != null">
+            and cmg.merchant_id = #{merchantId}
+        </if>
+    </update>
+    <update id="logicDelSeckillGoodsByIds">
+        update catering_marketing_goods as cmg, catering_marketing_seckill as cms set cmg.is_del = 1
+        where cms.id = cmg.of_id and cms.is_del = 0 and <![CDATA[ #{now} >= cms.begin_time]]>
+        and cmg.id in
+        <foreach collection="delIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <update id="logicDelGrouponGoodsByIds">
+        update catering_marketing_goods as cmg, catering_marketing_groupon as cmgr set cmg.is_del = 1
+        where cmgr.id = cmg.of_id and cmgr.is_del = 0 and <![CDATA[ #{now} >= cmgr.begin_time]]>
+        and cmg.id in
+        <foreach collection="delIds" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!--删除-->
+    <delete id="removeGoods" parameterType="java.lang.Long">
+        DELETE
+        t1.*,
+        t2.*
+        FROM
+        catering_marketing_goods t1
+        LEFT JOIN catering_marketing_goods_category t2 ON t1.id = t2.m_goods_id
+        WHERE
+        t1.of_id = #{ofId}
+        AND t1.is_del = FALSE
+    </delete>
+    <!-- V1.3.0版本通过秒杀场次关联ID进行删除   -->
+    <delete id="delSeckillGoods" parameterType="java.lang.Long">
+        DELETE
+        t1.*,
+        t2.*
+        FROM
+        catering_marketing_goods t1
+        LEFT JOIN catering_marketing_goods_category t2 ON t1.id = t2.m_goods_id
+        WHERE
+        t1.of_id in
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND t1.is_del = FALSE AND of_type = 1
+    </delete>
+    <delete id="delNoBeginSeckillGoods">
+        delete
+            cmg.*
+        from
+            catering_marketing_goods as cmg
+            left join catering_marketing_seckill as cms on cms.id = cmg.of_id
+        where
+            cmg.goods_id = #{goodsId} and cms.is_del = 0
+            and (<![CDATA[ #{now} < cms.begin_time]]>)
+            <if test="merchantId != null">
+                and cmg.merchant_id = #{merchantId}
+            </if>
+    </delete>
+    <delete id="delNoBeginGrouponGoods">
+        delete
+            cmg.*
+        from
+            catering_marketing_goods as cmg
+            left join catering_marketing_groupon as cmgr on cmgr.id = cmg.of_id
+        where
+            cmg.goods_id = #{goodsId} and cmgr.is_del = 0
+            and (<![CDATA[ #{now} < cmgr.begin_time]]>)
+            <if test="merchantId != null">
+                and cmg.merchant_id = #{merchantId}
+            </if>
+    </delete>
+    <delete id="delNoBeginSeckillGoodsByIds">
+        delete
+            cmg.*
+        from
+            catering_marketing_goods as cmg
+            left join catering_marketing_seckill as cms on cms.id = cmg.of_id
+        where
+            cms.is_del = 0 and (<![CDATA[ #{now} < cms.begin_time]]>)
+            and cmg.id in
+            <foreach collection="delIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </delete>
+    <delete id="delNoBeginGrouponGoodsByIds">
+        delete
+            cmg.*
+        from
+            catering_marketing_goods as cmg
+            left join catering_marketing_groupon as cmgr on cmgr.id = cmg.of_id
+        where
+            cmgr.is_del = 0 and (<![CDATA[ #{now} < cmgr.begin_time]]>)
+            and cmg.id in
+            <foreach collection="delIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </delete>
+
+    <!--查询商品信息-->
+    <select id="selectGoodsInfo" resultType="com.meiyuan.catering.marketing.dto.MarketingGoodsInfoDTO">
+        SELECT
+        t1.id,
+        t1.of_id,
+        t1.of_type,
+        t1.goods_id,
+        t1.CODE,
+        t1.goods_name,
+        t1.goods_type,
+        t1.limit_quantity,
+        t1.sku,
+        t1.quantity,
+        t1.min_quantity,
+        t1.activity_price,
+        t1.min_group_quantity,
+        t1.goods_picture,
+        t1.goods_desc,
+        t1.goods_synopsis as goodsSynopsis,
+        t1.sku_value,
+        t1.goods_label,
+        t1.merchant_id,
+        t1.goods_status as goodsStatus,
+        t1.goods_sort as goodsSort,
+        t1.pack_price as packPrice,
+        t2.shop_id,
+        ( SELECT change_good_price FROM catering_shop WHERE id = t2.shop_id ) AS changeGoodsPrice,
+        IF
+        (
+        ( SELECT change_good_price FROM catering_shop WHERE id = t2.shop_id ),
+        t1.store_price,
+        ( SELECT market_price FROM catering_shop_goods_sku WHERE shop_id = t2.shop_id AND sku_code = t1.sku and is_del = 0 )
+        ) AS storePrice
+        FROM
+        catering_marketing_goods t1
+        LEFT JOIN catering_marketing_merchant t2 ON t1.of_id = t2.of_id
+        WHERE
+            t1.goods_id = #{goodsId}
+          <if test="list != null and list.size() > 0">
+              AND t1.sku IN
+              <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                  #{item}
+              </foreach>
+          </if>
+          <if test="shopId != null">
+              and t2.shop_id = #{shopId}
+          </if>
+          <if test="merchantId != null">
+              and t1.merchant_id = #{merchantId}
+          </if>
+    </select>
+    <select id="detailSeckillGoods"
+            parameterType="java.lang.Long"
+            resultType="com.meiyuan.catering.marketing.vo.seckill.MarketingSeckillGoodsDetailVO">
+        select
+            cmg.goods_id as goodsId,
+            cmg.goods_name as goodsName,
+            cmg.sku as skuCode,
+            cmg.sku_value as propertyValue,
+            cmg.goods_spec_type as goodsSpecType,
+            cmg.store_price as storePrice,
+            cmg.activity_price as activityPrice,
+            cmg.quantity as quantity,
+            cmg.min_quantity as minQuantity,
+            cmg.limit_quantity as limitQuantity,
+            cmgc.goods_category_id as categoryId,
+            cmgc.goods_category_name as categoryName
+        from
+            catering_marketing_goods as cmg
+            left join catering_marketing_goods_category as cmgc on cmgc.m_goods_id = cmg.id
+        where
+            cmg.of_id = #{seckillId} and cmg.of_type = 1 and cmgc.is_del = 0
+            <if test="type == 0">
+                and cmg.is_del = 0
+            </if>
+    </select>
+
+    <select id="detailSeckillGoodsPage"
+            resultType="com.meiyuan.catering.marketing.vo.seckill.MarketingSeckillGoodsDetailVO">
+        select
+            goods_id as goodsId,
+            goods_name as goodsName,
+            sku as skuCode,
+            sku_value as propertyValue,
+            goods_spec_type as goodsSpecType,
+            store_price as storePrice,
+            activity_price as activityPrice,
+            quantity as quantity,
+            min_quantity as minQuantity,
+            limit_quantity as limitQuantity
+        from
+            catering_marketing_goods
+        where
+            of_id = #{seckillId} and of_type = 1
+    </select>
+
+    <select id="detailGrouponGoods"
+            resultType="com.meiyuan.catering.marketing.vo.groupon.MarketingGrouponGoodsDetailVO">
+        select
+            cmg.goods_id as goodsId,
+            cmg.goods_name as goodsName,
+            cmg.sku as skuCode,
+            cmg.sku_value as propertyValue,
+            cmg.goods_spec_type as goodsSpecType,
+            cmg.store_price as storePrice,
+            cmg.activity_price as activityPrice,
+            cmg.min_group_quantity as minGrouponQuantity,
+            cmg.min_quantity as minQuantity,
+            cmgc.goods_category_id as categoryId,
+            cmgc.goods_category_name as categoryName
+        from
+            catering_marketing_goods as cmg
+            left join catering_marketing_goods_category as cmgc on cmgc.m_goods_id = cmg.id
+        where
+            cmg.of_id = #{grouponId} and cmg.of_type = 3 and cmgc.is_del = 0
+            <if test="type == 0">
+                and cmg.is_del = 0
+            </if>
+    </select>
+    <select id="detailGrouponGoodsPage"
+            resultType="com.meiyuan.catering.marketing.vo.groupon.MarketingGrouponGoodsDetailVO">
+        select
+            goods_id as goodsId,
+            goods_name as goodsName,
+            sku as skuCode,
+            sku_value as propertyValue,
+            goods_spec_type as goodsSpecType,
+            store_price as storePrice,
+            activity_price as activityPrice,
+            min_group_quantity as minGrouponQuantity,
+            min_quantity as minQuantity
+        from
+            catering_marketing_goods
+        where
+            of_id = #{grouponId} and of_type = 3
+    </select>
+
+    <select id="mySelectPage" resultMap="CateringMarketingGoodsMap">
+        select * from catering_marketing_goods where of_id = #{marketingId}
+    </select>
+
+    <select id="mySelectList" resultMap="CateringMarketingGoodsMap">
+        select * from catering_marketing_goods where of_id = #{marketingId}
+    </select>
+
+    <select id="listIdsByGoodsId" resultType="java.lang.Long">
+        select id from catering_marketing_goods where goods_id = #{goodsId}
+    </select>
+
+    <select id="myListByMarketingIds"
+            resultMap="CateringMarketingGoodsMap">
+        select
+            cmg.*
+        from
+            catering_marketing_goods as cmg
+        where cmg.is_del = 0 and cmg.goods_add_type != 3 and cmg.of_id in
+            <foreach collection="marketingIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+    <select id="myListByGoodsId"
+            resultMap="CateringMarketingGoodsMap">
+        select * from catering_marketing_goods where goods_id = #{goodsId} and merchant_id = #{merchantId} and is_del = 0 and (of_type = 1 or of_type = 3)
+    </select>
+    <select id="isJoinActivity"
+            resultType="com.meiyuan.catering.marketing.entity.CateringMarketingGoodsEntity">
+        select
+            tmp.*
+        from
+         (
+            select
+                cmgo.*
+            from
+                catering_marketing_seckill as cms
+                left join catering_marketing_goods as cmgo on cmgo.of_id = cms.id and cmgo.of_type = 1
+            where
+                cms.is_del = 0 and cms.up_down = 2 and cmgo.is_del = 0 and cmgo.merchant_id = #{merchantId}
+                and <![CDATA[ ( cms.begin_time >= #{now} or (cms.begin_time <= #{now} and #{now} <= cms.end_time) ) ]]>
+                and cmgo.goods_id in
+                <foreach collection="goodsIds" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+
+            union all
+
+            select
+                cmgt.*
+            from
+                catering_marketing_groupon as cmg
+                left join catering_marketing_goods as cmgt on cmgt.of_id = cmg.id and cmgt.of_type = 3
+            where
+                cmg.is_del = 0 and cmg.up_down = 2 and cmgt.is_del = 0 and cmgt.merchant_id = #{merchantId}
+                and <![CDATA[ ( cmg.begin_time >= #{now} or (cmg.begin_time <= #{now} and #{now} <= cmg.end_time) ) ]]>
+                and cmgt.goods_id in
+                <foreach collection="goodsIds" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+         ) as tmp
+
+    </select>
+
+</mapper>

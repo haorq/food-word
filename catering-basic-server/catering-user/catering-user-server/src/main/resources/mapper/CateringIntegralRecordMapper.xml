@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringIntegralRecordMapper">
+
+    <insert id="addIntegralGetRecord">
+        INSERT INTO
+            catering_activity_get_record(id, activity_id,activity_rule_id, activity_type,reward_type, user_id,get_num)
+        VALUES
+            ( #{dto.id},
+            #{dto.activityId},
+            #{dto.activityRuleId},
+            #{dto.activityType},
+            #{dto.rewardType},
+            #{dto.userId},
+            #{dto.getNum})
+    </insert>
+    <update id="updateIntegralGetRecord">
+        UPDATE catering_activity_get_record SET get_num = get_num + 1 WHERE user_id = #{userId} AND activity_id = #{activityId}
+        <if test="activityRuleId != null">
+            and activity_rule_id = #{activityRuleId}
+        </if>
+    </update>
+
+
+    <select id="pageList" resultType="com.meiyuan.catering.user.vo.integral.IntegralRecordListVo">
+        SELECT
+        create_time createTime,
+        user_name userName,
+        user_nick_name userNickName,
+        integral,
+        reason,
+        user_phone userPhone,
+        user_type userType,
+        type
+        FROM
+        catering_integral_record
+        <where>
+            is_del = 0
+            <if test="query.keyword != null and query.keyword != ''">
+                AND (
+                user_name like concat('%', #{query.keyword} , '%') or
+                user_nick_name like concat('%', #{query.keyword} , '%') or
+                user_phone like concat('%', #{query.keyword} , '%')
+                )
+            </if>
+            <if test="query.userType != null">
+                and user_type = #{query.userType}
+            </if>
+            <if test="query.ruleNo != null and query.ruleNo != ''">
+                and integral_no = #{query.ruleNo}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+    <select id="sumByUserId" resultType="java.lang.Integer">
+       SELECT
+	      ifnull(sum( CASE WHEN type = 1 THEN integral END ),0) - ifnull(sum( CASE WHEN type = 2 THEN integral END ),0)
+        FROM
+            catering_integral_record
+        WHERE
+            is_del = 0
+          AND
+           user_id = #{uid}
+    </select>
+
+    <select id="monthList" resultType="java.lang.String">
+        SELECT
+        DATE_FORMAT(create_time,"%Y-%m") create_time
+        FROM
+        catering_integral_record
+        <where>
+            is_del = 0
+            <if test="userId != null">
+                and user_id=#{userId}
+            </if>
+        </where>
+        GROUP BY DATE_FORMAT( create_time, "%Y-%m" )
+        ORDER BY create_time desc
+    </select>
+
+    <select id="queryListByMonth" resultType="com.meiyuan.catering.user.vo.integral.IntegralListVo">
+      SELECT
+            create_time createTime,
+            integral,
+            reason,
+            type
+        FROM
+            catering_integral_record
+            WHERE
+            user_id = #{userId}
+            and
+            DATE_FORMAT(create_time,"%Y-%m") = #{month}
+            order by create_time desc
+    </select>
+    <select id="sumByMonths" resultType="com.meiyuan.catering.user.vo.integral.MonthIntegralVo">
+        SELECT
+	      DATE_FORMAT(create_time,'%Y-%m') month,
+	      sum(if(type = 1,integral,0)) gain,
+		  sum(if(type = 2,integral,0)) employ
+        FROM
+            catering_integral_record
+        WHERE
+            is_del = 0
+            AND  user_id = #{userId}
+            <if test="months != null and months.size() > 0">
+                AND  DATE_FORMAT(create_time,'%Y-%m')  in
+                <foreach collection="months" item="month" separator="," open="(" close=")">
+                    #{month}
+                </foreach>
+            </if>
+            GROUP BY DATE_FORMAT(create_time,'%Y-%m')
+    </select>
+    <select id="listByMonths" resultType="com.meiyuan.catering.user.vo.integral.IntegralListVo">
+        SELECT
+            id,
+            reason,
+            type,
+            create_time,
+            DATE_FORMAT(create_time,'%Y-%m') month,
+            integral
+        FROM
+            catering_integral_record
+        WHERE
+            is_del = 0
+            AND user_id = #{userId}
+            <if test="months != null and months.size() > 0">
+                AND  DATE_FORMAT(create_time,'%Y-%m')  in
+                <foreach collection="months" item="month" separator="," open="(" close=")">
+                    #{month}
+                </foreach>
+            </if>
+          	ORDER BY create_time desc
+    </select>
+
+    <select id="selectGetNum" resultType="java.lang.Integer">
+        SELECT
+            get_num
+        FROM
+          catering_activity_get_record
+        WHERE
+            user_id = #{userId}
+          AND activity_id = #{activityId}
+          <if test="activityRuleId!=null">
+              and activity_rule_id = #{activityRuleId}
+          </if>
+        AND reward_type = 2
+    </select>
+    <select id="countGetRecord" resultType="java.lang.Integer">
+        SELECT count( * ) FROM catering_activity_get_record WHERE user_id = #{userId} AND activity_id = #{activityId} AND reward_type = 2
+        <if test="activityRuleId!=null">
+            and activity_rule_id = #{activityRuleId}
+        </if>
+    </select>
+</mapper>

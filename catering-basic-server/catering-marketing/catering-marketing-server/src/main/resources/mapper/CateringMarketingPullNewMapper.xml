@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingPullNewMapper">
+
+
+    <select id="pullNewCount" resultType="com.meiyuan.catering.marketing.vo.pullnew.MarketingPullNewCountVO">
+        select
+            of_id as ofId,
+            of_type as ofType,
+            count(1) as count
+        from
+            catering_marketing_pull_new
+        <where>
+            <if test="marketingIds != null and marketingIds.size() > 0">
+                of_id in
+                <foreach collection="marketingIds" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        group by of_id
+    </select>
+</mapper>

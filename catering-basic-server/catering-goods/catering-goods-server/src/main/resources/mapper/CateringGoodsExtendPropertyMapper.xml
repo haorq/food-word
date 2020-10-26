@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsExtendPropertyMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsExtendPropertyEntity" id="CateringGoodsExtendPropertyMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="goodsExtendPropertyField" column="goods_extend_property_field" jdbcType="VARCHAR"/>
+                        <result property="goodsExtendPropertyValue" column="goods_extend_property_value" jdbcType="VARCHAR"/>
+                        <result property="fieldStatus" column="field_status" jdbcType="INTEGER"/>
+            </resultMap>
+
+    
+
+</mapper>

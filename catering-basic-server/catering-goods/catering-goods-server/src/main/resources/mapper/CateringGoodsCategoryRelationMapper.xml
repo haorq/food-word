@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsCategoryRelationMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsCategoryRelationEntity" id="CateringGoodsCategoryRelationMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="sort" column="sort" jdbcType="INTEGER"/>
+            </resultMap>
+
+    <sql id="column">
+        id, category_id, goods_id, sort
+    </sql>
+    <!--获取分类id和分类名称-->
+    <select id="listByGoodsIdList" resultType="com.meiyuan.catering.goods.dto.goods.GoodsCategoryAndLabelDTO">
+        select
+        categoryRelation.category_id as id,
+        category.category_name as `name`,
+        categoryRelation.goods_id as goodsId,
+        categoryRelation.sort as sort
+        from
+        catering_goods_category_relation categoryRelation
+        left join catering_category category on categoryRelation.category_id = category.id
+        where
+        categoryRelation.goods_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+    </select>
+
+
+    <!--批量获取根据分类id-->
+    <select id="listByCategory" resultMap="CateringGoodsCategoryRelationMap">
+        select
+        <include refid="column"/>
+        from
+        catering_goods_category_relation
+        where
+        category_id = #{dto.id}
+        <if test=" dto.sortField != null and dto.sortField != '' and dto.sortOrder != null and dto.sortOrder != '' ">
+            order by ${dto.sortField} ${dto.sortOrder}
+        </if>
+        <if test=" dto.sortField == null or dto.sortField == '' or dto.sortOrder == null or dto.sortOrder == '' ">
+            order by sort asc
+        </if>
+    </select>
+
+    <!--获取根据分类id和排序号-->
+    <select id="getByCategoryIdAndSort" resultType="com.meiyuan.catering.goods.dto.category.CategoryRelationDTO">
+        select
+        cr.id as id,
+        cr.category_id as categoryId,
+        cr.goods_id as goodsId,
+        cr.sort,
+        goods.goods_name as goodsName
+        from
+        catering_goods_category_relation cr
+        left join catering_goods goods on cr.goods_id = goods.id
+        where
+        cr.category_id = #{categoryId}
+        and
+        cr.sort = #{sort}
+    </select>
+
+    <!--获取根据分类id和商品id-->
+    <select id="getByCategoryIdAndGoodsId" resultType="com.meiyuan.catering.goods.dto.category.CategoryRelationDTO">
+        select
+        cr.id as id,
+        cr.category_id as categoryId,
+        cr.goods_id as goodsId,
+        cr.sort,
+        goods.goods_name as goodsName
+        from
+        catering_goods_category_relation cr
+        left join catering_goods goods on cr.goods_id = goods.id
+        where
+        cr.category_id = #{categoryId}
+        and
+        cr.goods_id = #{goodsId}
+    </select>
+
+    <!--修改分类排序号-->
+    <update id="updateGoodsSort">
+        update catering_goods_category_relation
+        set sort = #{sort}
+        where id = #{id}
+    </update>
+</mapper>

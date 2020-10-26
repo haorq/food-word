@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringAdvertisingMapper">
+
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.admin.vo.advertising.AdvertisingDetailVO">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="link" jdbcType="VARCHAR" property="link" />
+        <result column="linkStr" jdbcType="VARCHAR" property="linkStr" />
+        <result column="shop_id" jdbcType="BIGINT" property="shopId" />
+        <result column="shopName" jdbcType="VARCHAR" property="shopName" />
+        <result column="goods_id" jdbcType="BIGINT" property="goodsId" />
+        <result column="goodsName" jdbcType="VARCHAR" property="goodsName" />
+        <result column="link_type" jdbcType="INTEGER" property="linkType" />
+        <result column="url" jdbcType="VARCHAR" property="url" />
+        <result column="position" jdbcType="TINYINT" property="position" />
+        <result column="start_time" jdbcType="TIMESTAMP" property="startTime" />
+        <result column="end_time" jdbcType="TIMESTAMP" property="endTime" />
+        <result column="is_show" jdbcType="BOOLEAN" property="shows" />
+        <result column="enabled" jdbcType="BOOLEAN" property="enabled" />
+        <result column="publish_type" jdbcType="BOOLEAN" property="publishType" />
+        <result column="sort" jdbcType="INTEGER" property="sort" />
+        <collection property="advertisingExtList" ofType="com.meiyuan.catering.admin.vo.advertising.AdvertisingExtDetailVO">
+            <id column="ext_id" jdbcType="BIGINT" property="id"/>
+            <result column="ext_icon" jdbcType="VARCHAR" property="icon"/>
+            <result column="title" jdbcType="VARCHAR" property="title"/>
+            <result column="describe_txt" jdbcType="VARCHAR" property="describeTxt"/>
+            <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        </collection>
+    </resultMap>
+
+    <update id="updateShow">
+        update catering_advertising set is_show = #{show}
+        <where>
+            and publish_type = 2
+            <if test="show != null and show">
+                and start_time &lt;= now()
+                and end_time &gt;= now()
+            </if>
+            <if test="show != null and !show">
+                and end_time &lt; now()
+            </if>
+        </where>
+    </update>
+
+    <select id="queryDetailById" resultMap="BaseResultMap">
+        SELECT
+            adv.id,
+            adv.`name`,
+            adv.link,
+            (SELECT `name` FROM catering_dict_group_item where `code` = adv.link and group_id = 36) as linkStr,
+            adv.shop_id,
+            ( SELECT shop_name FROM catering_shop WHERE id = adv.shop_id  LIMIT 1 ) AS shopName,
+            adv.goods_id,
+            ( SELECT goods_name FROM catering_merchant_goods WHERE goods_id = adv.goods_id LIMIT 1 ) AS goodsName,
+            adv.link_type,
+            adv.url,
+            adv.`position`,
+            adv.content,
+            adv.start_time,
+            adv.end_time,
+            adv.is_show,
+            adv.publish_type,
+            adv.enabled,
+            adv.sort,
+            adv.is_del,
+            ext.id AS ext_id,
+            ext.icon AS ext_icon,
+            ext.title,
+            ext.describe_txt,
+            ext.create_time
+        FROM
+            catering_advertising adv
+        LEFT JOIN catering_advertising_ext ext ON adv.id = ext.advertising_id
+        where adv.id = #{id}
+    </select>
+
+    <select id="queryDetailAll" resultMap="BaseResultMap">
+        SELECT
+            adv.id,
+            adv.`name`,
+            adv.link,
+            (SELECT `name` FROM catering_dict_group_item where `code` = adv.link and group_id = 36) as linkStr,
+            adv.shop_id,
+            ( SELECT shop_name FROM catering_shop WHERE id = adv.shop_id  LIMIT 1 ) AS shopName,
+            adv.goods_id,
+            ( SELECT goods_name FROM catering_merchant_goods WHERE goods_id = adv.goods_id LIMIT 1 ) AS goodsName,
+            adv.link_type,
+            adv.url,
+            adv.`position`,
+            adv.content,
+            adv.start_time,
+            adv.end_time,
+            adv.is_show,
+            adv.publish_type,
+            adv.enabled,
+            adv.sort,
+            adv.is_del,
+            ext.id AS ext_id,
+            ext.icon AS ext_icon,
+            ext.title,
+            ext.describe_txt,
+            ext.create_time
+        FROM
+            catering_advertising adv
+        LEFT JOIN catering_advertising_ext ext ON adv.id = ext.advertising_id
+        <where>
+            and adv.is_del = 0
+            and adv.is_show = true
+            and adv.enabled = true
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringRegionMapper">
+
+  <resultMap id="BaseResultMap" type="com.meiyuan.catering.admin.entity.CateringRegionEntity">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="province" jdbcType="VARCHAR" property="province" />
+    <result column="province_code" jdbcType="VARCHAR" property="provinceCode" />
+
+    <result column="city" jdbcType="VARCHAR" property="city" />
+    <result column="city_code" jdbcType="VARCHAR" property="cityCode" />
+
+    <result column="district" jdbcType="VARCHAR" property="district" />
+    <result column="district_code" jdbcType="VARCHAR" property="districtCode" />
+
+  </resultMap>
+
+  <select id="listProvinceQuery" resultType="com.meiyuan.catering.core.vo.base.CateringRegionVo">
+        SELECT
+            province_code value,
+            province label
+        FROM
+            catering_region
+        GROUP BY
+            province_code
+  </select>
+
+    <select id="listCityQuery" resultType="com.meiyuan.catering.core.vo.base.CateringRegionVo">
+      SELECT
+            city_code VALUE,
+            city label
+        FROM
+            catering_region
+        WHERE
+        catering_region.province_code = #{adressCode}
+         GROUP BY catering_region.city_code
+    </select>
+
+    <select id="listDistrictQuery" resultType="com.meiyuan.catering.core.vo.base.CateringRegionVo">
+        SELECT
+             district_code VALUE,
+             district label
+        FROM
+            catering_region
+        WHERE
+            catering_region.city_code = #{adressCode}
+    </select>
+</mapper>

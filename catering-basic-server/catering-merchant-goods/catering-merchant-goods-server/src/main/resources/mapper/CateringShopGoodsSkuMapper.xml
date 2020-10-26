@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringShopGoodsSkuMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.goods.entity.CateringShopGoodsSkuEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="shop_id" jdbcType="BIGINT" property="shopId"/>
+        <result column="goods_id" jdbcType="BIGINT" property="goodsId"/>
+        <result column="shop_goods_sku_id" jdbcType="BIGINT" property="shopGoodsSpuId"/>
+        <result column="sku_code" jdbcType="CHAR" property="skuCode"/>
+        <result column="market_price" jdbcType="DECIMAL" property="marketPrice"/>
+        <result column="sales_price" jdbcType="DECIMAL" property="salesPrice"/>
+        <result column="enterprise_price" jdbcType="DECIMAL" property="enterprisePrice"/>
+        <result column="takeout_price" jdbcType="DECIMAL" property="takeoutPrice"/>
+        <result column="pack_price" jdbcType="DECIMAL" property="packPrice"/>
+        <result column="sort" jdbcType="INTEGER" property="sort"/>
+        <result column="property_value" jdbcType="LONGVARCHAR" property="propertyValue"/>
+        <result column="remain_stock" jdbcType="BIGINT" property="remainStock"/>
+        <result column="is_del" jdbcType="TINYINT" property="del"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id,
+        shop_id,
+        goods_id,
+        shop_goods_spu_id,
+        sku_code,
+        market_price,
+        sales_price,
+        enterprise_price,
+        takeout_price,
+        pack_price,
+        sort,
+        property_value,
+        remain_stock,
+        is_del,
+        create_time,
+        update_time
+    </sql>
+    <select id="getRemainStock" resultMap="BaseResultMap">
+        SELECT
+        sku.sku_code,
+        ifnull(sku.remain_stock,-1) remain_stock
+        FROM
+        `catering_merchant_goods_extend` mge
+        left JOIN catering_shop_goods_sku sku on mge.goods_id = sku.goods_id
+        <where>
+            mge.is_del = 0
+            and
+            sku.is_del = 0
+            and
+            mge.merchant_goods_status =2
+            <if test="merchantId != null">
+                and mge.merchant_id = #{merchantId}
+            </if>
+            <if test="shopId != null">
+                and sku.shop_id = #{shopId}
+            </if>
+            <if test="categoryId != null">
+                AND mge.category_id =#{categoryId}
+            </if>
+        </where>
+        GROUP BY sku.sku_code
+    </select>
+    <select id="getRemainStockBySku" resultType="java.lang.Integer">
+        SELECT
+        ifnull(sku.remain_stock,-1) remain_stock
+        FROM
+        `catering_merchant_goods_extend` mge
+        left JOIN catering_shop_goods_sku sku on mge.goods_id = sku.goods_id
+        <where>
+            mge.is_del = 0
+            and
+            sku.is_del = 0
+            and
+            mge.merchant_goods_status =2
+            <if test="merchantId != null">
+                and mge.merchant_id = #{merchantId}
+            </if>
+            <if test="shopId != null">
+                and sku.shop_id = #{shopId}
+            </if>
+            <if test="skuCode != null and skuCode != ''">
+                AND sku.sku_code =#{skuCode}
+            </if>
+        </where>
+        GROUP BY sku.sku_code
+    </select>
+
+    <select id="listShopDiscountGoods" parameterType="com.meiyuan.catering.merchant.goods.dto.shop.ShopDiscountGoodsDTO"
+            resultType="long">
+        SELECT
+        sgs.shop_id
+        FROM
+        catering_shop_goods_spu sgs
+        LEFT JOIN catering_merchant_goods_extend mge ON sgs.merchant_id = mge.merchant_id AND sgs.goods_id =
+        mge.goods_id
+        LEFT JOIN catering_shop_goods_sku sgsk ON sgsk.shop_goods_spu_id = sgs.id
+        WHERE
+        sgs.is_del = FALSE
+        AND sgs.shop_goods_status = 2
+        AND mge.is_del = FALSE
+        AND mge.merchant_goods_status = 2
+        <if test="dto.shopIds != null and dto.shopIds.size != 0">
+            and sgs.shop_id in
+            <foreach collection="dto.shopIds" item="shopId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </if>
+
+        <if test="dto.userType != 1">
+            AND sgsk.market_price > sgsk.sales_price AND sgsk.sales_price > 0
+        </if>
+        <if test="dto.userType == 2">
+            AND (
+            (sgsk.market_price > sgsk.sales_price AND sgsk.sales_price > 0 and sgsk.enterprise_price = -1)
+            or (sgsk.market_price > sgsk.enterprise_price AND sgsk.enterprise_price > 0))
+        </if>
+        GROUP BY
+        sgs.shop_id
+    </select>
+
+
+    <select id="queryBySkuAndShopId" resultType="com.meiyuan.catering.merchant.goods.dto.shop.ShopSkuDTO">
+        SELECT shop_goods_sku.property_value skuName,
+               merchant_goods.merchant_goods_name goodsName,
+               shop_goods_sku.shop_id shopId,
+               shop_goods_sku.goods_id goodsId
+        FROM   catering_shop_goods_sku shop_goods_sku,
+               catering_shop_goods_spu shop_goods_spu,
+               catering_merchant_goods_extend merchant_goods
+        WHERE  shop_goods_sku.sku_code = #{sku}
+           AND shop_goods_sku.shop_id = #{shopId}
+           AND shop_goods_sku.shop_goods_spu_id = shop_goods_spu.id
+           AND shop_goods_spu.merchant_id = merchant_goods.merchant_id
+           AND shop_goods_spu.goods_id = merchant_goods.goods_id
+           limit 0,1
+    </select>
+
+    <select id="listShopHaveGoods" parameterType="com.meiyuan.catering.merchant.goods.dto.shop.ShopDiscountGoodsDTO"
+            resultType="long">
+        SELECT
+        DISTINCT sgs.shop_id shopId
+        FROM
+          catering_shop_goods_spu sgs
+         JOIN catering_merchant_goods_extend mge ON sgs.merchant_id = mge.merchant_id  AND sgs.goods_id = mge.goods_id
+         JOIN catering_merchant_goods_sku mgs ON mge.id = mgs.merchant_goods_extend_id
+        WHERE
+        sgs.is_del = FALSE
+        AND sgs.shop_goods_status = 2
+        AND mge.is_del = FALSE
+        AND mge.merchant_goods_status = 2
+        AND mgs.is_del = FALSE
+        and mgs.sales_channels in(1,3)
+        <if test="dto.shopIds != null and dto.shopIds.size != 0">
+            and sgs.shop_id in
+            <foreach collection="dto.shopIds" item="shopId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </if>
+    </select>
+    <select id="listShopGoodsDiscount" parameterType="com.meiyuan.catering.merchant.goods.dto.shop.ShopDiscountGoodsDTO"
+            resultType="com.meiyuan.catering.merchant.goods.dto.shop.ShopGoodsDiscountDTO">
+        SELECT
+        sgs.shop_id shopId,
+        MIN(convert(case
+        when #{dto.userType} = 2 then case WHEN sgsk.sales_price >= 0 and sgsk.market_price!= 0 THEN
+        (sgsk.sales_price/sgsk.market_price)*10 ELSE 10 END
+        when #{dto.userType}=1 then case WHEN sgsk.enterprise_price >= 0 and sgsk.market_price!= 0 THEN
+        (sgsk.enterprise_price/sgsk.market_price)*10
+        ELSE case WHEN sgsk.sales_price >= 0 and sgsk.market_price!= 0 THEN (sgsk.sales_price/sgsk.market_price)*10 ELSE
+        10 END END
+        else 10 end,decimal (10,1))) price
+        FROM
+        catering_shop_goods_spu sgs
+        LEFT JOIN catering_merchant_goods_extend mge ON sgs.merchant_id = mge.merchant_id AND sgs.goods_id =
+        mge.goods_id
+        LEFT JOIN catering_shop_goods_sku sgsk ON sgsk.shop_goods_spu_id = sgs.id
+        WHERE
+        sgs.is_del = FALSE
+        AND sgs.shop_goods_status = 2
+        AND mge.is_del = FALSE
+        AND mge.merchant_goods_status = 2
+        <if test="dto.shopIds != null and dto.shopIds.size != 0">
+            and sgs.shop_id in
+            <foreach collection="dto.shopIds" item="shopId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </if>
+        GROUP BY
+        sgs.shop_id
+    </select>
+    <select id="verifySpecialGoods" resultMap="BaseResultMap">
+        select
+            id,
+            sku_code,
+            property_value
+        from
+            catering_shop_goods_sku
+        where shop_id = #{shopId} and is_del = 0 and sku_code in
+        <foreach collection="goodsSkuList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateSkuStock">
+        update
+        catering_shop_goods_sku
+        set remain_stock = remain_stock+#{count}
+        where shop_id=#{shopId}
+        and sku_code=#{skuCode}
+        and is_del=0
+        and remain_stock>=0
+        <if test="0>count">
+            and (remain_stock + #{count})&gt;=0
+        </if>
+    </update>
+
+</mapper>

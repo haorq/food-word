@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.finance.dao.CateringUserBalanceAccountMapper">
+
+    <update id="updatePayPassword">
+        update
+          catering_user_balance_account
+        set
+          password = #{password}
+        where
+          user_id = #{userId}
+    </update>
+    <select id="balanceAdd" resultType="java.lang.Boolean">
+        update
+        catering_user_balance_account
+        <set>
+            <if test="balance != null">
+                balance = balance + #{balance},
+            </if>
+            <if test="totalRealAmount != null">
+                total_real_amount = total_real_amount + #{totalRealAmount},
+            </if>
+            <if test="totalCouponAmount != null">
+                total_coupon_amount = total_coupon_amount + #{totalCouponAmount}
+            </if>
+        </set>
+        where user_id = #{userId}
+    </select>
+    <select id="balanceSubtract" resultType="java.lang.Boolean">
+        update
+          catering_user_balance_account
+        set
+          balance = balance - #{amount}
+        where
+          user_id = #{userId}
+    </select>
+</mapper>

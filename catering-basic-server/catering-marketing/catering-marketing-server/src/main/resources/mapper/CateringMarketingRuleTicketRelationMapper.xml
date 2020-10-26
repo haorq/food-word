@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingRuleTicketRelationMapper">
+    <resultMap id="BaseResultMap"
+               type="com.meiyuan.catering.marketing.entity.CateringMarketingRuleTicketRelationEntity">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="activity_rule_id" jdbcType="BIGINT" property="activityRuleId"/>
+        <result column="ticket_id" jdbcType="BIGINT" property="ticketId"/>
+        <result column="activity_id" jdbcType="BIGINT" property="activityId"/>
+        <result column="quantity" jdbcType="INTEGER" property="quantity"/>
+        <result column="passive_ticket_id" jdbcType="BIGINT" property="passiveTicketId"/>
+        <result column="passive_amount" jdbcType="INTEGER" property="passiveAmount"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    reTk.id as id,
+    reTk.activity_rule_id as activityRuleId,
+    reTk.ticket_id as ticketId,
+    reTk.activity_id as activityId,
+    reTk.quantity as quantity,
+    reTk.passive_ticket_id as passiveTicketId,
+    reTk.passive_amount as passiveAmount
+  </sql>
+
+    <delete id="deleteByActivityId">
+        DELETE FROM
+            catering_marketing_rule_ticket_relation
+            WHERE activity_id = #{activityId}
+    </delete>
+</mapper>

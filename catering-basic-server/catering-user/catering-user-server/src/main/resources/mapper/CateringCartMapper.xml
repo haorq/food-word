@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringCartMapper">
+
+    <resultMap type="com.meiyuan.catering.user.entity.CateringCartEntity" id="CateringCartMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="userType" column="user_type" jdbcType="INTEGER"/>
+        <result property="menuId" column="menu_id" jdbcType="BIGINT"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="goodsSn" column="goods_sn" jdbcType="VARCHAR"/>
+        <result property="skuCode" column="sku_code" jdbcType="VARCHAR"/>
+        <result property="number" column="number" jdbcType="INTEGER"/>
+        <result property="price" column="price" jdbcType="DECIMAL"/>
+        <result property="goodsStatus" column="goods_status" jdbcType="INTEGER"/>
+        <result property="checked" column="checked" jdbcType="INTEGER"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="shareUserId" column="share_user_id" jdbcType="BIGINT"/>
+        <result property="shareBillNo" column="share_bill_no" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <sql id="column">
+            id, user_id, user_type, menu_id, merchant_id, goods_sn, sku_code, `number`, price
+            goods_status, checked, `type`, share_user_id, share_bill_no, create_time
+        </sql>
+
+
+    <select id="numberAdd" resultType="boolean">
+        UPDATE `catering_cart`
+        SET
+          number = number + #{number}
+        where id = #{id}
+    </select>
+
+    <update id="updateCart">
+        UPDATE `catering_cart`
+        SET
+        category_id = #{categoryId},
+        goods_spec_type = #{goodsSpecType},
+        market_price = #{marketPrice},
+        sales_price = #{salesPrice},
+        enterprise_price = #{enterprisePrice},
+        pack_price = #{packPrice},
+        discount_limit = #{discountLimit},
+        total_price = total_price + #{totalPrice},
+        number = number + #{number}
+        <where>
+            id = #{id}
+            <if test="marketPrice != null">
+                and market_price = #{marketPrice}
+            </if>
+            <if test="salesPrice != null">
+                and sales_price = #{salesPrice}
+            </if>
+            <if test="enterprisePrice != null">
+                and enterprise_price = #{enterprisePrice}
+            </if>
+            <if test="packPrice != null">
+                and pack_price = #{packPrice}
+            </if>
+            <if test="discountLimit != null">
+                and discount_limit = #{discountLimit}
+            </if>
+        </where>
+    </update>
+
+    <update id="againUpdateCart">
+        UPDATE `catering_cart`
+        SET
+          category_id = #{categoryId},
+          goods_spec_type = #{goodsSpecType},
+          market_price = #{marketPrice},
+          sales_price = #{salesPrice},
+          enterprise_price = #{enterprisePrice},
+          pack_price = #{packPrice},
+          discount_limit = #{discountLimit},
+          total_price =  #{totalPrice},
+          number = number + #{number}
+        where id = #{id}
+    </update>
+
+    <select id="listCartGoodsByShareBill" resultType="com.meiyuan.catering.core.dto.cart.Cart">
+        SELECT
+        id,
+        market_price,
+        total_price,
+        goods_sn,
+        goods_id,
+        sales_price,
+        old_type,
+        type,
+        goods_spec_type,
+        sum( number ) number,
+        share_bill_no,
+        merchant_id,
+        price,
+        checked,
+        menu_id,
+        shop_id,
+        enterprise_price,
+        user_id,
+        share_user_id,
+        goods_type,
+        goods_status,
+        create_time,
+        user_type,
+        discount_limit,
+        category_id,
+        sku_code
+        FROM
+        catering_cart
+        <where>
+            type = 2
+            and merchant_id = #{merchantId}
+            <if test="shareBillNo != null and shareBillNo != ''">
+                and share_bill_no = #{shareBillNo}
+            </if>
+            <if test="shareBillNo == null or shareBillNo == ''">
+                and share_bill_no is null
+            </if>
+            <if test="shopId != null">
+                and shop_id = #{shopId}
+            </if>
+            <if test="userId != null">
+                and user_id = #{userId}
+                and user_type = 2
+            </if>
+        </where>
+        GROUP BY goods_id
+        ORDER BY create_time DESC;
+    </select>
+
+</mapper>

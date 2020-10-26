@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringPlatformEmpowerMerchantGoodsMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringPlatformEmpowerMerchantGoodsEntity" id="CateringPlatformEmpowerMerchantGoodsMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="number" column="number" jdbcType="INTEGER"/>
+                        <result property="del" column="is_del" jdbcType="INTEGER"/>
+                        <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                        <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            </resultMap>
+
+    
+
+</mapper>

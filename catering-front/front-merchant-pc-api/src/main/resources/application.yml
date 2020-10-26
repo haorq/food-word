@@ -1,0 +1,19 @@
+spring:
+  profiles:
+    active: dev
+  messages:
+    encoding: UTF-8
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 10MB
+      #location: /tmp/tomcat_upload
+
+
+server:
+  port: 8077
+  servlet:
+    context-path: /pc
+##logger配置
+logging:
+  config: classpath:logback-spring.xml

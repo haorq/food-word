@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingActivityRuleMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.marketing.entity.CateringMarketingActivityRuleEntity">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="activity_id" jdbcType="BIGINT" property="activityId" />
+        <result column="conditions_rule" jdbcType="INTEGER" property="conditionsRule" />
+        <result column="evaluate_rule" jdbcType="INTEGER" property="evaluateRule" />
+        <result column="receive_restrict" jdbcType="INTEGER" property="receiveRestrict" />
+        <result column="give_points" jdbcType="INTEGER" property="givePoints" />
+        <result column="valid_date" jdbcType="BOOLEAN" property="validDate" />
+    </resultMap>
+
+    <resultMap id="VoResultMap" type="com.meiyuan.catering.marketing.vo.activity.ActivityRuleVO">
+        <id column="id" jdbcType="BIGINT" property="ruleId" />
+        <result column="conditions_rule" jdbcType="INTEGER" property="conditionsRule"/>
+        <result column="evaluate_rule" jdbcType="INTEGER" property="evaluateRule"/>
+        <result column="receive_restrict" jdbcType="INTEGER" property="receiveRestrict"/>
+        <result column="give_points" jdbcType="INTEGER" property="givePoints"/>
+        <result column="passive_give_points" jdbcType="INTEGER" property="passiveGivePoints"/>
+        <result column="valid_date" jdbcType="BOOLEAN" property="validDate"/>
+        <collection property="ruleTicketRelationList" ofType="com.meiyuan.catering.marketing.vo.activity.RuleTicketRelationVO">
+            <id column="ruleTicketId" jdbcType="BIGINT" property="ruleTicketId"/>
+            <result column="ticketId" jdbcType="BIGINT" property="ticketId"/>
+            <result column="quantity" jdbcType="INTEGER" property="quantity"/>
+            <result column="passive_ticket_id" jdbcType="BIGINT" property="passiveTicketId"/>
+            <result column="passive_amount" jdbcType="INTEGER" property="passiveAmount"/>
+            <result column="ticket_name" property="ticketName"/>
+            <result column="ticket_name" property="passiveTicketName"/>
+            <result column="child_type" property="childType"/>
+            <result column="amount" property="amount"/>
+            <result column="consume_condition" property="consumeCondition"/>
+            <result column="is_goods_limit" property="goodsLimit"/>
+            <result column="indate_type" property="indateType"/>
+            <result column="use_begin_time" property="useBeginTime"/>
+            <result column="use_end_time" property="useEndTime"/>
+            <result column="use_days" property="useDays"/>
+        </collection>
+    </resultMap>
+    <sql id="Base_Column_List">
+        rule.id as id,
+        rule.activity_id as activityId,
+        rule.conditions_rule as conditionsRule,
+        rule.evaluate_rule as evaluateRule,
+        rule.receive_restrict as receiveRestrict,
+        rule.give_points as givePoints,
+        rule.valid_date as validDate
+  </sql>
+
+    <select id="queryListByActivityId" resultMap="VoResultMap">
+        SELECT
+            rule.id,
+            rule.conditions_rule,
+            rule.evaluate_rule,
+            rule.receive_restrict,
+            rule.give_points,
+            rule.passive_give_points,
+            rule.valid_date,
+            reTk.id as ruleTicketId,
+            reTk.quantity,
+            reTk.passive_ticket_id,
+            reTk.passive_amount,
+            tk.id AS ticketId,
+            tk.ticket_name,
+            tk.ticket_name AS passiveTicketName,
+            tk.child_type,
+            tk.amount,
+            tk.consume_condition,
+            tk.is_goods_limit,
+            tk.indate_type,
+            tk.use_begin_time,
+            tk.use_end_time,
+            tk.use_days
+        FROM
+            catering_marketing_activity_rule rule
+        LEFT JOIN	catering_marketing_rule_ticket_relation reTk on rule.id = reTk.activity_rule_id
+        LEFT JOIN catering_marketing_ticket tk ON reTk.ticket_id = tk.id
+        <where>
+            and rule.activity_id = #{activityId}
+        </where>
+    </select>
+    <select id="getReceiveRestrict" resultType="java.lang.Integer">
+        SELECT
+            t2.receive_restrict
+        FROM
+            catering_marketing_activity t1
+                LEFT JOIN catering_marketing_activity_rule t2 ON t1.id = t2.activity_id
+        WHERE
+            t1.id = #{activityId}
+          AND t1.activity_type = 5
+    </select>
+</mapper>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringLabelMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringLabelEntity" id="CateringLabelMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="labelName" column="label_name" jdbcType="VARCHAR"/>
+        <result property="labelDescribe" column="label_describe" jdbcType="VARCHAR"/>
+        <result property="labelStatus" column="label_status" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="LabelDetailDTOMap"
+               type="com.meiyuan.catering.goods.dto.label.LabelDetailDTO">
+        <result column="goods_id" property="goodsId"/>
+        <collection property="labelName"
+                    ofType="string">
+            <result column="label_name" />
+        </collection>
+    </resultMap>
+    <select id="getByGoodId" resultMap="LabelDetailDTOMap">
+        select
+        cl.id,
+        cl.label_name,
+        clr.goods_id
+        from
+        catering_label cl
+        join  catering_goods_label_relation clr
+        on cl.id=clr.label_id
+        where clr.goods_id in
+        <foreach collection="goodsIds" close=")" open="(" item="id" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <!--查询分页列表，并统计商品数量-->
+    <select id="queryPageList" resultType="com.meiyuan.catering.goods.dto.label.LabelDTO">
+        SELECT
+            newLabel.id as id ,
+            newLabel.merchant_id as merchant_id,
+            newLabel.label_name as label_name,
+            newLabel.label_describe as label_describe,
+            newLabel.label_status as label_status,
+            newLabel.default_label as default_label,
+            newLabel.is_del as is_del,
+            newLabel.create_by as create_by,
+            newLabel.create_time as create_time,
+            newLabel.update_by as update_by,
+            newLabel.update_time as update_time,
+            IF(goodsCount is null,0,goodsCount) as goodsCount
+        FROM (
+            SELECT
+                clab.*,
+                ( SELECT count(*) FROM catering_goods_label_relation clgr
+                    WHERE clgr.label_id = clab.id and clgr.merchant_id = 1
+                    GROUP BY clgr.label_id
+                ) AS goodsCount
+            FROM
+                catering_label clab
+            <where>
+                AND clab.is_del = 0
+                <if test="labelLimitQuery.labelName != null and labelLimitQuery.labelName != ''">
+                    and clab.label_name like concat(concat('%',#{labelLimitQuery.labelName}),'%')
+                </if>
+            </where>
+        ) as newLabel
+    </select>
+
+    <resultMap id="listLabelNameMap" type="com.meiyuan.catering.goods.dto.label.LabelDetailDTO">
+        <result property="goodsId" column="goods_id"/>
+        <collection property="labelName" ofType="java.lang.String">
+            <result column="label_name"/>
+        </collection>
+    </resultMap>
+    <select id="listNameByGoodsId" resultMap="listLabelNameMap">
+        SELECT
+            t2.label_name,
+            t1.goods_id
+        FROM
+            catering_goods_label_relation t1
+                LEFT JOIN catering_label t2 ON t1.label_id = t2.id
+        WHERE
+            t1.goods_id IN
+          <foreach collection="list" separator="," close=")" open="(" index="index" item="item">
+              #{item}
+          </foreach>
+          AND t1.merchant_id = #{merchantId}
+    </select>
+
+    <select id="getLabel" resultType="com.meiyuan.catering.core.dto.es.MerchantBaseLabel">
+        SELECT
+        l.id,
+        r.goods_id,
+        l.label_name as name
+        FROM
+        catering_label l
+        left join catering_goods_label_relation r on l.id = r.label_id
+        <where>
+            l.is_del = 0
+            <if test="goodsIds != null and goodsIds.size() != 0">
+               and r.goods_id in
+                <foreach collection="goodsIds" item="goodsId" open="(" close=")" separator=",">
+                    #{goodsId}
+                </foreach>
+            </if>
+        </where>
+
+    </select>
+
+</mapper>

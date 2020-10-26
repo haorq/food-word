@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringShopGoodsRelationMapper">
+
+    <resultMap type="com.meiyuan.catering.merchant.goods.entity.CateringShopGoodsRelationEntity" id="CateringShopGoodsRelationMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="sort" column="sort" jdbcType="INTEGER"/>
+                        <result property="shopId" column="shop_id" jdbcType="BIGINT"/>
+            </resultMap>
+
+    <sql id="column">
+        id, category_id, goods_id, shop_id,sort
+    </sql>
+
+</mapper>

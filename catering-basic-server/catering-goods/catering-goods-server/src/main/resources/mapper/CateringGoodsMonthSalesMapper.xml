@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsMonthSalesMapper">
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsMonthSalesEntity" id="CateringGoodsMonthSalesMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="time" column="time" jdbcType="TIMESTAMP"/>
+        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+        <result property="skuCode" column="sku_code" jdbcType="VARCHAR"/>
+        <result property="number" column="number" jdbcType="BIGINT"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="shopId" column="shop_id" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="column">
+        id, `time`, goods_id, sku_code, `number`, merchant_id ,shop_id
+    </sql>
+
+    <select id="list"  resultMap="CateringGoodsMonthSalesMap">
+        select
+        <include refid="column"/>
+        from
+        catering_goods_month_sales
+        where
+        merchant_id = #{merchantId}
+        and
+        `time` = #{time}
+        and
+        goods_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+    </select>
+
+    <insert id="listSave" parameterType="java.util.List">
+        insert into catering_goods_month_sales (<include refid="column"/>)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.id}, #{item.time}, #{item.goodsId}, #{item.skuCode}, #{item.number}, #{item.merchantId}
+            )
+        </foreach>
+    </insert>
+
+    <!--30天的销量-->
+    <select id="thirtyDaysSales" resultType="com.meiyuan.catering.goods.entity.CateringGoodsMonthSalesEntity">
+        select
+        id,
+        `time`,
+        goods_id as goodsId,
+        sku_code as skuCode,
+        `number`,
+        merchant_id as merchantId,
+        shop_id as shopId
+        FROM
+        catering_goods_month_sales
+        where
+        shop_id in (
+            <foreach collection="merchantList" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+        and DATE_FORMAT(`time`,'%Y-%m-%d') &gt;= DATE_ADD(DATE_FORMAT(now(),'%Y-%m-%d'),INTERVAL -30 DAY)
+        and DATE_FORMAT(`time`,'%Y-%m-%d') &lt;= DATE_FORMAT(now(),'%Y-%m-%d')
+    </select>
+
+    <delete id="del">
+        delete
+        from
+        catering_goods_month_sales
+        where
+        `time` = #{time}
+        and
+        shop_id = #{shopId}
+        and
+        goods_id in (
+        <foreach collection="list" item="item" separator=",">
+            #{item}
+        </foreach>
+        )
+    </delete>
+
+    <!--商品总销量-->
+    <select id="goodsTotal" resultType="com.meiyuan.catering.goods.entity.CateringGoodsMonthSalesEntity">
+        select
+        goods_id,
+        sum(`number`) as number
+        from
+        catering_goods_month_sales
+        <if test="list != null and list.size > 0">
+            where
+            goods_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        group by goods_id
+    </select>
+
+    <delete id="delAll">
+        delete from catering_goods_month_sales
+    </delete>
+</mapper>

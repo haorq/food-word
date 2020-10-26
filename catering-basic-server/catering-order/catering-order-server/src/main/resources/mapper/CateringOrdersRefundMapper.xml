@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersRefundMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersRefundEntity" id="CateringOrdersRefundMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="tradingFlow" column="trading_flow" jdbcType="VARCHAR"/>
+        <result property="refundNumber" column="refund_number" jdbcType="VARCHAR"/>
+        <result property="memberId" column="member_id" jdbcType="INTEGER"/>
+        <result property="memberName" column="member_name" jdbcType="VARCHAR"/>
+        <result property="memberPhone" column="member_phone" jdbcType="VARCHAR"/>
+        <result property="refundType" column="refund_type" jdbcType="INTEGER"/>
+        <result property="refundAmount" column="refund_amount" jdbcType="OTHER"/>
+        <result property="refundedAmount" column="refunded_amount" jdbcType="OTHER"/>
+        <result property="refundCompleteTime" column="refund_complete_time" jdbcType="TIMESTAMP"/>
+        <result property="refundStatus" column="refund_status" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="pageList" resultType="com.meiyuan.catering.order.vo.RefundQueryListVO">
+        SELECT
+        cor.id,
+        cor.refund_number refundNumber,
+        cor.refund_amount refundAmount,
+        cor.refund_status refundStatus,
+        cor.member_name memberName,
+        cora.refund_start_time createTime,
+        cora.business_audit_time auditTime,
+        cora.business_audit_status businessAuditStatus,
+        cora.business_name businessName
+        FROM
+        `catering_orders_refund` cor
+        left JOIN catering_orders_refund_audit cora on cor.id = cora.refund_id
+        <where>
+            cor.is_del = 0
+            <if test="dto.refundStatus!=null and dto.refundStatus!=''">
+                and cor.refund_status=#{dto.refundStatus}
+            </if>
+            <if test="dto.keyword != null and dto.keyword != ''">
+                and (
+                cor.member_name like concat ('%',#{dto.keyword},'%')
+                or cor.member_phone like concat('%',#{dto.keyword},'%')
+                )
+            </if>
+            <if test="dto.refundNumber != null and dto.refundNumber != ''">
+                and cor.refund_number = #{dto.refundNumber}
+            </if>
+            <if test="dto.createTime != null">
+                and cora.refund_start_time >= #{dto.createTime}
+            </if>
+            <if test="dto.createTime2 != null">
+                and cora.refund_start_time &lt; #{dto.createTime2}
+            </if>
+            <if test="dto.updateTime != null">
+                and cora.business_audit_time >= #{dto.updateTime}
+            </if>
+            <if test="dto.updateTime2 != null">
+                and cora.business_audit_time &lt; #{dto.updateTime2}
+            </if>
+        </where>
+        order by cora.refund_start_time desc
+    </select>
+
+
+    <resultMap id="refundCountMap" type="com.meiyuan.catering.order.vo.RefundCountVO">
+        <result property="all" column="allCount"/>
+        <result property="await" column="await"/>
+        <result property="already" column="already"/>
+        <result property="refuse" column="refuse"/>
+    </resultMap>
+
+    <select id="refundCount" resultMap="refundCountMap">
+        SELECT
+        count(cor.refund_status) allCount,
+        count(case when cor.refund_status =1 then cor.refund_status end) await,
+        count(case when cor.refund_status =2 then cor.refund_status end) already,
+        count(case when cor.refund_status =3 then cor.refund_status end) refuse
+        FROM
+        `catering_orders_refund` cor
+        left JOIN catering_orders_refund_audit cora on cor.id = cora.refund_id
+        <where>
+            cor.is_del = 0
+            <if test="dto.keyword != null and dto.keyword != ''">
+                and (
+                cor.member_name like concat ('%',#{dto.keyword},'%')
+                or cor.member_phone like concat('%',#{dto.keyword},'%')
+                )
+            </if>
+            <if test="dto.refundNumber != null and dto.refundNumber != ''">
+                and cor.refund_number = #{dto.refundNumber}
+            </if>
+            <if test="dto.createTime != null">
+                and cora.refund_start_time >= #{dto.createTime}
+            </if>
+            <if test="dto.createTime2 != null">
+                and cora.refund_start_time &lt; #{dto.createTime2}
+            </if>
+            <if test="dto.updateTime != null">
+                and cora.business_audit_time >= #{dto.updateTime}
+            </if>
+            <if test="dto.updateTime2 != null">
+                and cora.business_audit_time &lt; #{dto.updateTime2}
+            </if>
+        </where>
+    </select>
+
+    <select id="isShopHavePendingOrder" resultType="int">
+        SELECT Count(a.order_id)
+        FROM   catering_orders_refund a,
+               catering_orders b
+        WHERE  a.order_id = b.id
+           AND b.store_id = #{shopId}
+           and a.refund_status=1
+           and b.is_del=0
+    </select>
+
+
+    <select id="queryByOrderId" resultType="com.meiyuan.catering.order.dto.order.OrderRefundDto">
+        SELECT a.refund_number   refundNumber,
+               a.refund_type     refundType,
+               b.cargo_status    cargoStatus,
+               a.refund_status   refundStatus,
+               a.create_time     createTime,
+               a.update_time     updateTime,
+               a.refund_amount   refundAmount,
+               a.trading_flow    tradingFlow,
+               a.refund_way      refundWay,
+               b.refund_reason   refundReason,
+               b.refund_evidence refundEvidence,
+               b.refund_remark   refundRemark
+        FROM   catering_orders_refund a,
+               catering_orders_refund_audit b
+        WHERE  b.refund_id = a.id
+           AND a.order_id = #{orderId}
+    </select>
+
+</mapper>

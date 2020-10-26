@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingTicketMapper">
+
+
+    <!--详情-->
+    <resultMap id="ticketInfoMap" type="com.meiyuan.catering.marketing.dto.ticket.TicketDetailsDTO">
+        <id property="id" column="id"/>
+        <result property="ticketCode" column="ticket_code"/>
+        <result property="ticketName" column="ticket_name"/>
+        <result property="childType" column="child_type"/>
+        <result property="amount" column="amount"/>
+        <result property="useBeginTime" column="use_begin_time"/>
+        <result property="useEndTime" column="use_end_time"/>
+        <result property="usefulCondition" column="useful_condition"/>
+        <result property="goodsLimit" column="is_goods_limit"/>
+        <result property="consumeCondition" column="consume_condition"/>
+        <result property="useDays" column="use_days"/>
+        <result property="indateType" column="indate_type"/>
+        <result property="createTime" column="create_time"/>
+        <result property="creator" column="creator"/>
+        <collection property="goodsItem" ofType="com.meiyuan.catering.marketing.dto.MarketingGoodsInfoDTO">
+            <result property="goodsId" column="goods_id"/>
+            <result property="goodsName" column="goods_name"/>
+            <result property="storePrice" column="store_price"/>
+            <result property="goodsPicture" column="goods_picture"/>
+            <result property="sku" column="sku"/>
+            <result property="spuCode" column="code"/>
+            <result property="skuValue" column="sku_value"/>
+            <result property="salesPrice" column="activity_price"/>
+            <result property="goodsCategoryName" column="goods_category_name"/>
+        </collection>
+    </resultMap>
+    <select id="selectInfo" resultMap="ticketInfoMap" parameterType="java.lang.Long">
+        SELECT
+            t1.id,
+            t1.ticket_code,
+            t1.ticket_name,
+            t1.child_type,
+            t1.amount,
+            t1.use_begin_time,
+            t1.use_end_time,
+            t1.useful_condition,
+            t1.is_goods_limit,
+            t1.consume_condition,
+            t1.indate_type,
+            t1.use_days,
+            t1.create_time,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.code,
+            t2.sku_value,
+            t2.activity_price,
+            (select username from catering_admin where id = t1.create_by) as creator,
+            t3.goods_category_name
+        FROM
+            catering_marketing_ticket t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+                LEFT JOIN catering_marketing_goods_category t3 ON t3.m_goods_id = t2.id
+                AND t3.is_del = FALSE
+        WHERE
+            t1.id = #{id}
+          AND t1.is_del = FALSE
+    </select>
+    <!--分页列表-->
+    <select id="pageList" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketListDTO"
+            parameterType="com.meiyuan.catering.marketing.dto.ticket.TicketPageParamDTO">
+        SELECT
+            t1.id,
+            t1.ticket_name,
+            t1.ticket_code,
+            t1.child_type,
+            t1.amount,
+            t1.useful_condition,
+            t1.is_goods_limit as goodsLimit,
+            t1.consume_condition,
+            t1.use_days,
+            t1.indate_type,
+            t1.create_time,
+        (select if(count(*)>0,1,0)
+        from catering_marketing_rule_ticket_relation
+        where ticket_id = t1.id) as hasActivity,
+        (select username from catering_admin where id = t1.create_by) as creator
+        FROM
+        catering_marketing_ticket t1
+        <where>
+            t1.is_del = FALSE AND t1.send_ticket_party = 1 and t1.merchant_id = 1
+            <if test="dto.createTimeBegin != null ">
+                AND t1.create_time &gt;= #{dto.createTimeBegin}
+            </if>
+            <if test="dto.createTimeEnd != null ">
+                AND t1.create_time &lt; #{dto.createTimeEnd}
+            </if>
+            <if test="dto.ticketName != null and dto.ticketName != ''">
+                AND (t1.ticket_name like concat('%',#{dto.ticketName},'%') OR t1.ticket_code = #{dto.ticketName})
+            </if>
+            <if test="dto.childType != null">
+                AND t1.child_type = #{dto.childType}
+            </if>
+        </where>
+        ORDER BY t1.create_time DESC
+    </select>
+    <!--用户注册成功获取优惠券数据-->
+    <select id="selectListForRegister" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketSelectListDTO">
+        SELECT
+            t1.id,
+            t1.ticket_name,
+            t1.ticket_code
+        FROM
+            catering_marketing_ticket t1
+                LEFT JOIN catering_marketing_repertory t2 ON t1.id = t2.of_id
+        WHERE
+            t1.is_del = FALSE AND t2.is_del = FALSE and (t1.object_limit = #{objectLimit} or t1.object_limit = 0)
+        AND t2.residual_inventory > 0
+        AND t1.send_ticket_party = 1
+        <choose>
+            <when test="referrerId != null ">
+                and t1.on_click = 3
+            </when>
+            <otherwise>
+                and (t1.on_click = 5 or t1.on_click = 2)
+            </otherwise>
+        </choose>
+    </select>
+    <!--用户下单成功获取优惠券数据-->
+    <select id="selectListForOrder" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketSelectListDTO">
+        SELECT
+        t1.id,
+        t1.ticket_name,
+        t1.ticket_code
+        FROM
+        catering_marketing_ticket t1
+        LEFT JOIN catering_marketing_repertory t2 ON t1.id = t2.of_id
+        WHERE
+        t1.is_del = FALSE AND t2.is_del = FALSE and (t1.object_limit = #{objectLimit} or t1.object_limit = 0)
+        AND t2.residual_inventory > 0
+        <choose>
+            <when test="referrerId != null ">
+                and t1.on_click = 4
+            </when>
+            <otherwise>
+                and  t1.on_click = 1
+            </otherwise>
+        </choose>
+    </select>
+    <select id="findTicketInfo" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketInfoDTO">
+        SELECT
+            t1.id,
+            t1.ticket_code,
+            t1.ticket_name,
+            t1.child_type,
+            t1.amount,
+            t1.publish_quantity,
+            IFNULL(t1.limit_quantity,0) as limit_quantity,
+            t1.use_begin_time,
+            t1.use_end_time,
+            t1.indate_type,
+            t1.activity_id,
+            t1.useful_condition,
+            t1.is_goods_limit as goodsLimit,
+            t1.use_days as useDays,
+            t1.consume_condition,
+            t2.residual_inventory
+        FROM
+            catering_marketing_ticket t1
+                left join catering_marketing_repertory t2 on t1.id = t2.of_id and t2.is_del = false
+        WHERE
+            t1.id = #{id}
+          AND t1.is_del = FALSE
+          <if test="activityId!=null">
+              and t2.activity_id = #{activityId}
+          </if>
+    </select>
+
+    <select id="findTicketInfoByIds" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketInfoDTO">
+        SELECT
+            t1.id,
+            t1.ticket_code,
+            t1.ticket_name,
+            t1.child_type,
+            t1.amount,
+            t1.publish_quantity,
+            IFNULL(t1.limit_quantity,0) as limit_quantity,
+            t1.use_begin_time,
+            t1.use_end_time,
+            t1.useful_condition,
+            t1.is_goods_limit as goodsLimit,
+            t1.consume_condition,
+            t1.on_click,
+            t1.indate_type,
+            t1.use_days as useDays,
+            t2.residual_inventory
+        FROM
+            catering_marketing_ticket t1
+                left join catering_marketing_repertory t2 on t1.id = t2.of_id and t2.is_del = false
+        WHERE
+            t1.id in
+              <foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+                  #{id}
+              </foreach>
+          AND t1.is_del = FALSE
+        AND t2.activity_id is null
+    </select>
+    <select id="selectBasicInfo" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketBasicInfoDTO">
+        SELECT
+            t1.id,
+            t1.ticket_code,
+            t1.ticket_name,
+            t1.child_type,
+            t1.amount,
+            t1.publish_quantity,
+            IFNULL( t1.limit_quantity, 0 ) AS limit_quantity,
+            t2.begin_time,
+            t2.end_time,
+            t1.use_begin_time,
+            t1.use_end_time,
+            t1.useful_condition,
+            t1.is_goods_limit,
+            t1.consume_condition,
+            t1.object_limit,
+            t1.indate_type,
+            t1.send_ticket_party,
+            t1.use_channels,
+            t1.use_days,
+            t1.create_time
+        FROM
+            catering_marketing_ticket t1
+                LEFT JOIN catering_marketing_ticket_activity t2 ON t1.activity_id = t2.id
+                AND t2.is_del = 0
+        WHERE
+            t1.id in
+              <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                  #{item}
+              </foreach>
+          AND t1.is_del = FALSE
+    </select>
+
+    <resultMap id="canUseShopMap" type="com.meiyuan.catering.marketing.vo.ticket.WxTicketUseShopVo">
+        <result column="id" property="ticketId"/>
+        <collection property="shopList" ofType="java.lang.Long">
+            <result column="shop_id"/>
+        </collection>
+    </resultMap>
+    <!--通过优惠券ID获取可使用门店-->
+    <select id="canUseShop" resultMap="canUseShopMap">
+        SELECT
+        t1.id,
+        -- t2.shop_id
+        if(t2.shop_ticket_status IS NULL,NULL,if(t2.shop_ticket_status=2,t2.shop_id,if(t1.get_time &lt;= t2.update_time,t2.shop_id,-1))) as shop_id
+        FROM
+        catering_user_ticket t1
+        LEFT JOIN catering_marketing_ticket_activity t3 ON (t1.ticket_activity_id = t3.id OR t3.p_activity_id = t1.ticket_activity_id)
+        LEFT JOIN catering_marketing_ticket_activity_shop t2 ON t3.id = t2.activity_id
+        WHERE
+            t1.id IN
+            <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </select>
+
+    <resultMap id="ticketCanUseShopMap" type="com.meiyuan.catering.marketing.vo.ticket.WxShopTicketInfoVo">
+        <result column="shop_id" property="shopId"/>
+        <collection property="ticketList" ofType="com.meiyuan.catering.marketing.vo.ticket.WxMerchantIndexTicketInfoVO">
+            <result property="activityType" column="activity_type"/>
+            <result property="ticketId" column="ticketId"/>
+            <result property="amount" column="amount"/>
+            <result property="useBeginTime" column="use_begin_time"/>
+            <result property="useEndTime" column="use_end_time"/>
+            <result property="useDays" column="use_days"/>
+            <result property="indateType" column="indate_type"/>
+            <result property="consumeCondition" column="consume_condition"/>
+        </collection>
+    </resultMap>
+    <!--通过优惠券ID获取可使用门店-->
+    <select id="findTicketCanUseShop" resultMap="ticketCanUseShopMap">
+        SELECT
+            t3.shop_id,
+            t1.activity_type,
+            t2.id AS ticketId,
+            t2.amount,
+            t2.use_begin_time,
+            t2.use_end_time,
+            t2.use_days,
+            t2.indate_type,
+            t2.consume_condition
+        FROM
+            catering_marketing_ticket_activity t1
+                LEFT JOIN catering_marketing_ticket t2 ON t1.id = t2.activity_id
+                LEFT JOIN catering_marketing_ticket_activity_shop t3 ON t1.id = t3.activity_id
+        WHERE
+            t1.is_del = 0
+          AND t3.shop_id IN (
+            SELECT tas.shop_id FROM catering_marketing_ticket mt
+                                        LEFT JOIN catering_user_ticket ut on ut.ticket_id = mt.id
+                                        LEFT JOIN catering_marketing_ticket_activity_shop tas ON mt.activity_id = tas.activity_id
+            WHERE ut.id = #{ticketId}
+        and (tas.shop_ticket_status = 2 or (tas.shop_ticket_status=1 and ut.get_time &lt;= tas.update_time)))
+    </select>
+    <select id="findTicketActivity" resultType="java.lang.Integer">
+        select count(*)
+        from catering_marketing_rule_ticket_relation
+        where ticket_id = #{id}
+    </select>
+    <select id="pagePlatFormTicket"
+            resultType="com.meiyuan.catering.marketing.vo.ticket.MarketingPlatFormActivitySelectListVO">
+        select
+         id,
+        ticket_code,
+        ticket_name,
+        amount,
+        publish_quantity,
+        indate_type,
+        use_days,
+        use_begin_time,
+        use_end_time,
+        consume_condition,
+        is_goods_limit as goodsLimit,
+        child_type
+         from  catering_marketing_ticket
+    <where>
+        is_del = 0
+        and send_ticket_party = #{status}
+        and merchant_id = #{merchantId}
+        <if test="dto.ticketName != null and dto.ticketName != ''">
+            and (ticket_name like concat('%',#{dto.ticketName},'%') or ticket_code = #{dto.ticketName})
+        </if>
+    </where>
+        order by create_time desc
+    </select>
+    <select id="getActivityPage" resultType="com.meiyuan.catering.marketing.vo.activity.ActivityPageVO">
+        SELECT
+            t1.id,
+            t1. activity_number,
+            t1. name,
+            (CASE
+                 WHEN t1.state = 1 THEN 4
+                 WHEN t1.begin_time &gt; now(3) THEN 1
+                 WHEN t1.begin_time &lt;= now(3) and t1.end_time &gt; now(3) THEN 2
+                 WHEN t1.end_time &lt;= now(3) THEN 3
+                END) as  activityState,
+            t1.activity_type,
+            t1.create_time,
+            t1.begin_time,
+            t1.end_time
+        FROM
+            catering_marketing_activity t1 WHERE t1.id in
+             (SELECT activity_id FROM catering_marketing_rule_ticket_relation WHERE ticket_id =#{ticketId}) and t1.is_del=0
+    </select>
+
+    <delete id="deleteByActivityId" >
+        DELETE t1.*,
+        t2.*
+        FROM
+        catering_marketing_ticket t1
+        LEFT JOIN catering_marketing_repertory t2 ON t1.id = t2.of_id
+        WHERE
+        t1.activity_id = #{activityId}
+    </delete>
+
+</mapper>

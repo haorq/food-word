@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.finance.dao.CateringUserChargeRecordMapper">
+
+
+    <select id="pageList" resultType="com.meiyuan.catering.finance.vo.recharge.RechargeRecordListVO">
+        SELECT
+        create_time createTime,
+        received_amount receivedAmount,
+        payable_amount payableAmount,
+        discount_amount discountAmount,
+        cash_coupon cashCoupon,
+        total_amount totalAmount,
+        pay_way payWay,
+        user_type userType,
+        `status`,
+        operate_ip operateIp,
+        user_id userId
+        FROM
+        `catering_user_charge_record`
+        <where>
+            <if test="userIds != null and userIds.size() != 0">
+                user_id in
+                <foreach collection="userIds" close=")" open="(" item="id" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="dto.beginTime != null">
+                and create_time >= #{dto.beginTime}
+            </if>
+            <if test="dto.endTime != null ">
+                and create_time &lt; #{dto.endTime}
+            </if>
+            <if test="dto.payType != null and dto.payType != ''">
+                and pay_way = #{dto.payType}
+            </if>
+            <if test="dto.userType != null">
+                and user_type = #{dto.userType}
+            </if>
+        </where>
+        order by createTime desc
+    </select>
+</mapper>

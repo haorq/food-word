@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringGroupOrderMemberMapper">
+
+    <resultMap type="com.meiyuan.catering.marketing.entity.CateringGroupOrderMemberEntity" id="CateringGroupOrderMemberMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                <result property="groupOrderId" column="group_order_id" jdbcType="BIGINT"/>
+                <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+                <result property="memberId" column="member_id" jdbcType="BIGINT"/>
+                <result property="memberName" column="member_name" jdbcType="VARCHAR"/>
+                <result property="memberNickName" column="member_nick_name" jdbcType="VARCHAR"/>
+                <result property="isSponsor" column="is_sponsor" jdbcType="INTEGER"/>
+                <result property="del" column="is_del" jdbcType="INTEGER"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+    <select id="memberCount"
+            resultType="com.meiyuan.catering.marketing.vo.groupordermember.MarketingGroupOrderMemberCountVO">
+        select
+            group_order_id as groupOrderId,
+            count( distinct member_id) as memberCount
+        from
+            catering_group_order_member
+        where
+            is_del = 0 and
+            group_order_id in
+            <foreach collection="groupOrderIdList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            group by group_order_id
+    </select>
+    <select id="totalMemberCount" resultType="java.lang.Integer">
+        select
+            count( distinct member_id) as memberCount
+        from
+            catering_group_order_member
+        where
+            is_del = 0 and
+            group_order_id in
+            <foreach collection="groupOrderIdList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+
+</mapper>

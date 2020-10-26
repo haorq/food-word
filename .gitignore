@@ -1,0 +1,5 @@
+/application-core.yml
+*.iml
+.idea
+target/
+logs/

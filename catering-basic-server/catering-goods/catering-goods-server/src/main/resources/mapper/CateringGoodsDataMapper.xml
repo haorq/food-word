@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsDataMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsDataEntity" id="CateringGoodsDataMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="clickCount" column="click_count" jdbcType="BIGINT"/>
+                        <result property="exhibitionCount" column="exhibition_count" jdbcType="BIGINT"/>
+                        <result property="shareCount" column="share_count" jdbcType="BIGINT"/>
+                        <result property="salesCount" column="sales_count" jdbcType="BIGINT"/>
+                        <result property="commentCount" column="comment_count" jdbcType="BIGINT"/>
+                        <result property="ollectioncCount" column="ollectionc_count" jdbcType="BIGINT"/>
+                        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+                        <result property="del" column="is_del" jdbcType="INTEGER"/>
+                        <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                        <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            </resultMap>
+
+        <sql id="column">
+            id, goods_id, click_count, exhibition_count, share_count, sales_count, comment_count
+            ollectionc_count, start_time, is_del, create_by, create_time, update_by, update_time
+        </sql>
+        <select id="list" resultMap="CateringGoodsDataMap">
+                select
+                <include refid="column"/>
+                from
+                catering_goods_data
+                <if test="list != null and list.size > 0">
+                        where
+                        goods_id in (
+                        <foreach collection="list" item="item" separator=",">
+                                #{item}
+                        </foreach>
+                        )
+                </if>
+        </select>
+</mapper>

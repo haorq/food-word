@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringWxCategoryMapper">
+
+    <resultMap id="queryGoodsWxCategoryMap" type="com.meiyuan.catering.admin.entity.CateringWxCategoryEntity">
+        <id column="id" property="id"/>
+        <result column="storyGoodsList" property="storyGoodsList"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler" javaType="list"/>
+    </resultMap>
+
+    <resultMap id="WxCategoryDetailMap" type="com.meiyuan.catering.admin.vo.wxcategory.WxCategoryDetailVO">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="icon" jdbcType="VARCHAR" property="icon"/>
+        <result column="type" jdbcType="TINYINT" property="type"/>
+        <result column="link" jdbcType="VARCHAR" property="link"/>
+        <result column="link_type" jdbcType="TINYINT" property="linkType"/>
+        <result column="relevance_type" jdbcType="TINYINT" property="relevanceType"/>
+        <result column="story_list" jdbcType="OTHER" property="storyList" typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result column="story_goods_list" jdbcType="OTHER" property="storyGoodsList" typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result column="img_list" jdbcType="OTHER" property="imgList" typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result column="sort" jdbcType="INTEGER" property="sort"/>
+        <result column="status" jdbcType="TINYINT" property="status"/>
+        <collection property="wxCategoryExtList" ofType="com.meiyuan.catering.admin.vo.wxcategory.WxCategoryExtDetailVO">
+            <id column="ext_id" jdbcType="BIGINT" property="id"/>
+            <result column="ext_icon" jdbcType="VARCHAR" property="icon"/>
+            <result column="title" jdbcType="VARCHAR" property="title"/>
+            <result column="describe_txt" jdbcType="VARCHAR" property="describeTxt"/>
+            <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        </collection>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id, `name`, icon, `type`, link, link_type, story_url, story_describe, relevance_type,
+        story_list, story_goods_list, img_list, sort, is_del, status, create_time, update_time
+    </sql>
+
+    <select id="queryAllWxCategory" resultMap="WxCategoryDetailMap">
+        SELECT
+            cty.id,
+            cty.`name`,
+            cty.icon,
+            cty.`type`,
+            cty.link,
+            cty.link_type,
+            cty.relevance_type,
+            cty.story_list,
+            cty.story_goods_list,
+            cty.img_list,
+            cty.sort,
+            cty.status,
+            ext.id AS ext_id,
+            ext.icon AS ext_icon,
+            ext.title,
+            ext.describe_txt,
+            ext.create_time
+        FROM
+            catering_wx_category cty
+        LEFT JOIN catering_wx_category_ext ext ON cty.id = ext.wx_category_id
+        <where>
+            and cty.is_del = 0
+            and `status` = 1
+        </where>
+    </select>
+
+    <select id="queryGoodsWxCategory" resultMap="queryGoodsWxCategoryMap">
+        SELECT
+            id,
+            story_goods_list storyGoodsList
+        FROM
+            `catering_wx_category`
+        <where>
+            AND is_del = 0
+            AND `type` != 3
+            AND relevance_type = 2
+            AND JSON_CONTAINS(story_goods_list,JSON_OBJECT('goodsId', #{goodsId} ))
+        </where>
+    </select>
+
+    <select id="queryDetailById" resultMap="WxCategoryDetailMap">
+        SELECT
+            cty.id,
+            cty.`name`,
+            cty.icon,
+            cty.`type`,
+            cty.link,
+            cty.link_type,
+            cty.relevance_type,
+            cty.story_list,
+            cty.story_goods_list,
+            cty.img_list,
+            cty.sort,
+            cty.status,
+            ext.id AS ext_id,
+            ext.icon AS ext_icon,
+            ext.title,
+            ext.describe_txt,
+            ext.create_time
+        FROM
+            catering_wx_category cty
+            LEFT JOIN catering_wx_category_ext ext ON cty.id = ext.wx_category_id
+        <where>
+            and cty.is_del = 0
+            and cty.id = #{id}
+        </where>
+    </select>
+
+    <select id="queryPageList" resultType="com.meiyuan.catering.admin.vo.wxcategory.WxCategoryPageVO">
+        select
+            newTable.*,
+            (CASE newTable.typeNumber WHEN 0 THEN FALSE ELSE TRUE END) as hotMoneyFlag
+        from(
+            SELECT
+                cty.id,
+                cty.`name`,
+                cty.icon,
+                cty.`type`,
+                (case when cty.type = 1 then '导航栏'
+                when cty.type = 2 then '推荐区'
+                when cty.type = 3 then '爆品推荐'end) as typeStr,
+                cty.link,
+                cty.link_type as linkType,
+                (CASE cty.link_type WHEN 1 THEN '1'
+                WHEN 2 THEN cty.link
+                WHEN 3 THEN (select item.name from catering_dict_group dic
+                left join catering_dict_group_item item on dic.id = item.group_id
+                where dic.code = 'wx_third_party_id' and item.code = cty.link LIMIT 1)
+                END) as linkStr,
+                cty.sort,
+                cty.`status`,
+                (select count(*) from catering_wx_category where type = 3 and is_del = 0) as typeNumber
+            FROM
+                catering_wx_category cty
+            <where>
+                and cty.is_del = 0
+                <if test="dto.name != null and dto.name != ''">
+                    and cty.`name` like concat('%',#{dto.name},'%')
+                </if>
+                <if test="dto.type != null">
+                    and cty.type = #{dto.type}
+                </if>
+                <if test="dto.status != null">
+                    and cty.status = #{dto.status}
+                </if>
+            </where>
+            order by cty.sort asc
+        ) as newTable
+    </select>
+
+    <update id="deleteShopId">
+        UPDATE catering_wx_category
+        SET story_list = JSON_REMOVE ( story_list, JSON_UNQUOTE ( JSON_SEARCH ( story_list, "one", #{shopId} ) ) )
+        WHERE
+          JSON_SEARCH ( story_list, "one", #{shopId} ) IS NOT NULL
+    </update>
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsGiftMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsGiftEntity" id="CateringGoodsGiftMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="giftCode" column="gift_code" jdbcType="VARCHAR"/>
+        <result property="giftName" column="gift_name" jdbcType="VARCHAR"/>
+        <result property="giftPrice" column="gift_price" jdbcType="NUMERIC"/>
+        <result property="giftStock" column="gift_stock" jdbcType="INTEGER"/>
+        <result property="giftPicture" column="gift_picture" jdbcType="VARCHAR"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <sql id="column">
+                id, gift_code, gift_name, gift_price, gift_stock, gift_picture, is_del, create_by, create_time, update_by, update_time
+    </sql>
+
+    <select id="listGiftGood" parameterType="com.meiyuan.catering.goods.dto.goods.GoodsGiftListDTO"
+            resultType="com.meiyuan.catering.goods.vo.goods.GoodsGiftListVo">
+        SELECT
+        gg.id id,
+        gg.gift_name giftName,
+        gg.gift_stock giftStock
+        FROM
+        catering_goods_gift gg
+        <where>
+            gg.is_del = 0 and gg.id in
+            <foreach collection="dto.giftGoodIds" item="giftGoodId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="maxDbCode" resultMap="CateringGoodsGiftMap">
+        SELECT
+        <include refid="column"/>
+        FROM
+        catering_goods_gift
+        ORDER BY
+        SUBSTRING(gift_code FROM 3) DESC
+        limit 1
+    </select>
+</mapper>

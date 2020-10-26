@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringShopApplyMapper">
+
+
+
+
+    <select id="listShopApply" parameterType="com.meiyuan.catering.merchant.dto.shop.ShopApplyListDTO"
+            resultType="com.meiyuan.catering.merchant.vo.ShopApplyVO">
+        select * from catering_shop_apply where 1=1
+        <if test="dto.startTime != null">
+            AND to_days(create_time) >= to_days(#{dto.startTime})
+        </if>
+        <if test="dto.endTime != null">
+            AND to_days(create_time) &lt; to_days(#{dto.endTime})
+        </if>
+        <if test="dto.handled > 0">
+            AND handled = #{dto.handled}
+        </if>
+        <if test="dto.shopName != null and dto.shopName != ''">
+            AND shop_name like concat('%', REPLACE(REPLACE(#{dto.shopName,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+        </if>
+        <if test="dto.contactNameOrPhone != null and dto.contactNameOrPhone != ''">
+            AND (
+            contact_name like concat('%', REPLACE(REPLACE(#{dto.contactNameOrPhone,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+            or
+            contact_phone like concat('%', REPLACE(REPLACE(#{dto.contactNameOrPhone,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+            )
+        </if>
+        order by create_time desc
+    </select>
+
+    <select id="selectMerchantByPhone" resultType="com.meiyuan.catering.merchant.entity.CateringMerchantEntity">
+        select * from catering_merchant where phone=#{phone} and is_del=0 limit 1
+    </select>
+
+    <select id="selectShopByNameAndPhone" resultType="com.meiyuan.catering.merchant.entity.CateringShopEntity">
+        select * from catering_shop where register_phone=#{phone} and is_del=0 limit 1
+    </select>
+    <select id="selectShopById" resultType="com.meiyuan.catering.merchant.entity.CateringShopEntity">
+        select * from catering_shop where id = #{id}
+    </select>
+
+</mapper>

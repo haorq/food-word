@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersSplitBillOrderFlowMapper">
+
+
+    <select id="listCanSplitBill"
+            resultType="com.meiyuan.catering.order.vo.splitbill.CateringOrdersSplitBillOrderFlowVO">
+        select
+            cosbof.id as id,
+            cosbof.split_bill_id as splitBillId,
+            cosbof.trading_number as tradingNumber,
+            cosbof.third_trade_number as thirdTradeNumber,
+            cosbof.collection_user as collectionUser,
+            cosbof.order_split_amount as orderSplitAmount,
+            cosbof.fee_rate as feeRate,
+            cosbof.fee as fee,
+            cosbof.split_rule as splitRule,
+            cosbof.split_type as splitType,
+            cosbof.trade_status as tradeStatus,
+            cosbof.fail_message as failMessage,
+            cosbof.success_time as successTime,
+            cosbof.notify_message as notifyMessage,
+            cosb.order_id as orderId,
+            cosb.order_number as orderNumber
+        from
+            catering_orders_split_bill_order_flow as cosbof
+            left join catering_orders_split_bill as cosb on cosb.id = cosbof.split_bill_id
+        where
+            cosbof.trade_status in (3, 4) and cosbof.is_del = 0 and cosb.is_del = 0
+    </select>
+</mapper>

@@ -1,0 +1,10 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+app:
+  id: xs-front-wx-api
+apollo:
+  meta: http://172.18.74.60:18080
+  bootstrap:
+    enabled: true
+    namespaces: application,xs-catering.common.config

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingGroupOrderMapper">
+
+    <resultMap type="com.meiyuan.catering.marketing.entity.CateringMarketingGroupOrderEntity" id="CateringMarketingGroupOrderMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="groupId" column="group_id" jdbcType="BIGINT"/>
+                        <result property="orderId" column="order_id" jdbcType="BIGINT"/>
+                        <result property="groupStartTime" column="group_start_time" jdbcType="TIMESTAMP"/>
+                        <result property="groupEndTime" column="group_end_time" jdbcType="TIMESTAMP"/>
+                        <result property="groupValidTime" column="group_valid_time" jdbcType="INTEGER"/>
+                        <result property="groupMember" column="group_member" jdbcType="INTEGER"/>
+                        <result property="nowMember" column="now_member" jdbcType="INTEGER"/>
+                        <result property="status" column="status" jdbcType="INTEGER"/>
+                        <result property="del" column="is_del" jdbcType="INTEGER"/>
+                        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+                        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+            </resultMap>
+
+    
+
+</mapper>

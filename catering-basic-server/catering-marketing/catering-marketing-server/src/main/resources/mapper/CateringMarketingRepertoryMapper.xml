@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingRepertoryMapper">
+
+    <resultMap type="com.meiyuan.catering.marketing.entity.CateringMarketingRepertoryEntity"
+               id="CateringMarketingRepertoryMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="ofId" column="of_id" jdbcType="BIGINT"/>
+        <result property="ofType" column="of_type" jdbcType="INTEGER"/>
+        <result property="totalInventory" column="total_inventory" jdbcType="INTEGER"/>
+        <result property="seckillEventId" column="seckill_event_id"/>
+        <result property="residualInventory" column="residual_inventory" jdbcType="INTEGER"/>
+        <result property="soldOut" column="sold_out" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+    <!--更新库存-->
+    <update id="updateRepertory">
+        update catering_marketing_repertory
+        set residual_inventory=residual_inventory - ${number},
+        sold_out = sold_out + ${number}
+        where is_del = false and of_id = #{id}
+        <if test="activityId != null">
+            and activity_id = #{activityId}
+        </if>
+    </update>
+    <!--更新库存批量-->
+    <update id="updateRepertoryBatch">
+        update catering_marketing_repertory
+        set residual_inventory=residual_inventory - ${number},
+        sold_out = sold_out + ${number}
+        where is_del = false
+        and of_id in
+        <foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <if test="activityId != null">
+            and activity_id = #{activityId}
+        </if>
+    </update>
+    <delete id="removeByActivityId">
+        DELETE FROM catering_marketing_repertory WHERE activity_id = #{activityId}
+    </delete>
+    <select id="getInventoryByOfId" resultMap="CateringMarketingRepertoryMap">
+        SELECT
+            mr.m_goods_id,
+            mr.seckill_event_id,
+            mr.residual_inventory
+        FROM
+            catering_marketing_repertory mr
+        left JOIN catering_marketing_seckill ms on mr.of_id = ms.id
+        WHERE
+            mr.is_del = 0
+            AND ms.is_del = 0
+            and
+            ms.up_down = 2
+            and
+            (ms.object_limit = #{userType} or ms.object_limit = 0)
+            and
+            ms.merchant_id = #{shopId,jdbcType=BIGINT}
+    </select>
+    <select id="marketingProjectedCostCount" parameterType="java.lang.Long"
+            resultType="com.meiyuan.catering.marketing.vo.repertory.MarketingRepertoryGoodsSoldVo">
+        select
+            cmr.m_goods_id as mGoodsId,
+            sum(cmr.sold_out) as soldCount
+        from
+            catering_marketing_repertory as cmr
+        where
+            cmr.of_id = #{marketingId}
+        group by cmr.m_goods_id
+    </select>
+    <select id="soldBySeckillMarketingGoodsIds"
+            resultType="com.meiyuan.catering.marketing.vo.repertory.MarketingRepertoryEventSoldVo">
+        select
+        cmr.m_goods_id as mGoodsId,
+        (cmr.total_inventory - cmr.residual_inventory) as sold
+        from
+        catering_marketing_repertory as cmr
+        where
+        cmr.m_goods_id in
+        <foreach collection="mGoodsIdSet" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and cmr.is_del = 0
+    </select>
+    <select id="soldByEventMarketingGoodsId"
+            resultType="com.meiyuan.catering.marketing.vo.repertory.MarketingRepertoryEventSoldVo">
+        select
+        cmr.m_goods_id as mGoodsId,
+        (cmr.total_inventory - cmr.residual_inventory) as sold
+        from
+        catering_marketing_repertory as cmr
+        where
+        cmr.seckill_event_id = #{eventId} and m_goods_id in
+        <foreach collection="mGoodsIdList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and cmr.is_del = 0
+    </select>
+    <update id="refurbishSeckillGoodsRepertory">
+        update catering_marketing_repertory
+        set residual_inventory = total_inventory
+        where of_type = 1 and of_id in
+        <foreach collection="seckillIdList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updateRepertoryByTicketRuleRecordId">
+        update catering_marketing_repertory
+        set residual_inventory=residual_inventory - ${number},
+        sold_out = sold_out + ${number}
+        where is_del = false
+        and ticket_rule_record_id in
+        <foreach collection="list" item="id" index="index" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="updateStockByMgoodsIdAndSeckKillEventId">
+        update catering_marketing_repertory
+        set
+        residual_inventory = residual_inventory + #{numberWithStock},
+        sold_out = sold_out + #{numberWithSoldOut}
+        where
+        m_goods_id=#{mGoodsId}
+        and seckill_event_id=#{secKillEventId}
+        <if test="0 > numberWithStock ">
+            and (residual_inventory + #{numberWithStock})&gt;=0
+        </if>
+    </update>
+
+</mapper>

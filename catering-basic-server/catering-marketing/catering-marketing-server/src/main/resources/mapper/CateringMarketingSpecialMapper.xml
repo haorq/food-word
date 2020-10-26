@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingSpecialMapper">
+    <update id="updateStatusById">
+        update catering_marketing_special set status = #{status}, update_time = #{now} where id = #{specialId}
+    </update>
+    <update id="updateUpDown">
+        update catering_marketing_special set up_down = #{upDownStatus}, update_time = #{now} where id = #{specialId}
+    </update>
+
+    <select id="verifySpecialInfo" resultType="java.lang.String">
+        select
+            `name`
+        from
+            catering_marketing_special
+        where shop_id = #{shopId} and up_down = 2 and is_del = 0 and (status = 1 or status = 2)
+        <if test="id != null">
+            and id != #{id}
+        </if>
+
+    </select>
+    <select id="verifySkuInfo" resultType="java.lang.String">
+        select
+            cmss.sku_code
+        from
+            catering_marketing_special as cms
+            left join catering_marketing_special_sku as cmss on cmss.of_id = cms.id
+        where cms.shop_id = #{shopId} and cms.up_down = 2 and cms.is_del = 0
+            and (<![CDATA[
+                   (cms.begin_time <= #{beginTime} and #{beginTime} <= cms.end_time)
+                or (cms.begin_time <= #{endTime} and #{endTime} <= cms.end_time)
+                or (cms.begin_time <= #{beginTime} and #{endTime} <= cms.end_time) ]]>)
+            and cmss.is_del = 0 and cmss.sku_code in
+            <foreach collection="goodsSkuList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            <if test="id != null">
+                and cms.id != #{id}
+            </if>
+    </select>
+    <select id="needBeginList"
+            resultType="com.meiyuan.catering.marketing.entity.CateringMarketingSpecialEntity">
+        select
+            id as id,
+            begin_time as beginTime
+        from
+            catering_marketing_special
+        where is_del = false and up_down = 2 and status = 1
+        and TO_DAYS( begin_time ) - TO_DAYS( now( ) ) = 1
+    </select>
+
+    <select id="needEndList"
+            resultType="com.meiyuan.catering.marketing.entity.CateringMarketingSpecialEntity">
+        select
+            id as id,
+            end_time as endTime
+        from
+            catering_marketing_special
+        where is_del = false and up_down = 2 and status = 2
+        and TO_DAYS( end_time ) - TO_DAYS( now( ) ) = 1
+    </select>
+    <select id="verifySpecialExisted" resultType="java.lang.String">
+        select
+            `name`
+        from
+            catering_marketing_special
+        where
+            shop_id = #{shopId} and up_down = 2 and is_del = 0 and (status = 1 or status = 2)
+            and (<![CDATA[
+                   (begin_time <= #{beginTime} and #{beginTime} <= end_time)
+                or (begin_time <= #{endTime} and #{endTime} <= end_time)
+                or (begin_time <= #{beginTime} and #{endTime} <= end_time) ]]>)
+            <if test="id != null">
+                and id != #{id}
+            </if>
+    </select>
+</mapper>

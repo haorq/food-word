@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingRecommendPrizeMapper">
+    <insert id="insertTicket">
+        insert into catering_marketing_recommend_prize_ticket_relation(id,recommend_prize_id,referrer_ticket_id,referral_ticket_id)
+        value(#{ticketDTO.id},#{ticketDTO.recommendPrizeId},#{ticketDTO.referrerTicketId},#{ticketDTO.referralTicketId})
+    </insert>
+
+    <insert id="insertRecommendRecord">
+        insert into catering_recommend_record(id,referrer_id,referral_id)
+        value(#{recommendRecordDTO.id},#{recommendRecordDTO.referrerId},#{recommendRecordDTO.referralId})
+    </insert>
+
+    <delete id="deleteTicket">
+        delete from catering_marketing_recommend_prize_ticket_relation
+        where recommend_prize_id = #{recommendPrizeId}
+    </delete>
+
+    <select id="listPage" resultType="com.meiyuan.catering.marketing.vo.recommend.RecommendPrizeListVO">
+        select r.id, r.name, r.begin_time, r.end_time, r.prize_type,r.create_time,
+        t.referrer_ticket_id, t.referral_ticket_id
+        from catering_marketing_recommend_prize r
+        left join catering_marketing_recommend_prize_ticket_relation t
+        on r.id = t.recommend_prize_id
+        where r.is_del = false
+        <if test="queryDTO.name != null and queryDTO.name != ''">
+            and r.name like concat('%',#{queryDTO.name},'%')
+        </if>
+        <if test="queryDTO.beginTime != null">
+            and r.create_time &gt;= #{queryDTO.beginTime}
+        </if>
+        <if test="queryDTO.endTime != null">
+            and r.create_time &lt;= #{queryDTO.endTime}
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 1">
+            and r.begin_time &gt; now()
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 2">
+            and r.begin_time &lt;= now() and end_time &gt;= now()
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 3">
+            and r.end_time &lt; now()
+        </if>
+        order by r.create_time desc
+    </select>
+
+    <select id="getTicket" resultType="com.meiyuan.catering.marketing.dto.recommend.RecommendPrizeTicketDTO">
+        select * from catering_marketing_recommend_prize_ticket_relation
+        where recommend_prize_id = #{recommendPrizeId}
+    </select>
+
+    <select id="countByTime" resultType="java.lang.Long">
+        select count(*) from catering_marketing_recommend_prize
+        where is_del = 0 and recommend_condition = #{recommendCondition}
+        and (
+        (#{begin} between begin_time and end_time)
+        or (#{end} between begin_time and end_time)
+        or (#{begin} &lt;= begin_time and #{end} &gt;= end_time )
+        )
+        <if test="ignoredRecommendPrizeId != null">
+            and id != #{ignoredRecommendPrizeId}
+        </if>
+    </select>
+
+    <select id="getByRecommendCondition"
+            resultType="com.meiyuan.catering.marketing.entity.CateringMarketingRecommendPrizeEntity">
+        select * from catering_marketing_recommend_prize
+        where is_del = 0 and recommend_condition = #{recommendCondition}
+        and NOW() between begin_time and end_time
+        order by begin_time desc limit 1
+    </select>
+
+    <select id="getRecommendRecordByReferralId" resultType="com.meiyuan.catering.marketing.dto.recommend.RecommendRecordDTO">
+        select * from catering_recommend_record where referral_id = #{referralId}
+    </select>
+</mapper>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringSearchHistoryMapper">
+
+    <resultMap type="com.meiyuan.catering.user.entity.CateringSearchHistoryEntity" id="CateringSearchHistoryMap">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+                    <result property="keyword" column="keyword" jdbcType="VARCHAR"/>
+                    <result property="searchNum" column="search_num" jdbcType="INTEGER"/>
+                    <result property="searchFrom" column="search_from" jdbcType="VARCHAR"/>
+                    <result property="del" column="is_del" jdbcType="INTEGER"/>
+                    <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                    <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                    <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+                    <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+            </resultMap>
+
+</mapper>

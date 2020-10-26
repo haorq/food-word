@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringRoleMapper">
+
+
+    <resultMap id="roleListMap" type="com.meiyuan.catering.admin.vo.role.AdminRoleListVO">
+        <id property="id" column="id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
+        <result property="hasOperator" column="has_operator"/>
+    </resultMap>
+
+    <insert id="insertRolePermission">
+        insert into catering_common_role_permission_relation(id,role_id,permission_id) values
+        <foreach collection="list" index="index" item="item" separator=",">
+            (
+            #{item.id},
+            #{item.roleId},
+            #{item.permissionId}
+            )
+        </foreach>
+    </insert>
+
+
+    <update id="removeById">
+    update catering_common_role set is_del = 1 where id = #{id}
+  </update>
+    <delete id="removePermission">
+        delete from catering_common_role_permission_relation where role_id = #{roleId}
+    </delete>
+    <!--角色列表-->
+    <select id="pageRole" parameterType="com.meiyuan.catering.admin.dto.role.AdminRolePageDTO" resultMap="roleListMap">
+        SELECT
+        t1.id,
+        t1.role_name,
+        t1.remark,
+        t1.create_time,
+        (select if(count(id)=0,0,1) from catering_common_subject_role_relation where role_id = t1.id) as has_operator
+        FROM catering_common_role t1
+        WHERE t1.is_del = 0 and t1.subject_id = -1
+        <if test="dto.roleName != null and dto.roleName != ''">
+            and t1.role_name like concat('%',#{dto.roleName},'%')
+        </if>
+        <if test="dto.createTimeBegin != null">
+            and t1.create_time &gt;= #{dto.createTimeBegin}
+        </if>
+        <if test="dto.createTimeEnd != null">
+            and t1.create_time &lt;= #{dto.createTimeEnd}
+        </if>
+        <if test="dto.roleIdList!= null and dto.roleIdList.size > 0">
+              and t1.id not in
+            <foreach collection="dto.roleIdList" index="index" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        order by create_time DESC
+    </select>
+
+    <resultMap id="shopRoleMap" type="com.meiyuan.catering.admin.vo.admin.admin.CommonRoleVO">
+        <id property="id" column="id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="defaultFlag" column="default_flag"/>
+        <result property="app" column="app"/>
+        <result property="pc" column="pc"/>
+    </resultMap>
+
+    <select id="pageQueryRole" parameterType="com.meiyuan.catering.admin.dto.admin.admin.CommonRolePageListParamsDTO"
+            resultMap="shopRoleMap">
+        SELECT
+        t1.id,
+        t1.role_name,
+        t1.default_flag,
+        (
+        SELECT
+
+        IF (count(*) > 0, 1, 0)
+        FROM
+        catering_common_permission t3
+        JOIN catering_common_role_permission_relation t4 ON t3.id = t4.permission_id
+        WHERE
+        t4.role_id = t1.id
+        AND t3.type = 0
+        AND t3.is_del = 0
+        ) AS pc,
+        (
+        SELECT
+
+        IF (count(*) > 0, 1, 0)
+        FROM
+        catering_common_permission t5
+        JOIN catering_common_role_permission_relation t6 ON t5.id = t6.permission_id
+        WHERE
+        t6.role_id = t1.id
+        AND t5.type = 1
+        AND t5.is_del = 0
+        ) AS app
+        FROM
+        catering_common_role t1
+        WHERE t1.is_del = 0 and t1.subject_id = #{dto.shopId}
+        <if test="dto.roleName != null and dto.roleName != ''">
+            and t1.role_name like concat('%',#{dto.roleName},'%')
+        </if>
+        order by t1.create_time DESC
+    </select>
+
+    <resultMap id="rolePermissionMap" type="com.meiyuan.catering.admin.vo.role.AdminRoleListVO">
+        <id property="id" column="role_id"/>
+        <collection property="permissionList" ofType="java.lang.Long">
+            <result column="permission_id"/>
+        </collection>
+        <collection property="parentList" ofType="java.lang.Long">
+            <result column="parent_id"/>
+        </collection>
+    </resultMap>
+    <select id="selectPermission" resultMap="rolePermissionMap">
+        select role_id,permission_id,t2.parent_id
+        from catering_common_role_permission_relation t1
+        JOIN catering_common_permission t2 on t1.permission_id = t2.id
+        WHERE t2.parent_id != 0 and t1.role_id in
+        <foreach collection="list" open="(" separator="," close=")" item="item" index="index">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectAccountPermission" resultType="com.meiyuan.catering.admin.vo.role.AdminMenuVO">
+        SELECT
+            DISTINCT
+            t2.id,
+            t2.parent_id,
+            t2.CODE,
+            t2.menu_name as label
+        FROM
+            catering_common_role_permission_relation t1
+                JOIN catering_common_permission t2 ON t1.permission_id = t2.id
+        WHERE   t2.parent_id != 0 and t2.is_del = 0 and
+                t1.role_id IN ( SELECT role_id FROM catering_common_subject_role_relation WHERE subject_id = #{accountId} )
+    </select>
+
+    <select id="getAllPermissionByType" resultType="com.meiyuan.catering.admin.vo.role.AdminMenuVO">
+        SELECT
+        id,
+        parent_id,
+        code,
+        menu_name as label
+        FROM
+        catering_common_permission
+        WHERE type in
+        <foreach collection="list" open="(" separator="," close=")" item="item" index="index">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <select id="getMerchantAllPermissions" resultType="com.meiyuan.catering.admin.vo.role.MerchantMenuVO">
+        select
+            id,
+            menu_name as label,
+            code,
+            parent_id,
+            sort
+        from catering_common_permission
+        where type = 1 and is_del = 0
+
+    </select>
+
+    <select id="getHasPermissions" resultType="com.meiyuan.catering.admin.vo.role.MerchantMenuVO">
+       SELECT
+            t1.id,
+            t1.menu_name AS label,
+            t1. CODE,
+            t1.parent_id,
+            t1.sort
+        FROM
+            catering_common_permission t1
+        JOIN catering_common_role_permission_relation t2 ON t2.permission_id = t1.id
+        WHERE
+            t1.type = 1
+        AND t1.is_del = 0
+        AND t2.role_id IN (
+            SELECT
+                role_id
+            FROM
+                catering_common_subject_role_relation
+            WHERE
+                subject_id = #{accountTypeId}
+        );
+    </select>
+
+    <select id="getPermissionCountByType" resultType="java.lang.Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            catering_common_permission t1
+        INNER JOIN catering_common_role_permission_relation t2 ON t1.id = t2.permission_id
+        WHERE
+            t2.role_id IN (
+                SELECT
+                    role_id
+                FROM
+                    catering_common_subject_role_relation
+                WHERE
+                    subject_id = #{employeeId}
+            )
+        AND t1.type = #{type}
+        AND t1.is_del = 0
+    </select>
+
+
+    <select id="getRoleListByAccountTypeId" resultType="com.meiyuan.catering.admin.entity.CateringRoleEntity">
+        SELECT * FROM catering_common_role
+        where subject_id = #{accountTypeId} and is_del = 0
+    </select>
+
+    <select id="selectPermissionByRoleId" resultType="com.meiyuan.catering.admin.vo.admin.admin.PermissionVO">
+        select role_id,permission_id,t2.parent_id, t2.type
+            from catering_common_role_permission_relation t1
+            JOIN catering_common_permission t2 on t1.permission_id = t2.id
+            WHERE t2.parent_id != 0 and t1.role_id = #{roleId}
+    </select>
+
+    <select id="getPermissionByCodeList" resultType="com.meiyuan.catering.admin.entity.CateringPermissionEntity">
+        select * from catering_common_permission where is_del = 0 and type = 1 and code in
+        <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="selectByIds" resultType="java.lang.Integer">
+        select count(*) from catering_common_role
+        <where>
+            <if test="shopId != null">
+                and subject_id = #{shopId}
+            </if>
+            <if test="ids.size()>0">
+                and id in
+                <foreach collection="ids" open="(" separator="," close=")" item="item" index="index">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsEntity" id="CateringGoodsMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="spuCode" column="spu_code" jdbcType="VARCHAR"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="listPicture" column="list_picture" jdbcType="VARCHAR"/>
+        <result property="infoPicture" column="info_picture" jdbcType="VARCHAR"/>
+        <result property="sharePicture" column="share_picture" jdbcType="VARCHAR"/>
+        <result property="goodsSynopsis" column="goods_synopsis" jdbcType="VARCHAR"/>
+        <result property="goodsStatus" column="goods_status" jdbcType="INTEGER"/>
+        <result property="goodsWeight" column="goods_weight" jdbcType="INTEGER"/>
+        <result property="unit" column="unit" jdbcType="VARCHAR"/>
+        <result property="goodsSpecType" column="goods_spec_type" jdbcType="INTEGER"/>
+        <result property="marketPrice" column="market_price" jdbcType="DECIMAL"/>
+        <result property="salesPrice" column="sales_price" jdbcType="DECIMAL"/>
+        <result property="enterprisePrice" column="enterprise_price" jdbcType="DECIMAL"/>
+        <result property="goodsDescribeText" column="goods_describe_text" jdbcType="VARCHAR"/>
+        <result property="lowestBuy" column="lowest_buy" jdbcType="BIGINT"/>
+        <result property="highestBuy" column="highest_buy" jdbcType="BIGINT"/>
+        <result property="goodsAddType" column="goods_add_type" jdbcType="INTEGER"/>
+        <result property="merchantId" column="merchant_id" jdbcType="INTEGER"/>
+        <result property="startSellTime" column="start_sell_time" jdbcType="TIMESTAMP"/>
+        <result property="endSellTime" column="end_sell_time" jdbcType="TIMESTAMP"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="sqlColumn">
+        spu_code, goods_name, list_picture, info_picture, share_picture, goods_synopsis, goods_status, goods_weight,
+        unit, goods_spec_type, market_price, sales_price, enterprise_price, goods_describe_text, lowest_buy, highest_buy,
+        goods_add_type, merchant_id, start_sell_time, end_sell_time, is_del, create_by, create_time, update_by, update_time
+    </sql>
+    <!--商品列表-->
+    <select id="listLimit" resultType="com.meiyuan.catering.goods.dto.goods.GoodsListDTO">
+        select
+        goods.id as goodsId,
+        goods.spu_code as spuCode,
+        goods.`info_picture` as listPicture,
+        goods.goods_name as goodsName,
+        if(min(sku.market_price) is null,1,0) as nullMinMarketPrice,
+        min(sku.market_price) as marketPrice,
+        min(sku.sales_price) as salesPrice,
+        min(sku.enterprise_price) as enterprisePrice,
+        goods.goods_status as goodsStatus,
+        category.category_name as categoryName,
+        `data`.sales_count as salesCount,
+        goods.create_time as createTime
+        from
+        catering_goods as goods
+        left join catering_goods_sku sku on goods.id = sku.goods_id
+        left join catering_goods_category_relation categoryRelation on goods.id = categoryRelation.goods_id
+        left join catering_category category on categoryRelation.category_id = category.id
+        left join catering_goods_data `data` on `data`.goods_id = goods.id
+        where
+        goods.is_del = 0
+        and
+        sku.is_del = 0
+        and goods.merchant_id = #{merchantId}
+        <if test="goodsNameCode != null and goodsNameCode !=''">
+            and ( goods.spu_code like concat('%', #{goodsNameCode}, '%') or goods.goods_name like concat('%',
+            #{goodsNameCode}, '%') )
+        </if>
+        <if test="categoryId != null">
+            and category.id = #{categoryId}
+        </if>
+        <if test="goodsStatus != null">
+            and goods.goods_status = #{goodsStatus}
+        </if>
+        <if test="startCreateTime != null">
+            AND goods.create_time &gt;= #{startCreateTime}
+        </if>
+        <if test="endCreateTime != null">
+            AND goods.create_time &lt; DATE_ADD(#{endCreateTime},INTERVAL 1 DAY)
+        </if>
+        group by goods.id
+        order by goods.create_time desc
+    </select>
+
+    <!--团购秒杀商品列表-->
+    <select id="groupBuySeckillGoodsList" resultType="com.meiyuan.catering.goods.dto.goods.GroupBuySeckillGoodsDTO">
+        select
+        goods.id as goodsId,
+        goods.spu_code as spuCode,
+        goods.goods_name as goodsName,
+        category.id as categoryId,
+        category.category_name as categoryName
+        from
+        catering_goods as goods
+        left join catering_goods_category_relation categoryRelation on goods.id = categoryRelation.goods_id
+        left join catering_category category on categoryRelation.category_id = category.id
+        where goods.is_del = 0
+        and goods.goods_status = 2
+        and goods.merchant_id = #{merchantId}
+        and((goods.start_sell_time &lt;= #{startSellTime} and goods.end_sell_time is null)
+        or (goods.start_sell_time is null and goods.end_sell_time is null)
+        or( goods.start_sell_time is null and goods.end_sell_time>= #{startSellTime})
+        or( goods.start_sell_time &lt;= #{startSellTime} and goods.end_sell_time>= #{startSellTime}))
+        <if test="goodsIdList != null and goodsIdList.size > 0">
+            and goods.id in (
+            <foreach collection="goodsIdList" item="item" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="list != null and list.size > 0">
+            and goods.id not in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="categoryId != null">
+            and category.id = #{categoryId}
+        </if>
+        <if test="goodsNameCode != null and goodsNameCode !=''">
+            and goods.goods_name like concat('%', #{goodsNameCode}, '%')
+        </if>
+    </select>
+
+    <!--获取分类id根据商品id集合-->
+    <select id="getCategoryIdByGoodsIdList" resultType="com.meiyuan.catering.goods.dto.goods.GoodsIdAndCategoryIdDTO">
+        select
+        goods.id as goodsId,
+        category.id as categoryId
+        from
+        catering_goods as goods
+        left join catering_goods_category_relation categoryRelation on goods.id = categoryRelation.goods_id
+        left join catering_category category on categoryRelation.category_id = category.id
+        where goods.id in (
+        <foreach collection="list" item="item" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <!--商户商品列表-->
+    <select id="listLimitForMerchant" resultType="com.meiyuan.catering.goods.dto.goods.GoodsListDTO">
+        select
+        shop_spu.goods_id as goodsId,
+        shop_spu.spu_code as spuCode,
+        mgoods.`info_picture` as listPicture,
+        mgoods.goods_name as goodsName,
+        (select change_good_price from catering_shop where id = #{merchantId})as changeGoodPrice,
+        mgoods_ext.goods_spec_type as goodsSpecType,
+        mgoods_ext.merchant_goods_status as platformGoodsStatus,
+        MIN(shop_sku.market_price) as marketPrice,
+        IFNULL(MIN(shop_sku.sales_price),-1) as salesPrice,
+        IFNULL(MIN(shop_sku.enterprise_price),-1) as enterprisePrice,
+        shop_spu.shop_goods_status as goodsStatus
+        from
+        catering_shop_goods_spu shop_spu
+        left join catering_shop_goods_sku shop_sku
+        on shop_spu.id = shop_sku.shop_goods_spu_id
+        left join catering_merchant_goods mgoods
+        on (mgoods.goods_id = shop_spu.goods_id and mgoods.merchant_id = shop_spu.merchant_id)
+        left join catering_merchant_goods_extend mgoods_ext
+        on (mgoods.goods_id = mgoods_ext.goods_id and mgoods.merchant_id = mgoods_ext.merchant_id)
+        where
+        shop_spu.is_del = 0
+        and shop_spu.shop_id = #{merchantId}
+        <if test="goodsNameCode != null and goodsNameCode !=''">
+            and mgoods.goods_name like concat('%', #{goodsNameCode}, '%')
+        </if>
+        <if test="categoryId != null">
+            and mgoods_ext.category_id = #{categoryId}
+        </if>
+        <if test="goodsStatus != null and goodsStatus != 3">
+            <if test="goodsStatus == 1">
+                and shop_spu.shop_goods_status = #{goodsStatus}
+            </if>
+            <if test="goodsStatus == 2">
+                and shop_spu.shop_goods_status = #{goodsStatus}
+            </if>
+        </if>
+        GROUP BY shop_spu.goods_id
+        order by shop_spu.create_time desc
+    </select>
+
+    <!--批量获取根据查询条件-->
+    <select id="list" resultType="com.meiyuan.catering.goods.dto.goods.GoodsListDTO">
+        select
+        goods.id as goodsId,
+        goods.goods_name as goodsName
+        from
+        catering_goods goods
+        left join catering_goods_category_relation cr on goods.id = cr.goods_id
+        where
+        goods.is_del = 0
+        <if test="goodsNameCode != null and goodsNameCode != ''">
+            and goods.goods_name like concat('%', #{goodsNameCode}, '%')
+        </if>
+        <if test="categoryId != null">
+            and cr.category_id = #{categoryId}
+        </if>
+        <if test="idList != null and idList.size > 0">
+            and goods.id not in (
+            <foreach collection="idList" item="item" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <!--根据商品分类集合查询商品列表-->
+    <select id="listByCategoryIdList" resultType="com.meiyuan.catering.goods.dto.goods.GoodsListDTO">
+        select
+        goods.id as goodsId,
+        goods.goods_name as goodsName
+        from
+        catering_goods goods,catering_goods_category_relation relation,catering_category category
+        where
+        goods.id=relation.goods_id
+        and category.id=relation.category_id
+        and category.id in
+        <foreach collection="categoryIdList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="maxDbCode" resultMap="CateringGoodsMap">
+        SELECT
+        <include refid="sqlColumn"/>
+        FROM
+        catering_goods
+        ORDER BY
+        create_time DESC
+        LIMIT 1
+    </select>
+
+
+    <select id="pushGoodsList" resultType="com.meiyuan.catering.goods.dto.goods.GoodsPushList">
+        select
+        goods.id as goodsId,
+        goods.spu_code as spuCode,
+        goods.`info_picture` as listPicture,
+        goods.goods_name as goodsName
+
+        from
+        catering_goods as goods
+        where
+        goods.is_del = 0
+        <if test="dto.goodsName != null and dto.goodsName  !=''">
+            and goods.goods_name like concat('%', #{dto.goodsName }, '%')
+        </if>
+        order by goods.create_time desc
+    </select>
+</mapper>

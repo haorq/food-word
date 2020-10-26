@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringMerchantLoginAccountMapper">
+
+        <!-- 通用查询映射结果 -->
+        <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.entity.CateringMerchantLoginAccountEntity">
+                    <id column="id" property="id" />
+                    <result column="phone" property="phone" />
+                    <result column="password" property="password" />
+                    <result column="account_type" property="accountType" />
+                    <result column="account_type_id" property="accountTypeId" />
+                    <result column="account_status" property="accountStatus" />
+                    <result column="is_del" property="isDel" />
+                    <result column="last_login_time" property="lastLoginTime" />
+                    <result column="create_time" property="createTime" />
+                    <result column="update_time" property="updateTime" />
+        </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, phone, password, account_type, account_type_id, account_status, is_del, last_login_time, create_time, update_time
+    </sql>
+    <select id="getMaxAccountNum" resultType="java.lang.Integer">
+        SELECT
+            substring( mla.phone, 3, 10 ) AS accountNum
+        FROM
+            catering_merchant_login_account mla
+        WHERE
+            mla.account_type = 1
+        ORDER BY
+            accountNum + 0 DESC
+            LIMIT 1;
+    </select>
+
+    <update id="batchDelEmployee">
+        update catering_merchant_login_account set
+        `is_del` = 1
+        where
+        account_type_id in (
+        <foreach collection="ids" item="item" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+</mapper>

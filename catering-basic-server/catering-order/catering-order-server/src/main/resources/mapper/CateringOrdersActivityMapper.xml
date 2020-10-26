@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersActivityMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersActivityEntity" id="CateringOrdersActivityMap">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+                    <result property="relationDimension" column="relation_dimension" jdbcType="INTEGER"/>
+                    <result property="relationId" column="relation_id" jdbcType="VARCHAR"/>
+                    <result property="activityType" column="activity_type" jdbcType="INTEGER"/>
+                    <result property="activityId" column="activity_id" jdbcType="VARCHAR"/>
+                    <result property="activityNo" column="activity_no" jdbcType="VARCHAR"/>
+                    <result property="activityName" column="activity_name" jdbcType="VARCHAR"/>
+                    <result property="activityTimeLimited" column="activity_time_limited" jdbcType="INTEGER"/>
+                    <result property="activityBeginTime" column="activity_begin_time" jdbcType="TIMESTAMP"/>
+                    <result property="activityEndTime" column="activity_end_time" jdbcType="TIMESTAMP"/>
+                    <result property="del" column="is_del" jdbcType="INTEGER"/>
+                    <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                    <result property="createName" column="create_name" jdbcType="VARCHAR"/>
+                    <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                    <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                    <result property="updateName" column="update_name" jdbcType="VARCHAR"/>
+                    <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            </resultMap>
+    <select id="marketingOrderAmountCount"
+            resultType="com.meiyuan.catering.marketing.vo.marketing.MarketingSeckillGrouponOrderAmountCountVO">
+         select
+               coa.activity_id as ofId,
+               coa.activity_type as ofType,
+               sum(co.discount_before_fee) as count
+        from
+            (select distinct relation_id, activity_id, activity_type from catering_orders_activity) as coa
+            left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        where
+            co.is_del = 0 and co.is_del = 0
+            and co.status != 1 and co.paid_time is not null
+            <if test="marketingIds != null and marketingIds.size() > 0">
+                and coa.activity_id in
+                <foreach collection="marketingIds" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        group by coa.activity_id
+    </select>
+    <select id="marketingRelationOrderCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        select
+            count(1)
+        from
+            (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{marketingId} and co.is_del = 0 and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+    </select>
+    <select id="marketingGoodsBusinessCount"
+            resultType="com.meiyuan.catering.order.vo.marketing.MarketingOrderGoodsCountVo">
+        select
+            cog.goods_sku_code as sku,
+            count(1) as orderNumCount,
+            sum(cog.discount_later_fee) as orderBusinessCount
+        from
+            catering_orders_activity as coa
+        left join catering_orders_goods as cog on cog.id = coa.relation_id
+        left join catering_orders as co on co.id = cog.order_id and co.is_del=0
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{marketingId} and co.is_del = 0 and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+        group by cog.goods_sku_code
+    </select>
+    <select id="marketingRealBusinessCount" resultType="java.math.BigDecimal">
+        select
+            sum(co.discount_before_fee)
+        from
+            (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        where
+            coa.activity_id = #{marketingId} and co.is_del = 0
+            and co.status != 1 and co.paid_time is not null
+    </select>
+    <select id="seckillRealCostCount" resultType="java.math.BigDecimal">
+        select
+            sum(cog.discount_before_fee - cog.discount_later_fee)
+        from
+        (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{seckillId} and co.is_del = 0
+            <if test="type == 0">
+                and (cor.refund_status is null or cor.refund_status != 2)
+            </if>
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+            and cog.skill_event_id in
+            <foreach collection="seckillEventIdSet" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and cog.goods_sku_code in
+            <foreach collection="skuCodeSet" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+
+    <select id="oldSeckillRealCostCount" resultType="java.math.BigDecimal">
+        select
+            sum(cog.discount_before_fee - cog.discount_later_fee)
+        from
+            catering_orders_activity as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{seckillId} and co.is_del = 0 and cog.goods_type = 2
+            <if test="type == 0">
+                and (cor.refund_status is null or cor.refund_status != 2)
+            </if>
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+    </select>
+
+    <select id="seckillGoodsBusinessCount"
+            resultType="com.meiyuan.catering.order.vo.marketing.MarketingOrderGoodsCountVo">
+       select
+            cog.goods_sku_code as sku,
+            count(1) as orderNumCount,
+            sum(cog.discount_later_fee) as orderBusinessCount
+        from
+        (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{seckillId} and co.is_del = 0 and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+            and cog.skill_event_id in
+            <foreach collection="seckillEventIdSet" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and cog.goods_sku_code in
+            <foreach collection="skuCodeSet" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        group by cog.goods_sku_code
+    </select>
+
+    <select id="oldSeckillGoodsBusinessCount"
+            resultType="com.meiyuan.catering.order.vo.marketing.MarketingOrderGoodsCountVo">
+        select
+            cog.goods_sku_code as sku,
+            count(1) as orderNumCount,
+            sum(cog.discount_later_fee) as orderBusinessCount
+        from
+            catering_orders_activity as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{seckillId} and co.is_del = 0 and cog.goods_type = 2 and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+        group by cog.goods_sku_code
+    </select>
+
+    <select id="grouponRealCostCount" resultType="java.math.BigDecimal">
+        select
+            sum(cog.discount_before_fee - cog.discount_later_fee)
+        from
+            catering_orders_activity as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{grouponId} and co.is_del = 0
+            <if test="type == 0">
+                and (cor.refund_status is null or cor.refund_status != 2)
+            </if>
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+    </select>
+    <select id="grouponGoodsBusinessCount"
+            resultType="com.meiyuan.catering.order.vo.marketing.MarketingOrderGoodsCountVo">
+        select
+            cog.goods_sku_code as sku,
+            count(1) as orderNumCount,
+            sum(cog.discount_later_fee) as orderBusinessCount
+        from
+            catering_orders_activity as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{grouponId} and co.is_del = 0 and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+        group by cog.goods_sku_code
+    </select>
+    <select id="seckillSoldCount"
+            resultType="com.meiyuan.catering.marketing.vo.repertory.MarketingRepertoryGoodsSoldVo">
+        select
+            cog.goods_sku_code as goodsSkuCode,
+            sum(cog.quantity) as soldCount
+        from
+        (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+        coa.activity_id = #{seckillId} and co.is_del = 0 and (cor.refund_status is null or cor.refund_status != 2)
+        and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+        and cog.skill_event_id in
+        <foreach collection="seckillEventIdSet" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and cog.goods_sku_code in
+        <foreach collection="skuCodeSet" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by cog.goods_sku_code
+    </select>
+    <select id="oldSeckillSoldCount"
+            resultType="com.meiyuan.catering.marketing.vo.repertory.MarketingRepertoryGoodsSoldVo">
+        select
+            cog.goods_sku_code as goodsSkuCode,
+            sum(cog.quantity) as soldCount
+        from
+            catering_orders_activity as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{seckillId} and co.is_del = 0 and cog.goods_type = 2 and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+        group by cog.goods_sku_code
+    </select>
+    <select id="specialRealCostCount" resultType="java.math.BigDecimal">
+        select
+            sum(cog.discount_before_fee - cog.discount_later_fee)
+        from
+            (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+        coa.activity_id = #{specialId} and co.is_del = 0 and cog.goods_type = 4 and cog.skill_event_id = #{specialId} and (cor.refund_status is null or cor.refund_status != 2)
+        and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+    </select>
+    <select id="specialBusinessCostCount" resultType="java.math.BigDecimal">
+        select
+            sum(cog.discount_later_fee)
+        from
+            (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{specialId} and co.is_del = 0 and cog.goods_type = 4 and cog.skill_event_id = #{specialId} and (cor.refund_status is null or cor.refund_status != 2)
+            and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+    </select>
+    <select id="effectGoodsCount"
+            resultType="com.meiyuan.catering.marketing.vo.special.MarketingSpecialEffectGoodsCountVO">
+        select
+            cog.goods_sku_code as skuCode,
+            count(co.id) as relationOrderNum,
+            sum(cog.quantity) as soldOutQuantity,
+            sum(cog.discount_later_fee) as business
+        from
+        (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        left join catering_orders_goods as cog on cog.order_id = co.id
+        left join catering_orders_refund as cor on cor.order_id = co.id
+        where
+            coa.activity_id = #{specialId} and co.is_del = 0 and cog.goods_type = 4 and cog.skill_event_id = #{specialId} and (cor.refund_status is null or cor.refund_status != 2)
+        and (co.status = 2 or co.status = 3 or co.status = 4 or co.status = 5 or co.status = 8 or co.status = 7)
+            and cog.goods_sku_code in
+            <foreach collection="specialGoodsSkuList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            group by cog.goods_sku_code
+    </select>
+    <select id="specialRealBusinessCount" resultType="java.math.BigDecimal">
+        select
+            sum(co.discount_before_fee)
+        from
+            (select distinct relation_id, activity_id from catering_orders_activity) as coa
+        left join catering_orders as co on co.id = coa.relation_id and co.is_del=0
+        where
+            coa.activity_id = #{specialId} and co.is_del = 0
+            and co.status != 1 and co.paid_time is not null
+    </select>
+
+</mapper>

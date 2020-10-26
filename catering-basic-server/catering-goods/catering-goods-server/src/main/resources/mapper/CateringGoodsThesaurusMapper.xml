@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsThesaurusMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsThesaurusEntity" id="CateringGoodsThesaurusMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="keyWorld" column="key_world" jdbcType="VARCHAR"/>
+                        <result property="sort" column="sort" jdbcType="INTEGER"/>
+                        <result property="goodsId" column="goods_id" jdbcType="INTEGER"/>
+            </resultMap>
+
+    
+
+</mapper>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingPickupPointMapper">
+
+    <select id="listPickupGiftPage" resultType="com.meiyuan.catering.marketing.vo.pickup.PickupGiftListVO">
+        SELECT
+            mpp.id id,ppgr.gift_id giftId,mpp.create_time
+        FROM
+            catering_marketing_pickup_point mpp
+        left join
+            catering_marketing_pickup_point_gift_relation ppgr on ppgr.pickup_id = mpp.id
+        <where>
+            mpp.is_del = 0
+            <if test="dto.beginTime != null">
+                and mpp.create_time &gt;= #{dto.beginTime}
+            </if>
+            <if test="dto.endTime != null">
+                and mpp.create_time &lt; #{dto.endTime}
+            </if>
+        </where>
+        ORDER BY mpp.create_time DESC
+    </select>
+    <insert id="insertPickupPointGifRelation">
+        insert into catering_marketing_pickup_point_gift_relation(id,pickup_id,gift_id)
+        values(#{id},#{activityId},#{giftId})
+    </insert>
+
+    <insert id="insertPickupPointShopRelation">
+        insert into catering_marketing_pickup_point_shop_relation(id,pickup_id,shop_id,gift_quantity,gift_remain_quantity,is_del)
+        values
+        <foreach collection="shopList" item="shop" open="(" close=")" separator="),(">
+            #{shop.id},#{activityId},#{shop.shopId},#{shop.giftQuantity},#{shop.giftQuantity},false
+        </foreach>
+    </insert>
+
+    <select id="listPickupActivityGoodId" resultType="com.meiyuan.catering.marketing.vo.pickup.PickupCiftGoodInfoVO">
+        SELECT
+            mppgr.gift_id id,mppgr.gift_quantity giftQuantity
+        FROM
+            catering_marketing_pickup_point cmpp
+            LEFT JOIN catering_marketing_pickup_point_gift_relation mppgr ON mppgr.pickup_id= cmpp.id
+        where
+        cmpp.id = #{id}
+    </select>
+
+    <select id="listPickupRemainGifts" resultType="com.meiyuan.catering.marketing.dto.pickup.PickupRemainGiftDTO">
+        SELECT
+            mppgr.gift_id id,mppgr.gift_remain_quantity remainGiftQuantity
+        FROM
+            catering_marketing_pickup_point cmpp
+            LEFT JOIN catering_marketing_pickup_point_gift_relation mppgr ON mppgr.pickup_id= cmpp.id
+        where
+        cmpp.id = #{id}
+    </select>
+
+    <select id="listActivityShop" resultType="com.meiyuan.catering.marketing.dto.pickup.PickupGiftShopDTO">
+        SELECT
+            ppsr.shop_id,
+            ppsr.gift_quantity giftQuantity
+        FROM
+            catering_marketing_pickup_point cmpp
+            LEFT JOIN catering_marketing_pickup_point_shop_relation ppsr ON cmpp.id = ppsr.pickup_id
+        where
+        cmpp.id = #{id}
+    </select>
+
+    <select id="listGiftActivitySame"  resultType="com.meiyuan.catering.marketing.entity.CateringMarketingPickupPointEntity">
+        SELECT
+          ppgr.pickup_id id
+        FROM
+            catering_marketing_pickup_point_gift_relation ppgr
+            LEFT JOIN  catering_marketing_pickup_point pp on pp.id = ppgr.pickup_id
+        WHERE
+            pp.is_del = false and ppgr.gift_id = #{giftId}
+    </select>
+
+    <select id="listShopId" resultType="long">
+        SELECT
+        ppsr.shop_id shopId
+        FROM
+            catering_marketing_pickup_point pp
+            LEFT JOIN  catering_marketing_pickup_point_shop_relation ppsr on pp.id = ppsr.pickup_id
+        WHERE
+            ppsr.is_del = false and
+            pp.id IN
+        <foreach collection="activityIds" item="activityId" open="(" close=")" separator=",">
+            #{activityId}
+        </foreach>
+        GROUP BY ppsr.shop_id
+    </select>
+
+    <select id="listGiftByShop" resultType="com.meiyuan.catering.marketing.vo.pickup.ShopGiftVO">
+        SELECT
+            pp.id pickupId,
+            ppgr.gift_id giftId,
+            ppsr.gift_remain_quantity giftStock
+        FROM
+            catering_marketing_pickup_point pp
+            RIGHT JOIN  catering_marketing_pickup_point_shop_relation ppsr on pp.id = ppsr.pickup_id AND ppsr.shop_id = #{shopId}
+            RIGHT JOIN catering_marketing_pickup_point_gift_relation ppgr on ppgr.pickup_id = pp.id
+        WHERE
+            pp.is_del = false
+            <if test="giftIds != null and giftIds.size != 0">
+                AND ppgr.gift_id IN
+                <foreach collection="giftIds" item="giftId" open="(" close=")" separator=",">
+                    #{giftId}
+                </foreach>
+            </if>
+        GROUP BY ppgr.gift_id
+        ORDER BY pp.create_time DESC
+    </select>
+
+    <select id="listShopGift" resultType="com.meiyuan.catering.marketing.vo.pickup.ShopGiftVO">
+        SELECT
+            ppsr.gift_remain_quantity giftStock,
+            ppsr.pickup_id pickupId
+        FROM
+            catering_marketing_pickup_point_shop_relation  ppsr
+        WHERE
+            ppsr.is_del = false and ppsr.shop_id = #{shopId} and
+        ppsr.pickup_id IN
+        <foreach collection="pickupIds" item="pickupId" open="(" close=")" separator=",">
+            #{pickupId}
+        </foreach>
+    </select>
+
+</mapper>

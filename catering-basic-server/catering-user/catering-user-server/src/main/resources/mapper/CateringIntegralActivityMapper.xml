@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringIntegralActivityMapper">
+
+    <update id="modifyById">
+        UPDATE
+            catering_integral_activity
+        SET
+          integral_no=#{integralNo} ,
+          integral_name=#{integralName} ,
+          integral=#{integral} ,
+          name=#{name} ,
+          validity=#{validity} ,
+          remark=#{remark} ,
+          user_type=#{userType} ,
+          status=#{status}
+         WHERE
+          id=#{id}
+         AND is_del=0
+    </update>
+
+
+    <select id="queryNotDeleteList" resultType="java.lang.String">
+        SELECT
+          integral_no
+        FROM
+          catering_integral_activity
+        WHERE is_del=0
+    </select>
+    <select id="appraiseIntegral" resultType="com.meiyuan.catering.user.entity.CateringIntegralActivityEntity">
+        SELECT
+        	id,
+            name,
+            integral_no integralNo,
+            integral_name integralName,
+            integral,
+            user_type
+        FROM
+          `catering_integral_activity`
+        WHERE
+          is_del = 0
+        and
+          `status`=0
+        and
+          (user_type = #{userType} or user_type =0)
+        and
+          integral_no in ("L004","L005","L006")
+    </select>
+</mapper>

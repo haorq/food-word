@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringMerchantCategoryMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.goods.entity.CateringMerchantCategoryEntity">
+        <id column="id" property="id"/>
+        <result column="merchant_id" property="merchantId"/>
+        <result column="default_category" property="defaultCategory"/>
+        <result column="category_name" property="categoryName"/>
+        <result column="icon_url" property="iconUrl"/>
+        <result column="category_picture" property="categoryPicture"/>
+        <result column="sort" property="sort"/>
+        <result column="category_describe" property="categoryDescribe"/>
+        <result column="category_add_type" property="categoryAddType"/>
+        <result column="is_del" property="del"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id
+        ,
+        merchant_id,
+        default_category,
+        category_name,
+        icon_url,
+        category_picture,
+        sort,
+        category_describe,
+        category_add_type,
+        is_del,
+        create_by,
+        create_time,
+        update_by,
+        update_time
+    </sql>
+
+    <update id="deleteForApp">
+
+
+    </update>
+
+    <select id="queryPageList" resultType="com.meiyuan.catering.merchant.goods.vo.MerchantCategoryVO">
+        select count(cmge.id) as goodsCount, cmc.* from catering_merchant_category cmc
+        left join catering_merchant_goods_extend cmge on (cmc.id = cmge.category_id and cmc.merchant_id =
+        cmge.merchant_id    AND	 cmge.is_del = 0  and cmge.goods_add_type !=3)
+        <where>
+            and cmc.is_del = 0
+            and cmc.merchant_id = #{dto.merchantId}
+            <if test="null != dto.categoryName and '' != dto.categoryName">
+                and cmc.category_name like concat('%', #{dto.categoryName}, '%')
+            </if>
+        </where>
+        group by cmc.id
+        order by cmc.create_time desc
+    </select>
+
+    <select id="queryAll" resultType="com.meiyuan.catering.merchant.goods.vo.MerchantCategoryDownVO">
+        select id,
+               category_name,
+               default_category
+               from catering_merchant_category
+        <where>
+            and is_del = 0
+            and merchant_id = #{dto.merchantId}
+            <if test="null != dto.categoryName and '' != dto.categoryName">
+                and category_name like concat('%', #{dto.categoryName}, '%')
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+
+    <!--商品名称模糊搜索返回对应分类集合-->
+    <select id="listByGoodsName" resultType="com.meiyuan.catering.goods.dto.goods.GoodsCategoryAndLabelDTO">
+        select DISTINCT temp.id,
+        temp.`name`,
+        temp.sort
+        FROM (
+        SELECT DISTINCT
+        t1.id,
+        t1.category_name AS `name`,
+        (SELECT max(if((shop_sku.remain_stock=-1 || shop_sku.remain_stock>0),1,0)) FROM catering_shop_goods_sku shop_sku
+        WHERE shop_sku.shop_id =#{dto.merchantId} AND shop_sku.is_del = 0 and shop_sku.goods_id = t2.goods_id)
+        AS remain_stock,
+        g_spu.shop_goods_status as goodsStatus,
+        tr.sort as sort,
+        t2.merchant_goods_status as platformGoodsStatus
+        FROM
+        catering_shop_goods_spu g_spu
+        LEFT JOIN catering_merchant_goods_extend t2 ON ( g_spu.goods_id = t2.goods_id AND g_spu.merchant_id =
+        t2.merchant_id )
+        LEFT JOIN catering_merchant_category t1 ON t1.id = t2.category_id
+        LEFT JOIN catering_category_shop_relation tr ON t1.id = tr.category_id
+        WHERE
+        t1.is_del = 0
+        AND t2.is_del=0
+        AND g_spu.is_del=0
+        AND g_spu.shop_id = #{dto.merchantId}
+        <where>
+            <if test="dto.goodsName!= null and dto.goodsName!= ''">
+                AND t2.merchant_goods_name like concat('%', #{dto.goodsName},'%')
+            </if>
+        </where>
+        order by tr.sort )as temp
+        <where>
+            <if test="dto.type == 4">
+                and temp.remain_stock = 0
+                and temp.goodsStatus = 2
+                and temp.platformGoodsStatus = 2
+            </if>
+            <if test="dto.type == 2">
+                and temp.platformGoodsStatus = 2
+                and temp.goodsStatus = 2
+                and temp.remain_stock != 0
+            </if>
+            <if test="dto.type == 1">
+                and temp.platformGoodsStatus = 1
+                or temp.goodsStatus=1
+            </if>
+        </where>
+        GROUP BY temp.id
+        ORDER BY temp.sort
+    </select>
+
+    <!--商户app 商品分类条件查询-->
+    <select id="queryPageListForApp" resultType="com.meiyuan.catering.merchant.goods.vo.MerchantCategoryDownVO">
+        SELECT
+        mc.id,
+        mc.category_name,
+        mc.default_category as defaulCategory,
+        sr.sort,
+        mc.category_add_type as categoryAndType
+        FROM catering_merchant_category mc
+        LEFT JOIN catering_category_shop_relation sr on mc.id = sr.category_id
+        <where>
+            and mc.is_del = 0
+            <if test="null != dto.categoryName and '' != dto.categoryName">
+                and mc.category_name like concat('%', #{dto.categoryName}, '%')
+            </if>
+            <if test="null != dto.merchantId and '' != dto.merchantId">
+                and sr.shop_id =#{dto.merchantId}
+            </if>
+            <if test="dto.categoryAndType !=null">
+                and mc.category_add_type = #{dto.categoryAndType}
+            </if>
+        </where>
+        GROUP BY mc.id
+        order by sr.sort asc
+    </select>
+    <select id="queryCategoryByIds" resultType="com.meiyuan.catering.goods.dto.category.CategoryDTO">
+        SELECT distinct
+        c.id as id,
+        c.category_name as categoryName,
+        c.default_category as defaultCategory,
+        c.category_picture as categoryPicture,
+        c.category_describe as categoryDescribe
+        FROM
+        catering_merchant_category c
+        left JOIN catering_category_shop_relation sc on c.id = sc.category_id
+        where
+        c.is_del = 0
+        and
+        sc.shop_id = #{shopId}
+        and
+        c.id in
+        <foreach collection="categoryIds" item="categoryId" separator="," open="(" close=")">
+            #{categoryId}
+        </foreach>
+
+        ORDER BY sc.sort
+    </select>
+    <select id="queryCategoryByIdForShop" resultType="com.meiyuan.catering.goods.dto.category.CategoryDTO">
+        SELECT
+        distinct
+        c.id as id,
+        c.category_name as categoryName
+        FROM
+        catering_merchant_category c
+        left JOIN catering_category_shop_relation sc on c.id = sc.category_id
+        where
+        sc.shop_id = #{shopId}
+        and
+        c.id = #{categoryId}
+
+    </select>
+    <select id="queryAllByShopId" resultType="com.meiyuan.catering.merchant.goods.vo.MerchantCategoryDownVO">
+        select
+        c.id as id,
+        c.category_name as categoryName,
+        c.category_add_type,
+        c.default_category
+        FROM
+        catering_merchant_category c
+        left JOIN catering_category_shop_relation sc on c.id = sc.category_id
+        where
+        sc.shop_id = #{dto.merchantId}
+    </select>
+
+
+    <select id="listCategoryId" resultType="java.lang.Long">
+        select *
+        FROM (
+        select
+        mgoods_ext.category_id as id,
+        mgoods_ext.category_name as name ,
+        mgoods_ext.merchant_goods_status as platformGoodsStatus,
+        shop_spu.shop_goods_status as goodsStatus,
+        max(if((shop_sku.remain_stock=-1 || shop_sku.remain_stock>0),1,0)) as remain_stock
+        from
+        catering_shop_goods_spu shop_spu
+        left join catering_shop_goods_sku shop_sku
+        on shop_spu.id = shop_sku.shop_goods_spu_id
+        left join catering_merchant_goods mgoods
+        on mgoods.goods_id = shop_spu.goods_id
+        left join catering_merchant_goods_extend mgoods_ext
+        on (mgoods.goods_id = mgoods_ext.goods_id and shop_spu.merchant_id = mgoods_ext.merchant_id)
+        where
+        shop_spu.is_del = 0
+        and shop_sku.is_del = 0
+        and mgoods_ext.is_del = 0
+        and mgoods.is_del = 0
+        and shop_spu.shop_id = #{dto.merchantId}
+        GROUP BY shop_spu.goods_id
+        )as temp
+        <where>
+            <if test="dto.type == 4">
+                and temp.remain_stock = 0
+                and temp.goodsStatus = 2
+                and temp.platformGoodsStatus = 2
+            </if>
+            <if test="dto.type == 2">
+                and temp.platformGoodsStatus = 2
+                and temp.goodsStatus = 2
+                and temp.remain_stock != 0
+            </if>
+            <if test="dto.type == 1">
+                and temp.platformGoodsStatus = 1
+                or temp.goodsStatus=1
+            </if>
+        </where>
+    </select>
+
+
+
+
+
+    <select id="queryCategoryByShopId"
+            resultType="com.meiyuan.catering.goods.dto.goods.GoodsCategoryAndLabelDTO">
+        SELECT distinct
+        c.id as id,
+        c.category_name as name,
+        sc.sort sort
+        FROM
+        catering_merchant_category c
+        left JOIN catering_category_shop_relation sc on c.id = sc.category_id
+        where
+        c.is_del = 0
+        and
+        sc.shop_id = #{shopId}
+        and
+        c.id in
+        <foreach collection="categoryIds" item="categoryId" separator="," open="(" close=")">
+            #{categoryId}
+        </foreach>
+        ORDER BY sc.sort
+    </select>
+
+
+
+    <select id="queryCategoryByMerchantId" resultType="java.lang.Long">
+        SELECT
+        e.goods_id,
+        e.merchant_id,
+        s.shop_id
+        FROM
+        catering_merchant_goods_extend e
+        LEFT JOIN catering_shop_goods_spu s
+        ON (e.goods_id = s.goods_id AND e.merchant_id = s.merchant_id)
+        <where>
+            e. is_del = 0
+            and
+            s.is_del = 0
+            and
+            e.category_id =#{categoryId}
+            and
+            e.merchant_id = #{merchantId}
+        </where>
+    </select>
+
+
+    <select id="queryList"
+            resultType="com.meiyuan.catering.merchant.goods.entity.CateringCategoryShopRelationEntity">
+        select
+        *
+        from
+        catering_category_shop_relation
+        where
+        shop_id = #{dto.shopId}
+        <if test="dto.upOrDown==2">
+            and sort > #{dto.firstSort}
+        </if>
+        <if test="dto.upOrDown==1">
+            and sort >=#{dto.firstSort}
+        </if>
+        order by sort asc
+
+    </select>
+    <select id="queryDefault"
+            resultType="java.lang.Long">
+        SELECT
+            c.id as id
+        FROM
+            catering_merchant_category c
+                left JOIN catering_category_shop_relation sc on c.id = sc.category_id
+        where
+            c.is_del = 0
+          and
+            sc.shop_id = #{shopId}
+    </select>
+
+</mapper>

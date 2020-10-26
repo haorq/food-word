@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringSubjectRoleRelationMapper">
+  <resultMap id="RelationResultMap" type="com.meiyuan.catering.admin.dto.role.RoleRelationDTO">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="subject_id" property="employeeId" jdbcType="BIGINT"></result>
+    <result column="role_id" property="roleId" jdbcType="BIGINT"></result>
+  </resultMap>
+
+  <select id="selectRoleRelationByShopId" resultMap="RelationResultMap">
+    select srr.id,srr.subject_id,srr.role_id,r.role_name
+    from catering_common_subject_role_relation srr
+    left join catering_common_role r on srr.role_id= r.id
+    <where>
+      <if test="id != null">
+        and r.subject_id = #{id}
+      </if>
+    </where>
+  </select>
+
+  <delete id="delAllRelation">
+    delete from catering_common_subject_role_relation
+    where subject_id in
+    <foreach collection="ids" close=")" open="(" item="id" separator=",">
+      #{id}
+    </foreach>
+  </delete>
+</mapper>

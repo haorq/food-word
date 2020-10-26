@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsLabelRelationMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsLabelRelationEntity" id="CateringGoodsLabelRelationMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="labelId" column="label_id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+            </resultMap>
+
+
+    <select id="listByGoodsIdList" resultType="com.meiyuan.catering.goods.dto.goods.GoodsCategoryAndLabelDTO">
+        select DISTINCT
+        labelRelation.label_id as id,
+        lable.label_name as name,
+        labelRelation.goods_id as goodsId
+        from
+        catering_goods_label_relation labelRelation
+        left join catering_label lable on labelRelation.label_id = lable.id
+        where
+        lable.default_label = 1
+          <if test="merchantId!=null">
+              and labelRelation.merchant_id = #{merchantId}
+          </if>
+        and
+        labelRelation.goods_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+
+
+    </select>
+
+    <select id="listByGoodsIdListAndMerchant" resultType="com.meiyuan.catering.goods.dto.goods.GoodsCategoryAndLabelDTO">
+        select
+        labelRelation.label_id as id,
+        lable.label_name as name,
+        labelRelation.goods_id as goodsId
+        from
+        catering_goods_label_relation labelRelation
+        left join catering_label lable on labelRelation.label_id = lable.id
+        where
+        lable.default_label = 1
+        and
+        labelRelation.goods_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+        <if test="merchantId != null">
+            and labelRelation.merchant_id = #{merchantId}
+        </if>
+    </select>
+    <select id="selectMerchantIdsByGoodsId" resultType="java.lang.Long">
+        SELECT merchant_id FROM catering_merchant_goods_extend WHERE goods_id = #{goodsId} and is_del = 0
+        group by merchant_id
+
+    </select>
+
+
+    <resultMap id="LabelDetailDTOMap"
+               type="com.meiyuan.catering.goods.dto.label.LabelGoodDTO">
+        <result property="goodsId" column="goods_id"/>
+        <collection property="labelId"
+                    ofType="long">
+            <result column="id" />
+        </collection>
+        <collection property="labelName"
+                    ofType="string">
+            <result column="label_name" />
+        </collection>
+    </resultMap>
+
+    <select id="getLabelList" resultMap="LabelDetailDTOMap">
+        select
+        cl.id,
+        cl.label_name,
+        clr.goods_id
+        from
+        catering_label cl
+        join  catering_goods_label_relation clr
+        on cl.id=clr.label_id
+        <where>
+            <if test="goodsIds != null and goodsIds.size > 0">
+                and clr.goods_id  in (
+                <foreach collection="goodsIds" item="item" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="merchantId != null">
+                and clr.merchant_id = #{merchantId}
+            </if>
+        </where>
+    </select>
+</mapper>

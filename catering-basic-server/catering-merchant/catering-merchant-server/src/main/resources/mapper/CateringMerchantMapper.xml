@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringMerchantMapper">
+
+    <resultMap type="com.meiyuan.catering.merchant.entity.CateringMerchantEntity" id="CateringMerchantMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+
+        <result property="merchantCode" column="merchant_code" jdbcType="VARCHAR"/>
+
+                 <result property="merchantSource" column="merchant_source" jdbcType="INTEGER"/>
+                <result property="merchantStatus" column="merchant_status" jdbcType="INTEGER"/>
+                <result property="del" column="is_del" jdbcType="INTEGER"/>
+                <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="getMerchantShopDetail" parameterType="com.meiyuan.catering.merchant.dto.shop.ShopQueryDTO"
+            resultType="com.meiyuan.catering.merchant.vo.merchant.MerchantShopDetailVo">
+        SELECT
+            cs.merchant_id merchantId,
+            cs.shop_code shopCode,
+            cs.primary_person_name primaryPersonName,
+            cs.register_phone registerPhone,
+            cs.shop_source shopSource,
+            cs.create_time createTime,
+            cs.earnest_money earnestMoney,
+            cs.id shopId,
+            cs.door_number doorNumber,
+            cs.shop_name shopName,
+            cs.shop_type shopType,
+            cs.business_status businessStatus,
+            cs.address_detail addressDetail,
+            cs.address_full addressFull,
+            cs.shop_status shopStatus,
+            cs.sell_type sellType,
+            cs.is_pickup_point isPickupPoint,
+            cs.business_status businessStatus,
+            cs.address_picture addressPicture,
+            cs.shop_service shopService,
+            cs.door_head_picture doorHeadPicture,
+            cs.shop_phone shopPhone,
+            cs.opening_time openingTime,
+            cs.closing_time closingTime,
+            cs.map_coordinate mapCoordinate,
+            cs.shop_notice shopNotice,
+            cs.change_good_price changeGoodPrice,
+            csc.auto_receipt autoReceipt,
+            csc.delivery_object deliveryObject,
+            csc.delivery_range deliveryRange,
+            csc.business_support businessSupport ,
+            cse.business_license businessLicense,
+            cse.food_business_license foodBusinessLicense,
+            cse.id_card_positive idCardPositive,
+            cse.id_card_back idCardBack,
+            cse.id_card_withhand idCardWithhand,
+            cse.bank_name bankName,
+            cse.bank_branch bankBranch,
+            cse.bank_card_number bankCardNumber,
+            cs.delivery_type deliveryType,
+            (CASE
+            WHEN cs.shop_type = 3  THEN  2
+            WHEN cs.shop_type != 3 and cs.is_pickup_point = false THEN 1
+            WHEN cs.shop_type != 3 and cs.is_pickup_point = true THEN 3
+            END) as type
+        FROM
+            catering_shop cs
+            LEFT JOIN catering_shop_config csc ON cs.id = csc.shop_id
+            LEFT JOIN catering_shop_ext cse ON cse.shop_id = cs.id
+        WHERE
+            cs.is_del = false AND cs.id = #{dto.id} and cs.merchant_id = #{dto.merchantId}
+    </select>
+
+    <select id="listCateringMerchantPage" resultType="com.meiyuan.catering.merchant.vo.merchant.CateringMerchantPageVo">
+        SELECT
+            cs.merchant_id merchantId,
+            cs.primary_person_name primaryPersonName,
+            cs.shop_code shopCode,
+            cs.shop_source shopSource,
+            cs.register_phone registerPhone,
+            cs.create_time createTime,
+            cs.update_time updateTime,
+            cs.id shopId,
+            cs.shop_name shopName,
+            cs.shop_type shopType,
+            cs.address_full addressFull,
+            cs.shop_status shopStatus,
+            (CASE
+            WHEN cs.shop_type = 3  THEN  2
+            WHEN cs.shop_type != 3 and cs.is_pickup_point = false THEN 1
+            WHEN cs.shop_type != 3 and cs.is_pickup_point = true THEN 3
+            END) as type
+        FROM
+            catering_shop cs
+        <where>
+            cs.is_del = false and cs.merchant_id = #{dto.merchantId}
+            <if test="dto.shopType != null">
+                and cs.shop_type = #{dto.shopType}
+            </if>
+            <if test="dto.shopName != null and dto.shopName != ''">
+                AND cs.shop_name like concat('%', REPLACE(REPLACE(#{dto.shopName,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+            </if>
+            <if test="dto.shopStatus != null">
+                AND cs.shop_status = #{dto.shopStatus}
+            </if>
+            <if test="dto.shopSource != null">
+                AND cs.shop_source = #{dto.shopSource}
+            </if>
+
+            <if test="dto.addressProvinceCode != null and dto.addressProvinceCode != ''">
+                AND cs.address_province_code = #{dto.addressProvinceCode}
+            </if>
+            <if test="dto.addressCityCode != null and dto.addressCityCode != ''">
+                AND cs.address_city_code = #{dto.addressCityCode}
+            </if>
+            <if test="dto.addressAreaCode != null and dto.addressAreaCode != ''">
+                AND cs.address_area_code = #{dto.addressAreaCode}
+            </if>
+
+            <if test="dto.keyword!= null and dto.keyword!= ''">
+                AND (
+                cs.register_phone like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                or cs.shop_name like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                )
+            </if>
+
+            <if test="dto.startTime!=null ">
+                AND cs.create_time <![CDATA[ >= ]]> #{dto.startTime}
+            </if>
+            <if test="dto.endTime!=null ">
+                AND cs.create_time <![CDATA[ < ]]> #{dto.endTime}
+            </if>
+            <if test="dto.shopTagId != null">
+                AND cs.id in (SELECT cstr.shop_id from catering_shop_tag_relation cstr where cstr.shop_tag_id = #{dto.shopTagId})
+            </if>
+        </where>
+        ORDER BY cs.create_time DESC
+    </select>
+
+    <select id="listMerchantInfo" resultType="com.meiyuan.catering.merchant.vo.merchant.MerchantInfoVo">
+        SELECT
+            cs.shop_code shopCode,
+            cs.primary_person_name primaryPersonName,
+            cs.register_phone registerPhone,
+            cs.shop_source shopSource,
+            cs.create_time createTime,
+            cs.earnest_money earnestMoney,
+            cs.business_license businessLicense,
+            cs.food_business_license foodBusinessLicense,
+            cs.id_card_positive idCardPositive,
+            cs.id_card_back idCardBack,
+            cs.id shopId,
+            cs.merchant_id merchantId,
+            cs.shop_name shopName,
+            cs.map_coordinate mapCoordinate,
+            cs.shop_type shopType,
+            cs.business_status businessStatus,
+            cs.address_detail addressDetail,
+            cs.address_full addressFull,
+            cs.shop_status shopStatus,
+            cs.sell_type sellType,
+            cs.address_province_code as provinceCode,
+            cs.address_city_code as cityCode,
+            cs.address_area_code as areaCode,
+            csc.auto_receipt autoReceipt,
+            csc.delivery_object deliveryObject,
+            csc.delivery_price deliveryPrice,
+            csc.free_delivery_price freeDeliveryPrice,
+            csc.least_delivery_price leastDeliveryPrice,
+            csc.delivery_range deliveryRange,
+            csc.delivery_rule deliveryRule,
+            csc.business_support businessSupport
+        FROM
+          catering_shop cs
+            LEFT JOIN catering_shop_config csc ON cs.id = csc.shop_id
+        WHERE
+            cs.is_del = FALSE AND cs.shop_type != 3
+            <if test="queryCondition.merchantIds != null and queryCondition.merchantIds.size != 0">
+                AND cs.id in
+                <foreach collection="queryCondition.merchantIds" item="merchantId" open="(" close=")" separator=",">
+                    #{merchantId}
+                </foreach>
+            </if>
+    </select>
+
+    <select id="merchantPage" resultType="com.meiyuan.catering.merchant.vo.merchant.MerchantPageVo">
+        SELECT
+            cm.id id,
+            cm.merchant_code merchantCode,
+            cm.merchant_name merchantName,
+            cm.merchant_source merchantSource,
+            cm.phone phone,
+            cm.legal_person_name legalPersonName,
+            cm.merchant_attribute merchantAttribute,
+            cm.merchant_service merchantService,
+            cm.audit_status auditStatus,
+            cm.merchant_status merchantStatus,
+            cm.create_time createTime,
+            mla.phone account
+        FROM
+            catering_merchant cm
+            LEFT JOIN catering_merchant_login_account mla ON cm.id = mla.account_type_id
+            <where>
+                cm.is_del = false
+                <if test="dto.merchantAttribute != null">
+                    and cm.merchant_attribute = #{dto.merchantAttribute}
+                </if>
+                <if test="dto.merchantStatus != null">
+                    and cm.merchant_status = #{dto.merchantStatus}
+                </if>
+                <if test="dto.keyword!= null and dto.keyword!= ''">
+                    AND (
+                    cm.merchant_code like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                    or cm.merchant_name like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                    or cm.legal_person_name like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                    or cm.phone like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                    )
+                </if>
+                <if test="dto.startTime!=null ">
+                    AND cm.create_time <![CDATA[ >= ]]> #{dto.startTime}
+                </if>
+                <if test="dto.endTime!=null ">
+                    AND cm.create_time <![CDATA[ < ]]> #{dto.endTime}
+                </if>
+            </where>
+        ORDER BY cm.create_time DESC
+    </select>
+
+    <select id="getMerchantCodeMax" resultType="integer">
+        SELECT
+            substring( merchant.merchant_code, 5, 10 ) AS codeNum
+        FROM
+            catering_merchant merchant
+        ORDER BY
+            codeNum + 0 DESC
+            LIMIT 1;
+    </select>
+    <select id="findAll" resultType="com.meiyuan.catering.merchant.entity.CateringShopEntity">
+        select * from catering_shop where shop_type != 3
+    </select>
+
+    <select id="listMerchantAccount" resultType="com.meiyuan.catering.merchant.dto.auth.MerchantLoginAccountDTO">
+      SELECT
+            mlc.*
+      FROM
+            catering_merchant m
+            LEFT JOIN catering_merchant_login_account mlc ON mlc.account_type_id = m.id
+      WHERE
+        ( m.phone = #{account} OR mlc.phone = #{account}  )
+        AND m.is_del = FALSE
+        AND mlc.is_del = FALSE
+    </select>
+
+</mapper>

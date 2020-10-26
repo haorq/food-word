@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringMerchantMenuGoodsRelationMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringMerchantMenuGoodsRelationEntity" id="CateringMerchantMenuGoodsRelationMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+                        <result property="menuId" column="menu_id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="skuCode" column="sku_code" jdbcType="VARCHAR"/>
+                        <result property="status" column="status" jdbcType="INTEGER"/>
+            </resultMap>
+
+
+    <!--获取根据商品id/菜单id-->
+    <select id="listByGoodsIdOrMenuId" resultType="com.meiyuan.catering.goods.entity.CateringMerchantMenuGoodsRelationEntity">
+        select
+        id,
+        merchant_id as merchantId,
+        menu_id as menuId,
+        goods_id as goodsId,
+        sku_code as skuCode,
+        `status` as `status`,
+        fixed_or_all as fixedOrAll,
+        data_bind_type as dataBindType
+        from
+        catering_merchant_menu_goods_relation
+        where
+        data_bind_type = #{dataBindType}
+        <if test="goodsId != null">
+            and goods_id =  #{goodsId}
+        </if>
+        <if test="menuId != null">
+            and menu_id =  #{menuId}
+        </if>
+    </select>
+
+    <!--获取推送全部商户的商品/菜单-->
+    <select id="listAllMerchant" resultType="com.meiyuan.catering.goods.entity.CateringMerchantMenuGoodsRelationEntity">
+        select
+        DISTINCT
+        menu_id as menuId,
+        goods_id as goodsId,
+        `status` as `status`
+        from
+        catering_merchant_menu_goods_relation
+        where
+        fixed_or_all = 1
+        and
+        data_bind_type = #{dataBindType}
+    </select>
+
+    <select id="merchantIdsHasGoods" resultType="java.lang.Long">
+        SELECT mmg.`merchant_id`
+        FROM `catering_merchant_menu_goods_relation` mmg
+        WHERE mmg.status=2 AND (mmg.`data_bind_type`=1 OR mmg.`data_bind_type`=2)
+        GROUP BY mmg.`merchant_id`;
+    </select>
+
+    <select id="merchantHasGoods" resultType="java.lang.Long">
+        SELECT
+            mmg.`merchant_id`
+        FROM
+            `catering_merchant_menu_goods_relation` mmg
+        WHERE
+            mmg.STATUS = 2 AND mmg.`data_bind_type` = #{dataBindType} AND mmg.merchant_id= #{merchantId}
+        GROUP BY
+            mmg.`merchant_id`;
+    </select>
+
+    <select id="merchantIdsHasGoodsBySellType" resultType="java.lang.Long">
+        SELECT mmg.`merchant_id`
+        FROM `catering_merchant_menu_goods_relation` mmg
+        WHERE mmg.status=2
+        <foreach collection="params" item="item" separator=" OR " open="and (" close=")">
+            (mmg.`merchant_id`=#{item.merchantId}  AND mmg.`data_bind_type`=#{item.dataBindType})
+        </foreach>
+        GROUP BY mmg.`merchant_id`
+        <if test="orderByMerchantIds != null  and orderByMerchantIds!= ''">
+            ORDER BY FIELD (mmg.`merchant_id`,${orderByMerchantIds})
+        </if>
+    </select>
+
+    <select id="listCategoryList" resultType="com.meiyuan.catering.goods.dto.menu.ShopMenuDTO">
+        SELECT
+        DISTINCT c.id as id,
+        c.category_name as categoryName
+        from
+        catering_merchant_menu_goods_relation mmgr
+        LEFT JOIN catering_goods_category_relation cr on mmgr.goods_id = cr.goods_id
+        LEFT JOIN catering_category c on cr.category_id = c.id
+        LEFT JOIN catering_goods goods on goods.id = cr.goods_id
+        WHERE
+        mmgr.merchant_id = #{merchantId}
+        <if test=" status  != 3">
+            and ( mmgr.status = #{status}
+            <if test="status == 1">or goods.goods_status = #{status}
+            </if>
+            <if test="status == 2">and goods.goods_status = #{status}
+            </if>
+            )
+        </if>
+        and
+        data_bind_type = 1
+        ORDER BY
+        c.create_time DESC
+    </select>
+
+    <select id="listByWxIndexSearchData" resultType="com.meiyuan.catering.goods.dto.goods.SimpleGoodsDTO">
+        SELECT
+        gr.merchant_id as merchantId,
+        g.id as goodsId,
+        g.goods_name as goodsName,
+        g.market_price as marketPrice,
+        g.sales_price as salesPrice,
+        g.enterprise_price as enterprisePrice,
+        g.list_picture as listPicture
+        from
+        catering_merchant_menu_goods_relation gr
+        LEFT JOIN catering_goods g on gr.goods_id = g.id
+        where
+        gr.data_bind_type = 1
+    </select>
+
+    <!--修改菜单上下架-->
+    <update id="updateMenuStatus">
+        update catering_merchant_menu_goods_relation set
+        `status` = #{status}
+        where
+        menu_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+    </update>
+
+    <select id="list" resultType="com.meiyuan.catering.goods.entity.CateringMerchantMenuGoodsRelationEntity">
+        select
+        id,
+        merchant_id as merchantId,
+        menu_id as menuId,
+        goods_id as goodsId,
+        sku_code as skuCode,
+        `status` as `status`,
+        fixed_or_all as fixedOrAll,
+        data_bind_type as dataBindType
+        from
+        catering_merchant_menu_goods_relation
+        where
+        data_bind_type = #{dataBindType}
+        and
+        status = #{status}
+        and
+        merchant_id in (
+            <foreach collection="list" item="item" separator=",">
+                #{item}
+            </foreach>
+        )
+    </select>
+
+    <!--获取所有推送给商家的信息-->
+    <select id="listByPushMerchantGoods" resultType="com.meiyuan.catering.goods.dto.es.GoodsMerchantMenuGoodsDTO">
+        select
+        gr.id as id,
+        gr.merchant_id as merchantId,
+        gr.menu_id as menuId,
+        gr.goods_id as goodsId,
+        gr.sku_code as skuCode,
+        gr.status,
+        gr.fixed_or_all as fixedOrAll,
+        gr.data_bind_type as dataBindType,
+        goods.goods_name as goodsName
+        from
+        catering_merchant_menu_goods_relation gr
+        left join catering_goods goods on gr.goods_id = goods.id
+        where
+        gr.data_bind_type = 1
+    </select>
+</mapper>

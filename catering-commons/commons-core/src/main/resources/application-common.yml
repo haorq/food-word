@@ -1,0 +1,262 @@
+spring:
+  datasource:
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      filter:
+        stat:
+          log-slow-sql: true
+          merge-sql: false
+          slow-sql-millis: 1000
+      initial-size: 10
+      max-active: 100
+      max-pool-prepared-statement-per-connection-size: 20
+      max-wait: 60000
+      min-evictable-idle-time-millis: 300000
+      min-idle: 10
+      pool-prepared-statements: true
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+      test-on-borrow: false
+      test-on-return: false
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      filters:  stat,wall
+      url: jdbc:mysql://192.168.98.81:3306/catering_cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: 163@.com
+    #MQ
+    #rabbitmq:
+    # host: 192.168.98.84
+    #port: 5672
+    #username: admin
+    #password: 11Password1!
+    #virtualHost: /
+  rabbitmq:
+    host: 192.168.98.44
+    port: 35672
+    username: catering
+    password: catering@.com
+    virtualHost: /catering
+  #es
+  elasticsearch:
+    jest:
+      proxy:
+        host: 192.168.98.84:9200
+  redis:
+    host: 192.168.98.84
+    port: 6379
+    password: 11Password1!
+
+aliEs:
+  #是否开启阿里云的ES连接
+  flag: false
+  name: elastic
+  password: Meiyuan123
+#catering
+catering:
+  wx:
+    app-public-id: wx99cf7ba3fe7d08de
+    app-public-secret: 9c4da6905815aa4d37adca57c9eedf2e
+    app-id: wx09311328aedcdfac
+    app-secret: 0d59ece8214ccb3873c352415717c8c2
+    wx-token: om8hgwn9rn
+    mch-id: 1547034491
+    mch-key: LbNGzyRPlhoqCJitwfAHyWsoIBXyl9C0
+    notify-url: http://xs-dev.meiy520.com/wx/pay/
+    key-path: classpath:/static/apiclient_cert-dev.p12
+    # 对象存储配置
+  storage:
+    # 当前工作的对象存储模式，分别是aliyun
+    active: aliyun
+    # 阿里云对象存储配置信息
+    aliyun:
+      endpoint: http://oss-cn-shenzhen.aliyuncs.com
+      accessKeyId: LTAI4FpiF18xnmDnKggv4wDf
+      accessKeySecret: ADGeUIbMFUnLtgrkYbrbJ2O6VezNLO
+      bucketName: dev-my-common
+      domain: https://dev-my-common.meiy520.com/
+    folder: catering-dev
+  sms:
+    code: false
+    defaultCode: '000000'
+    pay: false
+  yly:
+    appId: 1095413271
+    appSecret: 814c78f3680cd1b12d5260e09fd8e313
+    appToken: 624a0a209fc2454eac47f0e04aafa73b
+    imgUrl: https://oss-prod-catering.meiy365.com/catering-prod/20201019/ryvuu3y43vlpiez2he8v.png
+  allinpay:
+    #    url: http://test.allinpay.com/op/gateway
+    #    appId: 1581648210684
+    #    secretKey: WaHVZNHZYX3v4si1bBTVseIwEMPMcKzL
+    #    certPath: classpath:/allinpay/1581648210684.pfx
+    #    certPwd: 123456
+    #    tlCertPath: classpath:/allinpay/TLCert-test.cer
+    #    domain: http://xs-dev.meiy520.com
+    #    domainH5: http://xs-dev.meiy520.com
+    #    accountSetNo: 400193
+    #    subsidyAccountNo: 2000000
+    #    splitAccountNo: 2000000
+    url: https://cloud.allinpay.com/gateway
+    appId: 1311119382956048385
+    secretKey: ysoAHEtKcqHcZOHCGKn8Jkk3VDy5HdnA
+    certPath: classpath:/allinpay/prod/1311119382956048385.pfx
+    certPwd: meiyuan12345
+    tlCertPath: classpath:/allinpay/prod/TLCert.cer
+    domain: http://xs-dev.meiy520.com
+    domainH5: http://xs-dev.meiy520.com
+    accountSetNo: 400679
+    vspMerchantId: 55265105812D73F
+    vspMerchantAppId: 00197968
+    vspCusId: 55265105812D73W
+    wxAppId: wx090d61996d5b51b6
+    subsidyAccountNo: 2000000
+    splitAccountNo: 2000000
+  delivery:
+    dada:
+      appId: dadad98fd9a49e88165
+      appSecret: 2e138a9561aa22fda4271a71473af2ab
+      isOnline: false
+      domain: http://xs-dev.meiy520.com
+      sourceId: 97987
+
+#消息中心
+message:
+  host: http://msg-dev.meiy520.com
+  loginUrl: ${message.host}/msg/api/openApiFacade/login
+  username: msg-xs
+  password: Meiyuan123
+  sendMsgUrl: ${message.host}/msg/api/openApiFacade/synSendMsg
+  aliShortMsgAppId: 10121
+  pickupPointCodeUrl: https://xs-dev.meiy520.com/#/pages/code/index
+  appDownloadUrl: https://xs-dev.meiy520.com/download/index.html#/
+  baiduShortUrl: https://dwz.cn/admin/v2/create
+  baiduShortUrlToken: 739e8bb11c3008e6f00ef5c556d5e3db
+
+# ali敏感词过滤相关配置
+baidu:
+  appId: 18438785
+  apiKey: ZlY2xvskwzKkFHNgWz3tCBaI
+  secretKey: TT6rZ2TN0xLhRaQHC5z2OVE1gaSifh8M
+  connectionTimeout: 2000
+  socketTimeout: 60000
+
+# 多数据源配置
+dynamic:
+  enabled: false # 开启多数据源开关
+  dataSourceHeader: dataSource # 取request的header中的值
+  datasource:
+    dev:
+      url: jdbc:mysql://192.168.98.81:3306/catering_cloud?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: 163@.com
+
+#redis
+redis:
+  host: 192.168.98.84
+  password: 11Password1!
+
+jetcache:
+  statIntervalMinutes: 10
+  areaInCacheName: false
+  local:
+    default:
+      type: linkedhashmap
+      keyConvertor: fastjson
+  remote:
+    default:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 12
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+    wechat:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 11
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+    user:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 10
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+    order:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 9
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+    merchant:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 8
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+    goods:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 7
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+    marketing:
+      type: redis
+      keyConvertor: fastjson
+      valueEncoder: java
+      valueDecoder: java
+      poolConfig:
+        minIdle: 5
+        maxIdle: 20
+        maxTotal: 50
+      database: 6
+      host: ${redis.host}
+      password: ${redis.password}
+      port: 6379
+
+
+createCode:
+  enable: false

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersShopDebtFlowMapper">
+
+
+    <select id="queryRollBackDebt" resultType="com.meiyuan.catering.order.entity.CateringOrdersShopDebtFlowEntity">
+      SELECT
+            *
+    FROM
+        `catering_orders_shop_debt_flow`
+        WHERE amount_type = 1
+        and order_id =  #{orderId}
+        ORDER BY create_time desc
+        LIMIT 1
+    </select>
+</mapper>

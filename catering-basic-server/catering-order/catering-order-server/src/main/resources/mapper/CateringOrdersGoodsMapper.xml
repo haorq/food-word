@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersGoodsMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersGoodsEntity" id="CateringOrdersGoodsMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="goodsId" column="goods_id" jdbcType="INTEGER"/>
+        <result property="goodsNumber" column="goods_number" jdbcType="VARCHAR"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="goodsType" column="goods_type" jdbcType="INTEGER"/>
+        <result property="goodsSpuCode" column="goods_spu_code" jdbcType="VARCHAR"/>
+        <result property="goodsSkuCode" column="goods_sku_code" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+        <result property="storePrice" column="store_price" jdbcType="OTHER"/>
+        <result property="salesPrice" column="sales_price" jdbcType="OTHER"/>
+        <result property="transactionPrice" column="transaction_price" jdbcType="OTHER"/>
+        <result property="deliveryPrice" column="delivery_price" jdbcType="OTHER"/>
+        <result property="packPrice" column="pack_price" jdbcType="OTHER"/>
+        <result property="discountBeforeFee" column="discount_before_fee" jdbcType="OTHER"/>
+        <result property="discountLaterFee" column="discount_later_fee" jdbcType="OTHER"/>
+        <result property="discountFee" column="discount_fee" jdbcType="OTHER"/>
+        <result property="goodsGroupId" column="goods_group_id" jdbcType="INTEGER"/>
+        <result property="goodsGroupName" column="goods_group_name" jdbcType="VARCHAR"/>
+        <result property="goodsSpecificationDesc" column="goods_specification_desc" jdbcType="VARCHAR"/>
+        <result property="goodsLabelName" column="goods_label_name" jdbcType="VARCHAR"/>
+        <result property="goodsPicture" column="goods_picture" jdbcType="VARCHAR"/>
+        <result property="gifts" column="is_gifts" jdbcType="INTEGER"/>
+        <result property="skillEventId" column="skill_event_id" jdbcType="INTEGER"/>
+        <result property="usedScore" column="is_used_score" jdbcType="INTEGER"/>
+        <result property="consumeScore" column="consume_score" jdbcType="INTEGER"/>
+        <result property="consumeScoreFee" column="consume_score_fee" jdbcType="OTHER"/>
+        <result property="childGoods" column="is_child_goods" jdbcType="INTEGER"/>
+        <result property="orderGoodsParentId" column="order_goods_parent_id" jdbcType="INTEGER"/>
+        <result property="shareBillUserId" column="share_bill_user_id" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createName" column="create_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateName" column="update_name" jdbcType="VARCHAR"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+
+
+</mapper>

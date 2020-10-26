@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.admin.dao.CateringAdminMapper">
+  <resultMap id="BaseResultMap" type="com.meiyuan.catering.admin.entity.CateringAdmin">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="username" jdbcType="VARCHAR" property="username" />
+    <result column="password" jdbcType="VARCHAR" property="password" />
+    <result column="last_login_ip" jdbcType="VARCHAR" property="lastLoginIp" />
+    <result column="last_login_time" jdbcType="TIMESTAMP" property="lastLoginTime" />
+    <result column="avatar" jdbcType="VARCHAR" property="avatar" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result property="isDel" column="is_del" jdbcType="INTEGER"/>
+    <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+    <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+    <result column="role_ids" jdbcType="VARCHAR" property="roleIds" typeHandler="com.meiyuan.catering.admin.handler.JsonLongArrayTypeHandler" />
+  </resultMap>
+
+    <insert id="insertRoleRelation">
+      insert into catering_common_subject_role_relation(id,subject_id,role_id) values
+      <foreach collection="list" index="index" item="item" separator="," >
+        (
+        #{item.id},
+        #{item.subjectId},
+        #{item.roleId}
+        )
+      </foreach>
+    </insert>
+
+    <delete id="removeRoleByAccountId">
+      delete from catering_common_subject_role_relation where subject_id = #{accountId}
+    </delete>
+    <select id="selectRole" resultType="com.meiyuan.catering.admin.vo.role.AdminRoleListVO">
+      SELECT
+        t2.id,
+        t2.role_name,
+        t2.remark,
+        t2.create_time
+      FROM
+        catering_common_subject_role_relation t1
+          JOIN catering_common_role t2 ON t1.role_id = t2.id
+      WHERE
+        t1.subject_id = #{id} and
+        t2.is_del = 0
+    </select>
+
+    <select id="querySelect" resultType="com.meiyuan.catering.admin.vo.admin.admin.AdminListQueryVo">
+      select * from catering_admin
+      <where>
+        is_del = 0
+        <if test="dto.nameOrTel != null and dto.nameOrTel != ''">
+          and (username like concat('%',#{dto.nameOrTel},'%') or phone like concat('%',#{dto.nameOrTel},'%'))
+        </if>
+        <if test="dto.status != null ">
+          and status = #{dto.status}
+        </if>
+        <if test="dto.startTime != null ">
+          and create_time &gt;= #{dto.startTime}
+        </if>
+        <if test="dto.endTime != null ">
+          and create_time &lt;= #{dto.endTime}
+        </if>
+      </where>
+      order by create_time desc
+    </select>
+
+
+</mapper>

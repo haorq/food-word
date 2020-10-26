@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.meiyuan.catering.marketing.dao.user.CateringUserTicketMapper">
+
+    <insert id="insertTicketDataRecord">
+        INSERT INTO
+        catering_ticket_data_record(id, ticket_id,ticket_activtiy_id, merchant_id, shop_id,order_id,user_id,order_amount,discount_before_fee,is_new_member,is_brand_new,order_status)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            ( #{item.id},
+            (SELECT ticket_id FROM catering_user_ticket WHERE id = #{item.ticketId}),
+            (SELECT ticket_activity_id FROM catering_user_ticket WHERE id = #{item.ticketId}),
+              #{item.merchantId},
+              #{item.shopId},
+              #{item.orderId},
+              #{item.userId},
+              #{item.orderAmount},
+              #{item.discountBeforeFee},
+            (SELECT if(count( 0 )=1,1,0) FROM catering_orders orders WHERE is_del=0 and store_id = #{item.shopId} AND member_id = #{item.userId}),
+            (SELECT if(count( 0 )=1,1,0) FROM catering_orders orders WHERE is_del=0 and merchant_id = #{item.merchantId} AND member_id = #{item.userId}),
+             #{item.orderSuccess})
+        </foreach>
+
+    </insert>
+
+    <insert id="addIntegralGetRecordBatch">
+        INSERT INTO
+        catering_activity_get_record(id, activity_id,activity_rule_id, activity_type,reward_type, user_id,get_num)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            ( #{item.id},
+            #{item.activityId},
+            #{item.activityRuleId},
+            #{item.activityType},
+            #{item.rewardType},
+            #{item.userId},
+            #{item.getNum})
+        </foreach>
+
+    </insert>
+
+    <insert id="addIntegralGetRecord">
+        INSERT INTO
+            catering_activity_get_record(id, activity_id,activity_rule_id, activity_type,reward_type, user_id,get_num)
+        VALUES
+        ( #{dto.id},
+          #{dto.activityId},
+          #{dto.activityRuleId},
+          #{dto.activityType},
+          #{dto.rewardType},
+              #{dto.userId},
+          #{dto.getNum})
+    </insert>
+    <update id="updateIntegralGetRecord">
+        UPDATE catering_activity_get_record SET get_num = get_num + 1 WHERE user_id = #{userId} AND activity_id = #{activityId}
+        <if test="activityRuleId != null">
+            and activity_rule_id = #{activityRuleId}
+        </if>
+    </update>
+
+
+    <select id="selectOrdersInfo" resultType="java.util.Map" parameterType="java.lang.Long">
+        SELECT
+               id,
+               store_id as shopId,
+               merchant_id as merchantId,
+               member_id as userId,
+               discount_later_fee as orderAmount,
+               discount_before_fee as discountBeforeFee
+        FROM catering_orders WHERE is_del=0 and id = #{orderId}
+    </select>
+
+    <!--获取用户可用的优惠券-->
+    <select id="listAvailableTicket" resultMap="userTicketMap" parameterType="java.lang.Long">
+        SELECT
+            t1.id,
+            t1.ticket_code,
+            u.ticket_name,
+            t1.child_type,
+            t1.amount,
+            t1.publish_quantity,
+            IFNULL( t1.limit_quantity, 0 ) AS limit_quantity,
+            if(t1.indate_type=1,t1.use_begin_time,u.get_time) as use_begin_time,
+            u.use_end_time,
+            t1.useful_condition,
+            t1.is_goods_limit,
+            t1.consume_condition,
+            t1.is_exclusion,
+            t1.send_ticket_party,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.CODE,
+            t2.sku_value,
+            t2.activity_price,
+            t3.goods_category_id,
+            t3.goods_category_name,
+            u.id AS userTicketId,
+            u.is_used AS used,
+            merchant.merchant_name
+        FROM
+            catering_marketing_ticket t1
+                LEFT JOIN catering_user_ticket u ON u.ticket_id = t1.id
+                AND u.is_del =
+                    FALSE LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del =
+                    FALSE LEFT JOIN catering_marketing_goods_category t3 ON t3.m_goods_id = t2.id
+                AND t3.is_del = FALSE
+                left join catering_merchant merchant on t1.merchant_id=merchant.id
+        WHERE
+           u.use_end_time &gt; now( )
+          AND u.user_id = #{userId}
+          AND is_used = FALSE
+        ORDER BY
+            u.get_time
+    </select>
+    <!--我的优惠券分页列表-->
+    <select id="pageMyTicket" resultType="com.meiyuan.catering.marketing.dto.ticket.TicketWechatListDTO">
+        SELECT
+        t1.id as userTicketId,
+        t2.id,
+        t2.ticket_code,
+        t1.ticket_name,
+        t2.child_type,
+        t2.amount,
+        t2.activity_id,
+        if(t2.indate_type = 1,t2.use_begin_time,t1.get_time) as useBeginTime,
+        t1.use_end_time,
+        t2.useful_condition,
+        t2.consume_condition,
+        t2.activity_id,
+        (select activity_type from catering_marketing_ticket_activity where id = t1.ticket_activity_id or p_activity_id = t1.ticket_activity_id  LIMIT 1) as platFromFlag,
+        t2.is_goods_limit,
+        (select m.merchant_name from catering_merchant m where m.id=t2.merchant_id) as merchantName,
+        t2.is_exclusion,
+        (
+        CASE
+        WHEN (t1.is_used = FALSE and t1.use_end_time &gt; now()) THEN
+        1
+        WHEN t1.is_used = TRUE THEN
+        2
+        WHEN (t1.is_used = FALSE and t1.use_end_time &lt;= now( )) THEN
+        3
+        END
+        ) AS STATUS
+        FROM
+        catering_user_ticket t1
+        LEFT JOIN catering_marketing_ticket t2 ON t1.ticket_id = t2.id
+        WHERE
+        t1.is_del = FALSE
+        and t1.user_id = #{userId}
+        <if test="status != null and status == 1">
+            AND t1.is_used = FALSE and t1.use_end_time &gt; now()
+        </if>
+        <if test="status != null and status == 2">
+            AND t1.is_used = TRUE
+        </if>
+        <if test="status != null and status == 3">
+            AND t1.is_used = FALSE and t1.use_end_time &lt;= now( )
+        </if>
+        <if test="sendTicketParty != null ">
+            AND t2.send_ticket_party = #{sendTicketParty}
+        </if>
+        ORDER BY t1.get_time DESC
+    </select>
+
+
+    <select id="countUser" resultType="java.lang.Long">
+        select id from catering_user
+        where is_del = false
+          and status = 1
+        order by register_time
+    </select>
+
+    <select id="countCompany" resultType="java.lang.Long">
+        select id from catering_user_company
+        where is_del = false
+          and company_status = 1
+        order by create_time
+    </select>
+
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT
+            id
+        FROM
+            (
+                SELECT
+                    id,
+                    create_time
+                FROM
+                    catering_user_company
+                WHERE
+                    is_del = FALSE
+                  AND company_status = 1 UNION
+                SELECT
+                    id,
+                    create_time
+                FROM
+                    catering_user
+                WHERE
+                    is_del = FALSE
+                  AND STATUS = 1
+            ) temp
+        ORDER BY
+            temp.create_time
+    </select>
+    <!--优惠券详情-->
+    <resultMap id="userTicketMap" type="com.meiyuan.catering.marketing.dto.ticket.UserTicketDetailsDTO">
+        <result property="id" column="id"/>
+        <result property="ticketCode" column="ticket_code"/>
+        <result property="childType" column="child_type"/>
+        <result property="amount" column="amount"/>
+        <result property="publishQuantity" column="publish_quantity"/>
+        <result property="limitQuantity" column="limit_quantity"/>
+        <result property="useBeginTime" column="use_begin_time"/>
+        <result property="useEndTime" column="use_end_time"/>
+        <result property="usefulCondition" column="useful_condition"/>
+        <result property="goodsLimit" column="is_goods_limit"/>
+        <result property="consumeCondition" column="consume_condition"/>
+        <result property="ticketName" column="ticket_name"/>
+        <result property="merchantName" column="merchant_name"/>
+        <result property="userTicketId" column="userTicketId"/>
+        <result property="used" column="used"/>
+        <result property="exclusion" column="is_exclusion"/>
+        <result property="sendTicketParty" column="send_ticket_party"/>
+        <collection property="goodsItem" ofType="com.meiyuan.catering.marketing.dto.MarketingGoodsInfoDTO">
+            <result property="goodsId" column="goods_id"/>
+            <result property="goodsName" column="goods_name"/>
+            <result property="storePrice" column="store_price"/>
+            <result property="goodsPicture" column="goods_picture"/>
+            <result property="sku" column="sku"/>
+            <result property="spuCode" column="CODE"/>
+            <result property="skuValue" column="sku_value"/>
+            <result property="salesPrice" column="activity_price"/>
+        </collection>
+        <collection property="goodsCategoryItem"
+                    ofType="com.meiyuan.catering.marketing.dto.MarketingGoodsCategoryAddDTO">
+            <result property="goodsCategoryId" column="goods_category_id"/>
+            <result property="goodsCategoryName" column="goods_category_name"/>
+        </collection>
+    </resultMap>
+    <select id="getUserTicketInfo" resultMap="userTicketMap">
+        SELECT
+        t1.id,
+        t1.ticket_code,
+        u.ticket_name,
+        t1.child_type,
+        t1.amount,
+        t1.publish_quantity,
+        IFNULL( t1.limit_quantity, 0 ) AS limit_quantity,
+        if(t1.indate_type=1,t1.use_begin_time,u.get_time) as use_begin_time,
+        u.use_end_time,
+        t1.useful_condition,
+        t1.is_goods_limit,
+        t1.consume_condition,
+        t1.is_exclusion,
+        t1.send_ticket_party,
+        t2.goods_id,
+        t2.goods_name,
+        t2.store_price,
+        t2.goods_picture,
+        t2.sku,
+        t2.CODE,
+        t2.sku_value,
+        t2.activity_price,
+        t3.goods_category_id,
+        t3.goods_category_name,
+        u.id AS userTicketId,
+        u.is_used AS used,
+        merchant.merchant_name
+        FROM
+        catering_marketing_ticket t1
+        LEFT JOIN catering_user_ticket u ON u.ticket_id = t1.id
+        AND u.is_del = FALSE
+        LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+        AND t2.is_del = FALSE
+        LEFT JOIN catering_marketing_goods_category t3 ON t3.m_goods_id = t2.id
+        AND t3.is_del = FALSE
+        left join catering_merchant merchant on merchant.id=t1.merchant_id
+        WHERE
+        u.id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+
+    </select>
+    <!--统计状态数据-->
+    <select id="countStatus" resultType="java.util.HashMap">
+        SELECT
+            STATUS as  `status`,
+        count( 0 ) as `number`
+        FROM
+        (
+        SELECT
+          t1.ticket_id,
+        (
+        CASE
+
+        WHEN ( t2.send_ticket_party= 1 ) THEN
+        1
+        WHEN (  t2.send_ticket_party= 3 ) THEN
+        3
+        END
+        ) AS STATUS
+        FROM
+         catering_user_ticket t1
+         LEFT JOIN catering_marketing_ticket t2 ON t1.ticket_id = t2.id
+        WHERE
+        t1.is_del = FALSE
+        AND t1.is_used = FALSE AND t1.use_end_time>now( )
+        AND t1.user_id = #{userId}
+        ) AS temp
+        GROUP BY
+        temp.`STATUS`
+    </select>
+    <!--微信-商户主页优惠券接口-->
+    <select id="listWxMerchantIndexTicket"
+            resultType="com.meiyuan.catering.marketing.vo.ticket.WxMerchantIndexTicketInfoVO">
+        SELECT
+        temp.activity_type,
+        temp.ticketId,
+        temp.amount,
+        temp.use_days,
+        temp.indate_type,
+        temp.consume_condition,
+        temp.effective_date,
+        temp.residual_inventory,
+        temp.userTicketId,
+        temp.p_activity_id as pActivityId,
+        temp.pull,
+        IF
+            ( temp.pull = 1 and temp.activity_type = 1, (SELECT get_time FROM catering_user_ticket ut WHERE ut.user_id = #{userId} AND ut.is_del = 0 AND ut.ticket_id = temp.ticketId), temp.use_begin_time ) AS use_begin_time,
+        IF
+            ( temp.pull = 1 and temp.activity_type = 1, (SELECT use_end_time FROM catering_user_ticket ut WHERE ut.user_id = #{userId} AND ut.is_del = 0 AND ut.ticket_id = temp.ticketId), temp.use_end_time ) AS use_end_time
+        FROM
+        (
+        SELECT
+        t1.activity_type,
+        t2.id AS ticketId,
+        t2.amount,
+        t2.use_begin_time,
+        t2.use_end_time,
+        t2.use_days,
+        t2.indate_type,
+        t2.consume_condition,
+        t1.effective_date,
+        t1.p_activity_id,
+        ( SELECT id FROM catering_user_ticket ut WHERE ut.user_id = #{userId} AND ut.is_del = 0 AND ut.ticket_id = t2.id ) as userTicketId,
+        t3.residual_inventory,
+        IF
+        (
+        ( SELECT count(id) FROM catering_user_ticket ut WHERE ut.user_id = #{userId} AND ut.is_del = 0 AND ut.ticket_id = t2.id ) &gt; 0,
+        1,
+        0
+        ) AS pull
+        FROM
+        catering_marketing_ticket_activity t1
+        LEFT JOIN catering_marketing_ticket t2 ON t1.id = t2.activity_id
+        LEFT JOIN catering_marketing_repertory t3 ON t2.id = t3.of_id
+        WHERE
+        t1.id IN ( SELECT activity_id FROM catering_marketing_ticket_activity_shop WHERE shop_id = #{shopId} AND is_del = FALSE
+          and shop_ticket_status = 2)
+        AND t1.is_del = 0
+          AND t1.begin_time &lt;= now() AND t1.end_time &gt; now()
+        AND t1.up_down_status = 2
+        AND (t2.use_channels in(1,3) OR t2.use_channels is null)
+        ORDER BY
+        t2.create_time DESC
+        ) AS temp
+    </select>
+    <select id="selectTicketDataRecord" resultType="java.lang.Integer">
+        SELECT
+            count( 0 )
+        FROM
+            `catering_ticket_data_record`
+        WHERE
+            merchant_id = #{merchantId} and user_id = #{userId}
+    </select>
+    <select id="countGetRecord" resultType="java.lang.Long">
+        select user_id
+               from catering_activity_get_record where activity_rule_id = #{activityId} and reward_type=1
+        and user_id in
+        <choose>
+            <when test="objectLimit == 1">
+                (select id from catering_user
+                where is_del = false
+                and status = 1
+                order by register_time)
+            </when>
+            <when test="objectLimit == 2">
+                (select id from catering_user_company
+                where is_del = false
+                and company_status = 1
+                order by create_time)
+            </when>
+            <otherwise>
+                (SELECT
+                id
+                FROM
+                (
+                SELECT
+                id,
+                create_time
+                FROM
+                catering_user_company
+                WHERE
+                is_del = FALSE
+                AND company_status = 1 UNION
+                SELECT
+                id,
+                create_time
+                FROM
+                catering_user
+                WHERE
+                is_del = FALSE
+                AND STATUS = 1
+                ) temp
+                ORDER BY
+                temp.create_time)
+            </otherwise>
+        </choose>
+    </select>
+    <select id="countUserGetRecord" resultType="java.lang.Integer">
+        select get_num
+        from catering_activity_get_record where activity_id = #{activityId} and reward_type=1
+        and user_id = #{userId}
+        <if test="aRuleId!=null">
+            and activity_rule_id = #{aRuleId}
+        </if>
+    </select>
+    <select id="listPlatFormTicket" resultType="com.meiyuan.catering.marketing.vo.ticket.WxMerchantIndexTicketInfoVO">
+        SELECT
+            t1.id AS ticketId,
+            t1.amount,
+            t1.use_begin_time,
+            t1.use_end_time,
+            t1.use_days,
+            t1.indate_type,
+            t1.consume_condition,
+            '3' as activityType,
+            t2.activity_id as pActivityId
+        FROM
+            catering_marketing_ticket t1
+                LEFT JOIN catering_marketing_rule_ticket_relation t2 ON t1.id = t2.ticket_id
+        WHERE
+        t2.activity_id IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="userH5TicketUpdate" resultType="java.lang.Integer">
+        update catering_user_ticket set user_id = #{userId} where user_id in
+        <foreach collection="list" item="item" index="index" close=")" separator="," open="(">
+            #{item}
+        </foreach>
+    </select>
+    <select id="userH5TicketRecord" resultType="java.lang.Integer">
+        update catering_h5_record set is_get = 1 where id in
+        <foreach collection="list" item="item" index="index" close=")" separator="," open="(">
+            #{item}
+        </foreach>
+    </select>
+    <select id="userH5TicketActivityRecord" resultType="java.lang.Integer">
+        update catering_activity_get_record set user_id = #{userId} where user_id in
+        <foreach collection="list" item="item" index="index" close=")" separator="," open="(">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getUserTicketInfoByUserTicketId"
+            resultMap="userTicketMap">
+        SELECT
+        t1.id,
+        t1.ticket_code,
+        u.ticket_name,
+        t1.child_type,
+        t1.amount,
+        t1.publish_quantity,
+        IFNULL( t1.limit_quantity, 0 ) AS limit_quantity,
+        if(t1.indate_type=1,t1.use_begin_time,u.get_time) as use_begin_time,
+        u.use_end_time,
+        t1.useful_condition,
+        t1.is_goods_limit,
+        t1.consume_condition,
+        t1.is_exclusion,
+        t1.send_ticket_party,
+        t2.goods_id,
+        t2.goods_name,
+        t2.store_price,
+        t2.goods_picture,
+        t2.sku,
+        t2.CODE,
+        t2.sku_value,
+        t2.activity_price,
+        t3.goods_category_id,
+        t3.goods_category_name,
+        u.id AS userTicketId,
+        u.is_used AS used,
+        merchant.merchant_name
+        FROM
+        catering_marketing_ticket t1
+        LEFT JOIN catering_user_ticket u ON u.ticket_id = t1.id
+        AND u.is_del = FALSE
+        LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+        AND t2.is_del = FALSE
+        LEFT JOIN catering_marketing_goods_category t3 ON t3.m_goods_id = t2.id
+        AND t3.is_del = FALSE
+        left join catering_merchant merchant on merchant.id=t1.merchant_id
+        WHERE
+        u.id = #{ticketId}
+    </select>
+
+</mapper>

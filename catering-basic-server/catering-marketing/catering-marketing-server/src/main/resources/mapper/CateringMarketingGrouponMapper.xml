@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingGrouponMapper">
+
+    <resultMap type="com.meiyuan.catering.marketing.entity.CateringMarketingGrouponEntity"
+               id="CateringMarketingGrouponMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="beginTime" column="begin_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="upDown" column="up_down" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="cretae_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <select id="listPage" resultType="com.meiyuan.catering.marketing.vo.groupon.GrouponListVO">
+        select g.id, g.name,g.begin_time,g.end_time,g.up_down,m.shop_name,m.merchant_name,g.create_time
+        from catering_marketing_groupon g
+        left join catering_marketing_merchant m on g.id = m.of_id
+        where g.is_del = false and m.is_del = false
+        <if test="queryDTO.name != null and queryDTO.name != ''">
+            and (g.name like concat('%',#{queryDTO.name},'%')
+            OR g.id in (SELECT
+            of_id
+            FROM
+            catering_marketing_goods
+            WHERE
+            is_del = FALSE
+            AND of_type = 3
+            AND goods_name LIKE concat('%',#{queryDTO.name},'%'))
+            )
+
+        </if>
+        <if test="queryDTO.beginTime != null">
+            and g.create_time &gt;= #{queryDTO.beginTime}
+        </if>
+        <if test="queryDTO.endTime != null">
+            and g.create_time &lt; #{queryDTO.endTime}
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 1">
+            and g.begin_time &gt; now() AND g.up_down = 2
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 2">
+            and g.begin_time &lt;= now() and g.end_time &gt; now() AND g.up_down = 2
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 3">
+            and (g.end_time &lt;= now() or g.up_down = 1)
+        </if>
+        <if test="queryDTO.upDown != null">
+            and g.up_down = #{queryDTO.upDown}
+        </if>
+        order by g.create_time desc
+    </select>
+
+    <select id="listPageOfMerchant"
+            resultType="com.meiyuan.catering.marketing.vo.groupon.MerchantGrouponListVO">
+        select groupon.id, groupon.name,groupon.begin_time,groupon.end_time,groupon.source,groupon.virtual_groupon,groupon.up_down,
+        (select count(0) from catering_marketing_goods good where good.of_id = groupon.id and good.is_del = FALSE ) as
+        goodsNumber
+        from catering_marketing_groupon groupon
+        left join catering_marketing_merchant merchant on groupon.id = merchant.of_id and merchant.is_del = false
+        where groupon.is_del = false and merchant.shop_id = #{merchantId}
+        <if test="queryDTO.status != null and queryDTO.status == 1">
+            and groupon.begin_time &gt; now() AND groupon.up_down = 2
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 2">
+            and groupon.begin_time &lt;= now() and groupon.end_time &gt; now() AND groupon.up_down = 2
+        </if>
+        <if test="queryDTO.status != null and queryDTO.status == 3">
+            and (groupon.end_time &lt;= now() or groupon.up_down = 1)
+        </if>
+        order by groupon.create_time desc
+    </select>
+
+    <select id="listGoodsIds" resultType="com.meiyuan.catering.marketing.dto.groupon.GoodsFilterDTO">
+        select goods.goods_id, merchant.shop_id as merchantId
+        from catering_marketing_goods goods
+        left join catering_marketing_merchant merchant on goods.of_id = merchant.of_id
+        left join catering_marketing_groupon groupon on groupon.id = merchant.of_id
+        where groupon.is_del = 0 and groupon.up_down = 2
+        <if test="objectLimit!=null">
+            and groupon.object_limit = #{objectLimit}
+        </if>
+        and
+        (
+        (#{begin} between groupon.begin_time and groupon.end_time)
+         or (#{end} between groupon.begin_time and groupon.end_time)
+        or (#{begin} &lt;= groupon.begin_time and #{end} &gt;= groupon.end_time )
+        )
+    </select>
+
+    <select id="countByTimeAndGoodsId" resultType="java.lang.Long">
+        select count(groupon.id) from catering_marketing_groupon groupon
+        left join catering_marketing_goods goods on groupon.id = goods.of_id
+        where groupon.is_del = 0 and goods.is_del = 0
+        and goods.goods_id = #{goodsId}
+        and (
+        (#{begin} between groupon.begin_time and groupon.end_time)
+        or (#{end} between groupon.begin_time and groupon.end_time)
+        or (#{begin} &lt;= groupon.begin_time and #{end} &gt;= groupon.end_time )
+        )
+        <if test="ignoredGrouponId != null">
+            and groupon.id != #{ignoredGrouponId}
+        </if>
+    </select>
+
+    <select id="findAll" resultType="com.meiyuan.catering.marketing.dto.es.MarketingToEsDTO">
+    SELECT
+        t1.id,
+        t1.NAME,
+        t1.begin_time,
+        t1.end_time,
+        t1.object_limit,
+        t1.up_down as upDownState,
+        t1.is_del AS del,
+        t1.merchant_id as shopId,
+        t2.id as mGoodsId,
+        t2.of_type,
+        t2.goods_id,
+        t2.goods_name,
+        t2.store_price,
+        t2.goods_picture,
+        t2.sku,
+        t2.quantity,
+        t2.limit_quantity,
+        t2.min_quantity,
+        t2.min_group_quantity AS minGrouponQuantity,
+        t2.activity_price,
+        t2.sku_value,
+        t2.goods_label,
+        t2.goods_desc AS goodsDescribeText,
+        t2.goods_status AS goodsUpDownState,
+        t2.goods_sort AS goodsSort,
+        t2.goods_synopsis as goodsSynopsis,
+        t2.goods_add_type as goodsAddType,
+        t2.goods_sales_channels as goodsSalesChannels,
+        t2.goods_spec_type as goodsSpecType,
+        t2.pack_price as packPrice,
+        ( SELECT sold_out FROM catering_marketing_repertory WHERE m_goods_id = t2.id AND is_del = FALSE ) AS soldOut,
+        t3.merchant_id AS merchantId,
+        t3.merchant_name AS merchantName,
+        t3.shop_name AS shopName
+    FROM
+	    catering_marketing_groupon t1
+	LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+	    AND t2.is_del = FALSE
+    LEFT JOIN catering_marketing_merchant t3 ON t1.id = t3.of_id AND t3.is_del = FALSE
+    WHERE t2.id IS NOT NULL
+    </select>
+
+    <select id="listTomorrowNeedDown"
+            resultType="com.meiyuan.catering.marketing.dto.groupon.GrouponAutoDownDTO">
+        select id,end_time from catering_marketing_groupon
+        where is_del = false and up_down = 2
+        and TO_DAYS( end_time ) - TO_DAYS( now( ) ) = 1
+    </select>
+    <select id="findByGoodsId" resultType="com.meiyuan.catering.marketing.dto.es.MarketingToEsDTO">
+        SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.up_down as upDownState,
+            t1.is_del AS del,
+            t1.merchant_id as shopId,
+            t2.id as mGoodsId,
+            t2.of_type,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.min_group_quantity as minGrouponQuantity,
+            t2.activity_price,
+            t2.sku_value,
+            t2.goods_label as goodsLabel,
+            t2.goods_picture as goodsPicture,
+            t2.goods_desc AS goodsDescribeText,
+            t2.goods_status as goodsUpDownState,
+            t2.goods_sort as goodsSort,
+            t2.goods_synopsis as goodsSynopsis,
+            t2.goods_add_type as goodsAddType,
+            t2.goods_sales_channels as goodsSalesChannels,
+            t2.goods_spec_type as goodsSpecType,
+            t2.pack_price as packPrice,
+            ( SELECT sold_out FROM catering_marketing_repertory WHERE m_goods_id = t2.id AND is_del = FALSE ) AS soldOut,
+            t3.merchant_id AS merchantId,
+            t3.merchant_name AS merchantName,
+            t3.shop_name AS shopName
+        FROM
+            catering_marketing_groupon t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+                LEFT JOIN catering_marketing_merchant t3 ON t1.id = t3.of_id AND t3.is_del = FALSE
+        WHERE t1.id in (SELECT of_id FROM catering_marketing_goods WHERE goods_id =#{goodsId} and is_del =FALSE)
+            AND t2.id IS NOT NULL
+    </select>
+    <!--筛选参加活动的商品-->
+    <resultMap id="filterGoodsMap" type="com.meiyuan.catering.marketing.dto.seckill.ActivityGoodsFilterDTO">
+        <result property="id" column="id"/>
+        <result property="merchantId" column="merchant_id"/>
+        <result property="name" column="name"/>
+        <collection property="goodsIds" ofType="java.lang.String">
+            <result column="goods_id"/>
+        </collection>
+        <collection property="goodsSkuList" ofType="com.meiyuan.catering.marketing.dto.seckill.ActivityGoodsSkuDTO">
+            <result property="goodsName" column="goods_name"/>
+            <result property="sku" column="sku"/>
+            <result property="skuValue" column="sku_value"/>
+        </collection>
+    </resultMap>
+    <select id="shopListMerchantIds" resultMap="filterGoodsMap">
+        SELECT
+        t1.id,
+        t2.goods_id,
+        t1.name,
+        t1.merchant_id,
+        t2.goods_name,
+        t2.sku,
+        t2.sku_value
+        FROM
+        catering_marketing_groupon t1
+        LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+        AND t2.is_del = FALSE
+        WHERE
+        t1.merchant_id = #{shopId} AND t1.is_del = FALSE and t1.up_down = 2
+        <if test="objectLimit != null and objectLimit == 0">
+            and (t1.object_limit = 0 or t1.object_limit = 1 or t1.object_limit = 2)
+        </if>
+        <if test="objectLimit != null and objectLimit == 1">
+            and t1.object_limit = 1
+        </if>
+        <if test="objectLimit != null and objectLimit == 2">
+            and t1.object_limit = 2
+        </if>
+        AND ( ( #{begin} BETWEEN t1.begin_time AND t1.end_time ) OR ( #{end} BETWEEN t1.begin_time AND t1.end_time ) OR (#{begin} &lt;= t1.begin_time and #{end} &gt;= t1.end_time))
+    </select>
+
+    <select id="listShopHaveGroupon" resultType="long">
+        SELECT
+          mg.merchant_id shopId
+        FROM
+        catering_marketing_groupon mg
+        right JOIN catering_marketing_goods mgo ON mg.id = mgo.of_id
+        WHERE
+            mg.up_down = 2  AND mg.is_del = 0  and mgo.is_del = false and mgo.goods_status = 2
+            and (<![CDATA[ mg.begin_time <= now() and mg.end_time >= now()]]>)
+        <if test="type">
+            and (mg.object_limit = 0 or  mg.object_limit = 2)
+        </if>
+        <if test="!type">
+            and (mg.object_limit = 0 or  mg.object_limit = 1)
+        </if>
+        <if test="shopIds != null and shopIds.size != 0">
+            AND mg.merchant_id in
+            <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </if>
+        GROUP BY shopId;
+    </select>
+
+    <select id="listGoodsMinPriceByShop" resultType="com.meiyuan.catering.marketing.dto.groupon.ShopGrouponGoodsDTO">
+        SELECT
+            mg.merchant_id shopId,
+            MIN(mgo.activity_price) activityPrice
+        FROM
+            catering_marketing_groupon mg
+            right JOIN catering_marketing_goods mgo ON mg.id = mgo.of_id
+        WHERE
+            mg.up_down = 2  AND mg.is_del = 0  and mgo.is_del = false and mgo.goods_status = 2
+            and (<![CDATA[ mg.begin_time <= now() and mg.end_time >= now()]]>)
+            <if test="type">
+                and (mg.object_limit = 0 or  mg.object_limit = 2)
+            </if>
+            <if test="!type">
+                and (mg.object_limit = 0 or  mg.object_limit = 1)
+            </if>
+            <if test="shopIds != null and shopIds.size != 0">
+                AND mg.merchant_id in
+                <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                    #{shopId}
+                </foreach>
+            </if>
+        GROUP BY shopId;
+    </select>
+    <select id="minPriceByShopId" resultType="java.math.BigDecimal">
+        select
+            cmgo.activity_price
+        from
+            catering_marketing_goods as cmgo
+        left join catering_marketing_groupon as cmg on cmg.id = cmgo.of_id
+        where
+        cmg.merchant_id = #{shopId}
+        and (cmg.object_limit = #{objectLimit} or cmg.object_limit = 0)
+        and cmg.up_down = 2 and cmg.is_del = 0 and cmgo.goods_status = 2 and cmgo.is_del = 0
+        and ( <![CDATA[ begin_time <= #{now} and #{now} <= end_time]]> )
+        order by cmgo.activity_price asc
+        limit 1
+    </select>
+
+    <select id="selectValidBeginOrNoBegin" resultType="java.lang.Long">
+        select
+            id
+        from
+            catering_marketing_groupon
+        where
+            merchant_id = #{shopId} and up_down = 2 and is_del = false
+            and ( <![CDATA[ begin_time >= #{now} or (begin_time <= #{now} and #{now} <= end_time)]]> )
+    </select>
+
+    <update id="freezeBath">
+        update catering_marketing_groupon
+        set up_down = 1
+        where id in
+        <foreach collection="ids" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+</mapper>

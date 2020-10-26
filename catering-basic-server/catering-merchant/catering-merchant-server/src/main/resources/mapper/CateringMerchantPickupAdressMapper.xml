@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringMerchantPickupAdressMapper">
+
+    <resultMap type="com.meiyuan.catering.merchant.entity.CateringMerchantPickupAdressEntity" id="CateringMerchantPickupAdressMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="pickupId" column="pickup_id" jdbcType="BIGINT"/>
+                        <result property="shopId" column="shop_id" jdbcType="BIGINT"/>
+                         <result property="chargerName" column="charger_name" jdbcType="VARCHAR"/>
+                         <result property="chargerPhone" column="charger_phone" jdbcType="VARCHAR"/>
+                        <result property="name" column="name" jdbcType="VARCHAR"/>
+                        <result property="addressProvinceCode" column="address_province_code" jdbcType="VARCHAR"/>
+                        <result property="addressCityCode" column="address_city_code" jdbcType="VARCHAR"/>
+                        <result property="addressAreaCode" column="address_area_code" jdbcType="VARCHAR"/>
+                        <result property="addressProvince" column="address_province" jdbcType="VARCHAR"/>
+                        <result property="addressCity" column="address_city" jdbcType="VARCHAR"/>
+                        <result property="addressArea" column="address_area" jdbcType="VARCHAR"/>
+                        <result property="addressDetail" column="address_detail" jdbcType="VARCHAR"/>
+                        <result property="addressFull" column="address_full" jdbcType="VARCHAR"/>
+                        <result property="mapCoordinate" column="map_coordinate" jdbcType="VARCHAR"/>
+            </resultMap>
+
+        <select id="listMerchantPickupAddressPage" resultType="com.meiyuan.catering.merchant.vo.merchant.CateringMerchantPickupAddressPageVo">
+            SELECT
+                cs.id id,
+                cs.shop_name shopName,
+                cs.shop_code shopCode,
+                cs.primary_person_name primaryPersonName,
+                cs.register_phone registerPhone,
+                cs.address_detail addressDetail,
+                cs.address_city addressCity,
+                cs.address_area addressArea,
+                cs.address_province addressProvince,
+                cs.shop_status shopStatus,
+                cs.create_time createTime,
+                case (SELECT count(*) FROM catering_merchant_pickup_adress mpa where mpa.is_del = false and cs.id = mpa.pickup_id) when 0 then 2 else 1 end shopBoundStatus
+            FROM
+            catering_shop cs
+            <where>
+                cs.is_del = false AND cs.is_del = false and cs.shop_type = 3
+                <if test="dto.shopName != null">
+                    AND cs.shop_name like concat('%', REPLACE(REPLACE(#{dto.shopName,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                </if>
+                <if test="dto.addressProvinceCode != null and dto.addressProvinceCode != ''">
+                    AND cs.address_province_code = #{dto.addressProvinceCode}
+                </if>
+                <if test="dto.addressCityCode != null and dto.addressCityCode != ''">
+                    AND cs.address_city_code = #{dto.addressCityCode}
+                </if>
+                <if test="dto.addressAreaCode != null and dto.addressAreaCode != ''">
+                    AND cs.address_area_code = #{dto.addressAreaCode}
+                </if>
+                <if test="dto.keyword!= null and dto.keyword!= ''">
+                    AND (
+                    cs.primary_person_name like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%') or
+                    cs.register_phone like concat('%', REPLACE(REPLACE(#{dto.keyword,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                    )
+                </if>
+                <if test="dto.startTime!=null ">
+                    AND cs.create_time <![CDATA[ >= ]]> #{dto.startTime}
+                </if>
+                <if test="dto.endTime!=null ">
+                    AND cs.create_time <![CDATA[ < ]]> #{dto.endTime}
+                </if>
+            </where>
+            ORDER BY createTime DESC
+        </select>
+
+    <select id="getMerchantPickupAddress" resultType="com.meiyuan.catering.merchant.dto.merchant.MerchantsPickupAddressDTO">
+            SELECT
+                cs.id id,
+                cs.shop_name shopName,
+                cs.primary_person_name primaryPersonName,
+                cs.address_detail addressDetail,
+                cs.door_number doorNumber,
+                cs.map_coordinate mapCoordinate,
+                cs.address_full addressFull,
+                cs.shop_status shopStatus,
+                (case when cs.shop_type = 3 then cs.register_phone  else cs.shop_phone end) registerPhone
+            FROM
+                catering_shop cs
+            where
+            cs.id = #{id}
+    </select>
+    <select id="shopPickupAddressPage" resultType="com.meiyuan.catering.merchant.entity.CateringMerchantPickupAdressEntity">
+        SELECT
+            mpa.id id,
+            mpa.shop_id shopId,
+            mpa.pickup_id pickupId,
+            mpa.charger_name chargerName,
+            mpa.charger_phone chargerPhone,
+            mpa.name name,
+            mpa.address_province_code addressProvinceCode,
+            mpa.address_city_code addressCityCode,
+            mpa.address_area_code addressAreaCode,
+            mpa.address_province addressProvince,
+            mpa.address_city addressCity,
+            mpa.address_area addressArea,
+            mpa.address_detail addressDetail,
+            mpa.address_full addressFull,
+            mpa.map_coordinate mapCoordinate,
+            mpa.shop_status shopStatus,
+            mpa.is_del isDel
+        FROM
+            catering_merchant_pickup_adress mpa
+            RIGHT JOIN catering_shop shop ON mpa.pickup_id = shop.id AND shop.shop_status = 1  and shop.is_del = 0
+            RIGHT JOIN catering_merchant merchant ON merchant.id = shop.merchant_id AND merchant.merchant_status = 1 AND merchant.audit_status = 3 AND merchant.is_del = 0
+        WHERE
+          mpa.shop_id = #{dto.shopId} and mpa.is_del = false
+            <if test="dto.keyWord!= null and dto.keyWord!= ''">
+                AND (
+                mpa.name like concat('%', REPLACE(REPLACE(#{dto.keyWord,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%') or
+                mpa.address_full like concat('%', REPLACE(REPLACE(#{dto.keyWord,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')
+                )
+            </if>
+    </select>
+</mapper>

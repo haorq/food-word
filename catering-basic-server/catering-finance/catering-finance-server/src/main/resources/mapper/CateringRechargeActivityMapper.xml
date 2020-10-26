@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.finance.dao.CateringRechargeActivityMapper">
+
+    <select id="listByCondition" resultType="com.meiyuan.catering.finance.entity.CateringRechargeActivityEntity">
+        SELECT
+        id,
+        discount_rate,
+        operate_id,
+        update_admin_id,
+        update_time,
+        is_del AS del,
+        remark,
+        recharge_account,
+        create_time,
+        name,
+        user_type,
+        end_time,
+        begin_time,
+        given_account,
+        status
+        FROM
+        catering_recharge_activity
+        <where>
+            is_del=0
+            <if test="name != null and name != ''">
+                and name != #{name}
+            </if>
+            <if test="rechargeAccount != null">
+                and recharge_account = #{rechargeAccount}
+            </if>
+            and (
+            (begin_time &lt; #{beginTime} or
+            end_time &gt;= #{beginTime} )
+            or
+            (begin_time &lt; #{endTime} or
+            end_time &gt;= #{endTime})
+            )
+        </where>
+
+
+    </select>
+</mapper>

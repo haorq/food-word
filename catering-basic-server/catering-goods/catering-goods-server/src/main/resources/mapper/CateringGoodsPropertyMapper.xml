@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsPropertyMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsPropertyEntity" id="CateringGoodsPropertyMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                        <result property="goodsId" column="goods_id" jdbcType="BIGINT"/>
+                        <result property="spuCode" column="spu_code" jdbcType="VARCHAR"/>
+                        <result property="propertyTypeId" column="property_type_id" jdbcType="BIGINT"/>
+                        <result property="propertyTypeName" column="property_type_name" jdbcType="VARCHAR"/>
+                        <result property="propertyValue" column="property_value" jdbcType="VARCHAR"/>
+            </resultMap>
+
+
+    <sql id="sqlColumn">
+        id, goods_id, spu_code, property_type_id, property_type_name, property_value
+    </sql>
+
+    <!--获取集合根据商品id-->
+    <select id="listByGoodsId" resultType="java.lang.Long" resultMap="CateringGoodsPropertyMap">
+        select
+        <include refid="sqlColumn"/>
+        from
+        catering_goods_property
+        where
+        goods_id = #{goodsId}
+    </select>
+
+</mapper>

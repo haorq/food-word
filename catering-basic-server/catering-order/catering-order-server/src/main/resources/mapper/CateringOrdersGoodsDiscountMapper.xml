@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersGoodsDiscountMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersGoodsDiscountEntity" id="CateringOrdersGoodsDiscountMap">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+                    <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+                    <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+                    <result property="orderGoodsId" column="order_goods_id" jdbcType="INTEGER"/>
+                    <result property="orderDiscountsId" column="order_discounts_id" jdbcType="INTEGER"/>
+                    <result property="discountRate" column="discount_rate" jdbcType="OTHER"/>
+                    <result property="discountAmount" column="discount_amount" jdbcType="OTHER"/>
+                    <result property="salesPrice" column="sales_price" jdbcType="OTHER"/>
+                    <result property="transactionPrice" column="transaction_price" jdbcType="OTHER"/>
+                    <result property="discountBeforeFee" column="discount_before_fee" jdbcType="OTHER"/>
+                    <result property="discountLaterFee" column="discount_later_fee" jdbcType="OTHER"/>
+                    <result property="limitLevel" column="limit_level" jdbcType="INTEGER"/>
+            </resultMap>
+
+</mapper>

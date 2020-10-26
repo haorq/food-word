@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingSpecialSkuMapper">
+
+    <update id="logicDelGoods">
+        update catering_marketing_special_sku as cmss, catering_marketing_special as cms set cmss.is_del = 1, cmss.update_time = #{now}
+        where cms.id = cmss.of_id and cmss.goods_id = #{goodsId} and cms.is_del = 0 and cms.status != 1
+        <if test="merchantId != null">
+            and cms.merchant_id = #{merchantId}
+        </if>
+    </update>
+
+    <update id="updateGoodsNameByGoodsId">
+        update
+            catering_marketing_special_sku as cmss,
+            catering_marketing_special as cms
+        set
+            cmss.goods_name = #{goodsName}
+        where
+            cmss.of_id = cms.id and cmss.goods_id = #{goodsId} and cms.merchant_id = #{merchantId}
+    </update>
+
+    <update id="logicDelGoodsByIds">
+        update catering_marketing_special_sku as cmss, catering_marketing_special as cms set cmss.is_del = 1, cmss.update_time = #{now}
+        where cms.id = cmss.of_id and cms.is_del = 0 and cms.status != 1
+        and cmss.id in
+        <foreach collection="delIdList" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <delete id="delNoBeginGoods">
+        delete
+            cmss.*
+        from
+            catering_marketing_special_sku as cmss
+            left join catering_marketing_special as cms on cms.id = cmss.of_id
+        where
+            cms.is_del = 0 and cms.status = 1 and cmss.goods_id = #{goodsId}
+            <if test="merchantId != null">
+                and cms.merchant_id = #{merchantId}
+            </if>
+    </delete>
+
+    <delete id="delNoBeginGoodsByIds">
+        delete
+            cmss.*
+        from
+            catering_marketing_special_sku as cmss
+            left join catering_marketing_special as cms on cms.id = cmss.of_id
+        where
+            cms.is_del = 0 and cms.status = 1
+            and cmss.id in
+            <foreach collection="delIdList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </delete>
+
+    <select id="selectGoodsDetail"
+            resultType="com.meiyuan.catering.marketing.vo.special.MarketingSpecialGoodsDetailVO">
+        select
+            cmss.goods_id as goodsId,
+            cmge.category_id as categoryId,
+            cmge.category_name as categoryName,
+            cmss.goods_name as goodsName,
+            cmss.sku_code as skuCode,
+            cmss.property_value as propertyValue,
+            cmss.special_number as specialNumber,
+            cmss.activity_price as activityPrice,
+            cmss.discount_limit as discountLimit,
+            cmss.min_quantity as minQuantity,
+            s_sku.market_price as marketPrice
+        from
+            catering_marketing_special_sku as cmss
+            left join catering_shop_goods_sku as s_sku on s_sku.id = cmss.shop_sku_id
+            left join catering_shop_goods_spu as s_spu on s_spu.id = s_sku.shop_goods_spu_id
+            left join (select * from catering_merchant_goods_extend where id in (select max(id) from catering_merchant_goods_extend where merchant_id = #{merchantId} group by goods_id)) as cmge on (cmge.merchant_id = s_spu.merchant_id and s_spu.goods_id = cmge.goods_id)
+            left join catering_category_shop_relation ccsr ON ccsr.category_id = cmge.category_id and ccsr.shop_id = cmss.shop_id
+        where
+            cmss.of_id = #{specialId}
+        order by ccsr.sort, s_spu.sort, s_sku.property_value
+    </select>
+
+    <select id="selectDetailGoodsPage"
+            resultType="com.meiyuan.catering.marketing.vo.special.MarketingSpecialGoodsPageVO">
+        select
+            cmss.sku_code as skuCode,
+            cmss.goods_id as goodsId,
+            cmge.category_id as categoryId,
+            cmge.category_name as categoryName,
+            cmss.goods_name as goodsName,
+            cmss.property_value as propertyValue,
+            cmss.special_number as specialNumber,
+            cmss.activity_price as activityPrice,
+            cmss.discount_limit as discountLimit,
+            cmss.min_quantity as minQuantity,
+            s_sku.market_price as marketPrice,
+            cmge.id as goodsExtentId,
+            cmge.goods_spec_type as goodsSpecType
+        from
+            catering_marketing_special_sku as cmss
+            left join catering_shop_goods_sku as s_sku on s_sku.id = cmss.shop_sku_id
+            left join catering_shop_goods_spu as s_spu on s_spu.id = s_sku.shop_goods_spu_id
+            left join (select * from catering_merchant_goods_extend where id in (select max(id) from catering_merchant_goods_extend where merchant_id = #{merchantId} group by goods_id)) as cmge on (cmge.merchant_id = s_spu.merchant_id and s_spu.goods_id = cmge.goods_id)
+            left join catering_category_shop_relation ccsr ON ccsr.category_id = cmge.category_id and ccsr.shop_id = cmss.shop_id
+        where
+            cmss.of_id = #{specialId}
+            <if test="categoryId != null">
+                and cmge.category_id = #{categoryId}
+            </if>
+            <if test="goodsName != null and goodsName != ''">
+                <bind name="_goodsName" value="'%' + goodsName + '%'"/>
+                and cmss.goods_name like #{_goodsName}
+            </if>
+        order by ccsr.sort, s_spu.sort, s_sku.property_value
+    </select>
+    <select id="selectHavingListByShopId"
+            resultType="com.meiyuan.catering.marketing.dto.marketing.MarketingPcMenuUpdateSpecialReturnDTO">
+        select
+            cms.fix_type as fixType,
+            cmss.goods_id as goodsId,
+            cmss.goods_name as goodsName,
+            cmss.sku_code as skuCode,
+            cmss.property_value as propertyValue,
+            cmss.special_number as specialNumber,
+            cmss.activity_price as activityPrice,
+            cmss.discount_limit as discountLimit,
+            cmss.min_quantity as minQuantity
+        from
+            catering_marketing_special_sku as cmss
+            left join catering_marketing_special as cms on cms.id = cmss.of_id
+            left join catering_shop_goods_sku as s_sku on s_sku.id = cmss.shop_sku_id
+            left join catering_shop_goods_spu as s_spu on s_spu.id = s_sku.shop_goods_spu_id
+        where
+            cmss.is_del = 0 and cms.is_del = 0 and cms.up_down = 2 and cms.status = 2
+            and cmss.shop_id = #{shopId} and s_spu.goods_and_type != 3
+
+    </select>
+    <select id="selectGoodsSkuByShopIds"
+            resultType="com.meiyuan.catering.core.dto.es.MarketingSpecialSku">
+        select
+            cms.id as specialId,
+            cms.fix_type as fixType,
+            cms.shop_id as shopId,
+            cmss.goods_id as goodsId,
+            cmss.sku_code as skuCode,
+            cmss.special_number as specialNumber,
+            cmss.activity_price as activityPrice,
+            cmss.discount_limit as discountLimit,
+            cmss.min_quantity as minQuantity
+        from
+            catering_marketing_special as cms
+            left join catering_marketing_special_sku as cmss on cmss.of_id = cms.id
+        where
+            cms.up_down = 2 and cms.status = 2 and cms.is_del = 0 and cmss.is_del = 0
+            and cms.shop_id in
+            <foreach collection="shopIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+    <select id="selectGoodsSkuByShopIdAndGoodsId"
+            resultType="com.meiyuan.catering.core.dto.es.MarketingSpecialSku">
+        select
+            cms.id as specialId,
+            cms.fix_type as fixType,
+            cms.shop_id as shopId,
+            cmss.goods_id as goodsId,
+            cmss.sku_code as skuCode,
+            cmss.special_number as specialNumber,
+            cmss.activity_price as activityPrice,
+            cmss.discount_limit as discountLimit,
+            cmss.min_quantity as minQuantity
+        from
+            catering_marketing_special as cms
+            left join catering_marketing_special_sku as cmss on cmss.of_id = cms.id
+        where
+            cms.up_down = 2 and cms.status = 2 and cms.is_del = 0 and cmss.is_del = 0
+            and cms.shop_id = #{shopId} and cmss.goods_id = #{goodsId}
+    </select>
+    <select id="selectGoodsSkuByGoodsId" resultType="com.meiyuan.catering.core.dto.es.MarketingSpecialSku">
+        select
+            cms.id as specialId,
+            cms.fix_type as fixType,
+            cms.shop_id as shopId,
+            cmss.goods_id as goodsId,
+            cmss.sku_code as skuCode,
+            cmss.special_number as specialNumber,
+            cmss.activity_price as activityPrice,
+            cmss.discount_limit as discountLimit,
+            cmss.min_quantity as minQuantity
+        from
+            catering_marketing_special as cms
+            left join catering_marketing_special_sku as cmss on cmss.of_id = cms.id
+        where
+            cms.up_down = 2 and cms.status = 2 and cms.is_del = 0 and cmss.is_del = 0
+            and cmss.goods_id = #{goodsId}
+    </select>
+    <select id="isJoinActivity"
+            resultType="com.meiyuan.catering.marketing.entity.CateringMarketingSpecialSkuEntity">
+        select
+            cmss.*
+        from
+            catering_marketing_special as cms
+            left join catering_marketing_special_sku as cmss on cmss.of_id = cms.id
+        where
+            cms.up_down = 2 and cms.status != 3 and cms.is_del = 0 and cmss.is_del = 0 and cms.merchant_id = #{merchantId}
+            and cmss.goods_id in
+            <foreach collection="goodsIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+    <select id="selectGoodsUnit"
+            resultType="com.meiyuan.catering.marketing.vo.special.MarketingSpecialGoodsUnitVO">
+        select
+            sku_code as skuCode,
+            unit as unit
+        from
+            catering_merchant_goods_sku
+        where id in (
+            select max(id) from catering_merchant_goods_sku where merchant_goods_extend_id in
+            <foreach collection="goodsExtentIdList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            group by sku_code
+        )
+    </select>
+    <select id="listByMerchantIdAndGoodsId"
+            resultType="com.meiyuan.catering.marketing.entity.CateringMarketingSpecialSkuEntity">
+        select
+            cmss.*
+        from
+            catering_marketing_special_sku as cmss
+            left join catering_marketing_special cms on cms.id = cmss.of_id
+        where cmss.goods_id = #{goodsId} and cms.merchant_id = #{merchantId} and cmss.is_del = 0 and cms.is_del = 0
+    </select>
+</mapper>

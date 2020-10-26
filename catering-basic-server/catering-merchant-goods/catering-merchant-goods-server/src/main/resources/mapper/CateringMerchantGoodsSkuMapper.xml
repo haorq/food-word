@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.goods.dao.CateringMerchantGoodsSkuMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.goods.entity.CateringMerchantGoodsSkuEntity">
+        <id column="id" property="id" />
+        <result column="merchant_goods_extend_id" property="merchantGoodsExtendId" />
+        <result column="goods_id" property="goodsId" />
+        <result column="spu_code" property="spuCode" />
+        <result column="sku_code" property="skuCode" />
+        <result column="property_value" property="propertyValue" />
+        <result column="pic_url" property="picUrl" />
+        <result column="market_price" property="marketPrice" />
+        <result column="sales_price" property="salesPrice" />
+        <result column="enterprise_price" property="enterprisePrice" />
+        <result column="pack_price" property="packPrice" />
+        <result column="sales_channels" property="salesChannels" />
+        <result column="unit" property="unit" />
+        <result column="stock" property="stock" />
+        <result column="is_full_stock" property="isFullStock" />
+        <result column="remain_stock" property="remainStock" />
+        <result column="discount_limit" property="discountLimit" />
+        <result column="goods_spec_type" property="goodsSpecType" />
+        <result column="update_time" property="updateTime" />
+        <result column="lowest_buy" property="lowestBuy" />
+        <result column="highest_buy" property="highestBuy" />
+        <result column="is_del" property="del" />
+        <result column="create_by" property="createBy" />
+        <result column="create_time" property="createTime" />
+        <result column="update_by" property="updateBy" />
+    </resultMap>
+    <sql id="Base_Column_List">
+          id, merchant_goods_extend_id,goods_id, spu_code, sku_code, property_value, pic_url, market_price, sales_price, remain_stock,enterprise_price, pack_price,unit, sales_channels, stock, is_full_stock, discount_limit, goods_spec_type, update_time, lowest_buy, highest_buy, is_del, create_by, create_time, update_by
+    </sql>
+    <select id="maxDbCode"
+            resultType="com.meiyuan.catering.merchant.goods.entity.CateringMerchantGoodsSkuEntity">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM
+        catering_merchant_goods_sku
+        where
+        goods_id=#{merchantGoodsId}
+        ORDER BY
+        SUBSTRING(sku_code FROM 4) DESC
+        limit 1
+    </select>
+
+    <select id="getGoodsSkuInfo"
+            resultMap="BaseResultMap">
+        select * from catering_merchant_goods_sku where merchant_goods_extend_id = #{extendId} and sku_code = #{skuCode} order by create_time desc limit 1
+    </select>
+    <select id="selectGoodsMinQuantity"
+            resultType="com.meiyuan.catering.merchant.goods.vo.MarketingSpecialGoodsMinQuantityVO">
+        select
+            sku_code AS skuCode,
+            lowest_buy AS minQuantity
+        from
+            catering_merchant_goods_sku
+        where
+            id in (select
+                    max(id)
+                   from
+                    catering_merchant_goods_sku
+                   where
+                    merchant_goods_extend_id in
+                    <foreach collection="goodsExtendIds" item="item" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                     group by sku_code)
+            and sku_code in
+        <foreach collection="skuCodeSet" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+</mapper>

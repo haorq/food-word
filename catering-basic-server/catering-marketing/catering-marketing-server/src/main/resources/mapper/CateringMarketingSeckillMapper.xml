@@ -1,0 +1,1072 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.marketing.dao.CateringMarketingSeckillMapper">
+
+    <resultMap type="com.meiyuan.catering.marketing.entity.CateringMarketingSeckillEntity" id="CateringMarketingSeckillMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
+        <result property="beginTime" column="begin_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="upDown" column="up_down" jdbcType="INTEGER"/>
+        <result property="objectLimit" column="object_limit" jdbcType="INTEGER"/>
+        <result property="orderCancellationTime" column="order_cancellation_time" jdbcType="INTEGER"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="source" column="source" jdbcType="INTEGER"/>
+        <result property="activityTarget" column="activity_target" jdbcType="VARCHAR"/>
+        <result property="userTarget" column="user_target" jdbcType="INTEGER"/>
+        <result property="businessTarget" column="business_target" jdbcType="OTHER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+    <!--秒杀分页列表-->
+    <select id="pageList" resultType="com.meiyuan.catering.marketing.dto.seckill.MarketingSeckillListDTO" parameterType="com.meiyuan.catering.marketing.dto.seckill.MarketingSeckillPageParamDTO">
+        SELECT
+        t1.id,
+        t1.NAME,
+        t1.begin_time,
+        t1.end_time,
+        t1.up_down as upDownState,
+        t1.create_time,
+        m.shop_name as shopName,
+        m.merchant_name as merchantName,
+        t2.sold_out,
+        ( CASE
+        WHEN t1.up_down = 1 OR t1.end_time &lt; now(3) THEN 3
+        WHEN t1.begin_time &gt; now(3) THEN 2
+        WHEN t1.begin_time &lt;= now(3) AND t1.end_time &gt; now(3) THEN 1
+        END ) as `status`
+        FROM
+        catering_marketing_seckill t1
+        LEFT JOIN catering_marketing_repertory t2 ON t1.id = t2.of_id
+        LEFT JOIN catering_marketing_merchant m ON t1.id = m.of_id
+        AND t2.is_del = FALSE
+        <where>
+            t1.is_del = FALSE and m.is_del = false
+            <if test="dto.createTimeStart != null">
+                AND t1.create_time &gt;= #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND t1.create_time &lt; #{dto.createTimeEnd}
+            </if>
+            <if test="dto.name != null">
+                AND (t1.name like concat('%',#{dto.name},'%')
+                OR t1.description like concat('%',#{dto.name},'%')
+                OR t1.id in (SELECT
+                of_id
+                FROM
+                catering_marketing_goods
+                WHERE
+                is_del = FALSE
+                AND of_type = 1
+                AND goods_name LIKE concat('%',#{dto.name},'%'))
+                )
+            </if>
+            <if test="dto.upDownState != null">
+                AND t1.up_down = #{dto.upDownState}
+            </if>
+            <choose>
+                <when test="dto.status != null and dto.status == 1">
+                    AND t1.begin_time &lt;= now(3) AND t1.end_time &gt; now(3) AND t1.up_down = 2
+                </when>
+                <when test="dto.status != null and dto.status == 2">
+                    AND t1.begin_time &gt; now(3) AND t1.up_down = 2
+                </when>
+                <when test="dto.status != null and dto.status == 3">
+                    AND (t1.end_time &lt;= now(3) OR t1.up_down = 1)
+                </when>
+                <otherwise></otherwise>
+            </choose>
+        </where>
+        GROUP BY t1.id
+        ORDER BY t1.create_time DESC
+    </select>
+    <!--详情-->
+    <resultMap id="seckillInfoMap" type="com.meiyuan.catering.marketing.dto.seckill.MarketingSeckillDetailsDTO">
+        <id property="id" column="id"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="name" column="NAME"/>
+        <result property="endTime" column="end_time"/>
+        <result property="objectLimit" column="object_limit"/>
+        <result property="description" column="description"/>
+        <result property="orderCancellationTime" column="order_cancellation_time"/>
+        <result property="upDownState" column="up_down"/>
+        <result property="merchantId" column="merchantId"/>
+        <result property="merchantName" column="merchantName"/>
+        <result property="shopId" column="shopId"/>
+        <result property="shopName" column="shopName"/>
+        <result property="createTime" column="create_time"/>
+        <collection property="goodsItem" ofType="com.meiyuan.catering.marketing.dto.seckill.MarketingSeckillGoodsInfoDTO">
+            <result property="goodsId" column="goods_id"/>
+            <result property="goodsName" column="goods_name"/>
+            <result property="storePrice" column="store_price"/>
+            <result property="goodsPicture" column="goods_picture"/>
+            <result property="sku" column="sku"/>
+            <result property="skuValue" column="sku_value"/>
+            <result property="quantity" column="quantity"/>
+            <result property="limitQuantity" column="limit_quantity"/>
+            <result property="minQuantity" column="min_quantity"/>
+            <result property="salesPrice" column="activity_price"/>
+        </collection>
+    </resultMap>
+    <select id="getInfo" resultMap="seckillInfoMap" parameterType="java.lang.Long">
+        SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.description,
+            t1.order_cancellation_time,
+            t1.up_down,
+            t3.merchant_id AS merchantId,
+            t3.merchant_name AS merchantName,
+            t3.shop_id AS shopId,
+            t3.shop_name AS shopName,
+            t1.create_time,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.sku_value,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.activity_price
+        FROM
+            catering_marketing_seckill t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+                LEFT JOIN catering_marketing_merchant t3 ON t1.id = t3.of_id AND t3.is_del = FALSE
+        WHERE
+            t1.id = #{id}
+          AND t1.is_del = FALSE
+    </select>
+    <select id="pageMerchantList"
+            resultType="com.meiyuan.catering.marketing.dto.seckill.SeckillMerchantListDTO" parameterType="java.lang.Integer">
+        SELECT
+        t1.id,
+        t1.NAME,
+        t1.begin_time,
+        t1.end_time,
+        t1.object_limit,
+        (select count(0) from catering_marketing_goods g where g.of_id = t1.id and g.is_del = FALSE ) as goodsNumber,
+        t1.source,
+        ( CASE
+        WHEN t1.up_down = 1 OR t1.end_time &lt; now(3) THEN 3
+        WHEN t1.begin_time &gt; now(3) THEN 1
+        WHEN t1.begin_time &lt;= now(3) AND t1.end_time &gt; now(3) THEN 2
+        END ) as `status`
+        FROM
+        catering_marketing_seckill t1
+        left join catering_marketing_merchant t2 on t2.of_id = t1.id and t2.is_del = false
+        <where>
+            t1.is_del = FALSE and t2.shop_id = #{merchantId}
+            <choose>
+                <when test="status != null and status == 2">
+                    AND t1.begin_time &lt;= now(3) AND t1.end_time &gt; now(3) AND t1.up_down = 2
+                </when>
+                <when test="status != null and status == 1">
+                    AND t1.begin_time &gt; now(3) AND t1.up_down = 2
+                </when>
+                <when test="status != null and status == 3">
+                    AND (t1.end_time &lt;= now(3) OR t1.up_down = 1)
+                </when>
+                <otherwise></otherwise>
+            </choose>
+        </where>
+
+    </select>
+
+
+
+    <resultMap id="merchantSeckillInfoMap" type="com.meiyuan.catering.marketing.dto.seckill.SeckillMerchantDetailsDTO">
+        <id property="id" column="id"/>
+        <result property="beginTime" column="begin_time"/>
+        <result property="name" column="NAME"/>
+        <result property="endTime" column="end_time"/>
+        <result property="objectLimit" column="object_limit"/>
+        <result property="description" column="description"/>
+        <result property="source" column="source"/>
+        <result property="goodsNumber" column="goodsNumber"/>
+        <result property="status" column="status"/>
+        <result property="seckillEvent" column="seckillEvent"/>
+        <result property="activityTarget" column="activity_target"/>
+        <result property="userTarget" column="user_target"/>
+        <result property="businessTarget" column="business_target"/>
+        <collection property="goodsItem" ofType="com.meiyuan.catering.marketing.dto.seckill.MarketingSeckillGoodsInfoDTO">
+            <result property="goodsId" column="goods_id"/>
+            <result property="goodsName" column="goods_name"/>
+            <result property="storePrice" column="store_price"/>
+            <result property="goodsPicture" column="goods_picture"/>
+            <result property="sku" column="sku"/>
+            <result property="skuValue" column="sku_value"/>
+            <result property="quantity" column="quantity"/>
+            <result property="limitQuantity" column="limit_quantity"/>
+            <result property="minQuantity" column="min_quantity"/>
+            <result property="salesPrice" column="activity_price"/>
+            <result property="del" column="is_del"/>
+        </collection>
+    </resultMap>
+    <select id="getMerchantInfo"
+            resultMap="merchantSeckillInfoMap" parameterType="java.lang.Long">
+     select temp.*  from (SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.up_down,
+            t1.description,
+            t1.activity_target,
+            t1.user_target,
+            t1.business_target,
+            (select count(0) from catering_marketing_goods g where g.of_id = t1.id and g.is_del = FALSE ) as goodsNumber,
+            ( SELECT GROUP_CONCAT( DISTINCT ser.event_time ) FROM catering_marketing_seckill_event_relation ser WHERE ser.seckill_id = t1.id ) AS seckillEvent,
+            t1.source,
+            ( CASE
+        WHEN t1.up_down = 2 and t1.begin_time > now( 3 ) THEN 1
+        WHEN t1.up_down = 2 and t1.end_time &lt; now( 3 ) THEN 	3
+        WHEN t1.up_down = 2 and t1.begin_time &lt;= now( 3 ) AND t1.end_time > now( 3 ) THEN 2
+        WHEN t1.up_down = 1 THEN	4
+
+        END ) as `status`,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.sku_value,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.is_del ,
+            t2.activity_price
+        FROM
+            catering_marketing_seckill t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+            <where>
+                t1.id = #{id}
+                AND t1.is_del = FALSE
+            </where>
+               )as temp
+      <where>
+          <if test="status==1">
+              AND temp.is_del = FALSE
+          </if>
+      </where>
+
+    </select>
+    <!--筛选参加活动的商品-->
+    <resultMap id="filterGoodsMap" type="com.meiyuan.catering.marketing.dto.seckill.ActivityGoodsFilterDTO">
+        <result property="id" column="id"/>
+        <result property="merchantId" column="shop_id"/>
+        <result property="name" column="name"/>
+        <collection property="goodsIds" ofType="java.lang.String">
+            <result column="goods_id"/>
+        </collection>
+        <collection property="goodsSkuList" ofType="com.meiyuan.catering.marketing.dto.seckill.ActivityGoodsSkuDTO">
+            <result property="goodsName" column="goods_name"/>
+            <result property="sku" column="sku"/>
+            <result property="skuValue" column="sku_value"/>
+        </collection>
+    </resultMap>
+    <select id="listMerchantIds" resultMap="filterGoodsMap">
+        SELECT
+        t1.id,
+        t2.goods_id,
+        t1.name,
+        t3.shop_id
+        FROM
+        catering_marketing_seckill t1
+        LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+        AND t2.is_del = FALSE
+        LEFT JOIN catering_marketing_merchant t3 ON t3.of_id = t1.id
+        AND t3.is_del = FALSE
+        WHERE
+        t1.is_del = FALSE and t1.up_down = 2
+        <if test="objectLimit!=null">
+            and t1.object_limit = #{objectLimit}
+        </if>
+        AND ( ( #{begin} BETWEEN t1.begin_time AND t1.end_time ) OR ( #{end} BETWEEN t1.begin_time AND t1.end_time ) OR (#{begin} &lt;= t1.begin_time and #{end} &gt;= t1.end_time))
+    </select>
+
+    <select id="shopListMerchantIds" resultMap="filterGoodsMap">
+        SELECT
+        t1.id,
+        t2.goods_id,
+        t1.name,
+        t3.shop_id,
+        t2.goods_name,
+        t2.sku,
+        t2.sku_value
+        FROM
+        catering_marketing_seckill t1
+        LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+        AND t2.is_del = FALSE
+        LEFT JOIN catering_marketing_merchant t3 ON t3.of_id = t1.id
+        AND t3.is_del = FALSE
+        WHERE
+        t1.merchant_id = #{shopId} AND t1.is_del = FALSE and t1.up_down = 2
+        <if test="objectLimit != null and objectLimit == 0">
+            and (t1.object_limit = 0 or t1.object_limit = 1 or t1.object_limit = 2)
+        </if>
+        <if test="objectLimit != null and objectLimit == 1">
+            and t1.object_limit = 1
+        </if>
+        <if test="objectLimit != null and objectLimit == 2">
+            and t1.object_limit = 2
+        </if>
+        AND ( ( #{begin} BETWEEN t1.begin_time AND t1.end_time ) OR ( #{end} BETWEEN t1.begin_time AND t1.end_time ) OR (#{begin} &lt;= t1.begin_time and #{end} &gt;= t1.end_time))
+    </select>
+
+    <select id="findAll" resultType="com.meiyuan.catering.marketing.dto.es.MarketingToEsDTO">
+        SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.up_down as upDownState,
+            t1.is_del as del,
+            t1.merchant_id as shopId,
+            t2.id as mGoodsId,
+            t2.of_type,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.min_group_quantity AS minGrouponQuantity,
+            t2.activity_price,
+            t2.sku_value,
+            t2.goods_label,
+            t2.goods_desc AS goodsDescribeText,
+            t2.goods_status AS goodsUpDownState,
+            t2.goods_sort AS goodsSort,
+            t2.goods_synopsis as goodsSynopsis,
+            t2.goods_add_type as goodsAddType,
+            t2.goods_spec_type as goodsSpecType,
+            t2.pack_price as packPrice,
+            t2.goods_sales_channels as goodsSalesChannels,
+            t3.merchant_id AS merchantId,
+            t3.merchant_name AS merchantName,
+            t3.shop_name AS shopName
+        FROM
+            catering_marketing_seckill t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+                LEFT JOIN catering_marketing_merchant t3 ON t1.id = t3.of_id AND t3.is_del = FALSE
+        WHERE t2.id IS NOT NULL
+    </select>
+    <select id="seckillGoodsInfo"
+            resultType="com.meiyuan.catering.marketing.dto.seckill.SeckillGoodsDetailsDTO">
+        SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.up_down as upDownState,
+            t1.is_del as del,
+            t2.id as mGoodsId,
+            t2.goods_status as goodsStatus,
+            t2.of_type,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.min_group_quantity,
+            t2.activity_price,
+            t2.sku_value,
+            ( SELECT sold_out FROM catering_marketing_repertory WHERE m_goods_id = t2.id AND is_del = FALSE and seckill_event_id = #{seckillEventId} ) AS soldOut,
+            ( SELECT residual_inventory FROM catering_marketing_repertory WHERE m_goods_id = t2.id AND is_del = FALSE and seckill_event_id = #{seckillEventId}) AS residualInventory,
+            t3.merchant_id as merchantId,
+            t3.shop_id as shopId
+        FROM
+            catering_marketing_seckill t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+                LEFT JOIN catering_marketing_merchant t3 ON t1.id = t3.of_id AND t3.is_del = FALSE
+        where t2.id = #{mGoodsId}
+    </select>
+    <!--查询秒杀结束时间是明天、上架中的秒杀id-->
+    <select id="selectTomorrow" resultType="com.meiyuan.catering.marketing.dto.seckill.MarketingSeckillListDTO">
+        SELECT
+            id,begin_time,end_time
+        FROM
+            `catering_marketing_seckill`
+        WHERE
+            TO_DAYS( end_time ) - TO_DAYS( now( ) ) = 1
+          AND up_down = 2
+          AND is_del = FALSE
+
+    </select>
+    <select id="findByGoodsIds" resultType="com.meiyuan.catering.marketing.dto.es.MarketingToEsDTO">
+        SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.up_down as upDownState,
+            t1.is_del as del,
+            t1.merchant_id as shopId,
+            t2.id as mGoodsId,
+            t2.of_type,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.min_group_quantity as minGrouponQuantity,
+            t2.activity_price,
+            t2.sku_value,
+            t2.goods_label as goodsLabel,
+            t2.goods_picture as goodsPicture,
+            t2.goods_desc AS goodsDescribeText,
+            t2.goods_status as goodsUpDownState,
+            t2.goods_sort as goodsSort,
+            t2.goods_synopsis as goodsSynopsis,
+            t2.goods_add_type as goodsAddType,
+            t2.goods_sales_channels as goodsSalesChannels,
+            t2.goods_spec_type as goodsSpecType,
+            t2.pack_price as packPrice,
+            t3.merchant_id AS merchantId,
+            t3.merchant_name AS merchantName,
+            t3.shop_name AS shopName
+        FROM
+            catering_marketing_seckill t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+                LEFT JOIN catering_marketing_merchant t3 ON t1.id = t3.of_id AND t3.is_del = FALSE
+        WHERE
+            t1.id in (SELECT of_id FROM catering_marketing_goods WHERE goods_id =#{goodsId} and is_del =FALSE)
+            AND t2.id IS NOT NULL
+
+    </select>
+
+    <select id="findByMerchant" resultType="com.meiyuan.catering.marketing.dto.seckill.SeckillMerchantListDTO">
+        SELECT
+        t1.id,
+        t1.NAME,
+        t1.begin_time,
+        t1.end_time,
+        t1.up_down as upDownState,
+        t1.create_time
+        FROM
+        catering_marketing_seckill t1
+        JOIN catering_marketing_merchant m ON t1.id = m.of_id
+        <where>
+            m.shop_id = #{dto.merchantId} AND t1.is_del = FALSE and m.is_del = false
+            <if test="dto.upDownState != null">
+                AND t1.up_down = #{dto.upDownState}
+            </if>
+
+            <if test="dto.objectLimit != null">
+                AND  t1.object_limit=#{dto.objectLimit}
+            </if>
+
+            <choose>
+                <when test="dto.status != null and dto.status == 2">
+                    AND t1.begin_time &lt;= now(3) AND t1.end_time &gt; now(3)
+                </when>
+                <when test="dto.status != null and dto.status == 1">
+                    AND t1.begin_time &gt; now(3)
+                </when>
+                <when test="dto.status != null and dto.status == 3">
+                    AND (t1.end_time &lt;= now(3) OR t1.up_down = 1)
+                </when>
+                <otherwise></otherwise>
+            </choose>
+        </where>
+        ORDER BY t1.begin_time,t1.create_time ASC
+    </select>
+    <select id="listSeckillGoods"
+            resultType="com.meiyuan.catering.marketing.dto.seckill.SeckillGoodsDetailsDTO">
+        SELECT
+            t1.id,
+            t1.NAME,
+            t1.begin_time,
+            t1.end_time,
+            t1.object_limit,
+            t1.up_down,
+            t1.is_del as del,
+            t2.id as mGoodsId,
+            t2.of_type,
+            t2.goods_id,
+            t2.goods_name,
+            t2.store_price,
+            t2.goods_picture,
+            t2.sku,
+            t2.quantity,
+            t2.limit_quantity,
+            t2.min_quantity,
+            t2.min_group_quantity,
+            t2.activity_price,
+            t2.sku_value,
+            ( SELECT sold_out FROM catering_marketing_repertory WHERE m_goods_id = t2.id AND is_del = FALSE ) AS soldOut,
+            ( SELECT residual_inventory FROM catering_marketing_repertory WHERE m_goods_id = t2.id AND is_del = FALSE ) AS residualInventory,
+            (select merchant_id from  catering_marketing_merchant where of_id = t1.id and is_del = false) as merchantId
+        FROM
+            catering_marketing_seckill t1
+                LEFT JOIN catering_marketing_goods t2 ON t1.id = t2.of_id
+                AND t2.is_del = FALSE
+        where t1.id = #{seckillId}
+    </select>
+    <select id="marketingActivityHavingPageQuery"
+            parameterType="com.meiyuan.catering.marketing.dto.marketing.MarketingSeckillGrouponPageQueryDTO"
+            resultType="com.meiyuan.catering.marketing.vo.marketing.MarketingSeckillGrouponPageQueryVO">
+        select
+            res.id as id,
+            res.marketingType as marketingType,
+            res.marketingName as marketingName,
+            res.beginTime as beginTime,
+            res.endTime as endTime,
+            res.userTarget as userTarget,
+            res.businessTarget as businessTarget,
+            res.upDown as upDown,
+            res.createTime as createTime
+        from
+        (
+        select
+            id as id,
+            1 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_seckill
+        where merchant_id = #{dto.shopId} and up_down = 2 and <![CDATA[ begin_time <= #{dto.now} ]]> and <![CDATA[ end_time >= #{dto.now} ]]> and is_del = 0
+
+        union all
+
+        select
+            id as id,
+            3 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_groupon
+        where merchant_id = #{dto.shopId} and up_down = 2 and <![CDATA[ begin_time <= #{dto.now} ]]> and <![CDATA[ end_time >= #{dto.now} ]]> and is_del = 0
+
+        union all
+
+        select
+            id as id,
+            5 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_special
+        where shop_id = #{dto.shopId} and up_down = 2 and <![CDATA[ begin_time <= #{dto.now} ]]> and <![CDATA[ end_time >= #{dto.now} ]]> and is_del = 0
+        ) as res
+        <where>
+            <if test="dto.marketingType == 1">
+                and res.marketingType = 1
+            </if>
+            <if test="dto.marketingType == 3">
+                and res.marketingType = 3
+            </if>
+            <if test="dto.marketingType == 5">
+                and res.marketingType = 5
+            </if>
+            <if test="dto.beginTime != null">
+                <![CDATA[ and res.beginTime >= #{dto.beginTime} ]]>
+            </if>
+            <if test="dto.endTime != null">
+                <![CDATA[ and res.endTime <= #{dto.endTime} ]]>
+            </if>
+            <if test="dto.marketingName != null and dto.marketingName != ''">
+                <bind name="_marketingName" value="'%' + dto.marketingName + '%'"/>
+                and res.marketingName like #{_marketingName}
+            </if>
+        </where>
+        order by res.createTime desc
+    </select>
+    <select id="marketingActivityNoBeginPageQuery"
+            parameterType="com.meiyuan.catering.marketing.dto.marketing.MarketingSeckillGrouponPageQueryDTO"
+            resultType="com.meiyuan.catering.marketing.vo.marketing.MarketingSeckillGrouponPageQueryVO">
+        select
+            res.id as id,
+            res.marketingType as marketingType,
+            res.marketingName as marketingName,
+            res.beginTime as beginTime,
+            res.endTime as endTime,
+            res.userTarget as userTarget,
+            res.businessTarget as businessTarget,
+            res.upDown as upDown,
+            res.createTime as createTime
+        from
+        (
+        select
+            id as id,
+            1 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_seckill
+        where merchant_id = #{dto.shopId} and up_down = 2 and <![CDATA[ begin_time > #{dto.now} ]]> and is_del = 0
+
+        union all
+
+        select
+            id as id,
+            3 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_groupon
+        where merchant_id = #{dto.shopId} and up_down = 2 and <![CDATA[ begin_time > #{dto.now} ]]> and is_del = 0
+
+        union all
+
+        select
+            id as id,
+            5 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_special
+        where shop_id = #{dto.shopId} and up_down = 2 and <![CDATA[ begin_time > #{dto.now} ]]> and is_del = 0
+        ) as res
+        <where>
+            <if test="dto.marketingType == 1">
+                and res.marketingType = 1
+            </if>
+            <if test="dto.marketingType == 3">
+                and res.marketingType = 3
+            </if>
+            <if test="dto.marketingType == 5">
+                and res.marketingType = 5
+            </if>
+            <if test="dto.beginTime != null">
+                <![CDATA[ and res.beginTime >= #{dto.beginTime} ]]>
+            </if>
+            <if test="dto.endTime != null">
+                <![CDATA[ and res.endTime <= #{dto.endTime} ]]>
+            </if>
+            <if test="dto.marketingName != null and dto.marketingName != ''">
+                <bind name="_marketingName" value="'%' + dto.marketingName + '%'"/>
+                and res.marketingName like #{_marketingName}
+            </if>
+        </where>
+        order by res.createTime desc
+    </select>
+    <select id="marketingActivityEndPageQuery"
+            parameterType="com.meiyuan.catering.marketing.dto.marketing.MarketingSeckillGrouponPageQueryDTO"
+            resultType="com.meiyuan.catering.marketing.vo.marketing.MarketingSeckillGrouponPageQueryVO">
+        select
+            res.id as id,
+            res.marketingType as marketingType,
+            res.marketingName as marketingName,
+            res.beginTime as beginTime,
+            res.endTime as endTime,
+            res.userTarget as userTarget,
+            res.businessTarget as businessTarget,
+            res.upDown as upDown,
+            res.createTime as createTime
+        from
+        (
+        select
+            id as id,
+            1 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_seckill
+        where merchant_id = #{dto.shopId} and (up_down = 1 or <![CDATA[ end_time < #{dto.now} ]]>) and is_del = 0
+
+        union all
+
+        select
+            id as id,
+            3 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_groupon
+        where merchant_id = #{dto.shopId} and (up_down = 1 or <![CDATA[ end_time < #{dto.now} ]]>) and is_del = 0
+
+        union all
+
+        select
+            id as id,
+            5 as marketingType,
+            `name` as marketingName,
+            begin_time as beginTime,
+            end_time as endTime,
+            user_target as userTarget,
+            business_target as businessTarget,
+            up_down as upDown,
+            create_time as createTime
+        from
+            catering_marketing_special
+        where shop_id = #{dto.shopId} and (up_down = 1 or <![CDATA[ end_time < #{dto.now} ]]>) and is_del = 0
+        ) as res
+        <where>
+            <if test="dto.marketingType == 1">
+                and res.marketingType = 1
+            </if>
+            <if test="dto.marketingType == 3">
+                and res.marketingType = 3
+            </if>
+            <if test="dto.marketingType == 5">
+                and res.marketingType = 5
+            </if>
+            <if test="dto.beginTime != null">
+                <![CDATA[ and res.beginTime >= #{dto.beginTime} ]]>
+            </if>
+            <if test="dto.endTime != null">
+                <![CDATA[ and res.endTime <= #{dto.endTime} ]]>
+            </if>
+            <if test="dto.marketingName != null and dto.marketingName != ''">
+                <bind name="_marketingName" value="'%' + dto.marketingName + '%'"/>
+                and res.marketingName like #{_marketingName}
+            </if>
+        </where>
+        order by res.createTime desc
+    </select>
+
+
+    <!--商户app端营销管理列表-->
+    <select id="listMarketing"
+            resultType="com.meiyuan.catering.marketing.vo.marketing.MarketingMerchantAppListVO">
+        SELECT
+        temp.*,
+        (
+        CASE
+        WHEN temp.upDownState = 1 THEN
+        4
+        WHEN temp.begin_time &gt; now( 3 ) THEN
+        1
+        WHEN temp.begin_time &lt;= now( 3 ) AND temp.end_time &gt; now( 3 ) THEN
+        2
+        WHEN temp.end_time &lt;= now( 3 ) THEN
+        3
+        END
+        ) AS STATUS
+        FROM
+        (
+                -- 券
+                SELECT
+                    t.id,
+                    "3" AS activityType,
+                    t.activity_name AS `name`,
+                    t.begin_time,
+                    t.end_time,
+                    t.source,
+                    t.activity_type as ticketType,
+                    (
+                    CASE
+                    WHEN t.activity_type = 3 THEN
+        ( SELECT count( tr.ticket_id ) FROM catering_marketing_rule_ticket_relation tr WHERE  tr.activity_id = t.p_activity_id )
+                    WHEN t.activity_type = 2 THEN
+        ( SELECT count( mt.id ) FROM catering_marketing_ticket mt WHERE mt.is_del = 0 AND mt.activity_id = t.id )
+                    WHEN t.activity_type = 1 THEN
+        ( SELECT count( mt.id ) FROM catering_marketing_ticket mt WHERE mt.is_del = 0 AND mt.activity_id = t.id )
+                    END
+                    ) AS goodsNumber,
+                    a_shop.shop_ticket_status AS upDownState,
+                    t.create_time,
+                    NULL AS seckillEvent,
+                    "0" AS virtualGroupon,
+                    t.effective_date as effectiveData,
+                    NULL AS specialFixType
+                FROM
+                    catering_marketing_ticket_activity t
+                        LEFT JOIN catering_marketing_ticket_activity_shop a_shop ON a_shop.activity_id = t.id
+                WHERE
+                    t.is_del = 0
+                  AND a_shop.is_del = 0
+                  AND a_shop.shop_id = #{shopId} UNION ALL
+                    -- 秒杀
+                SELECT
+                    s.id,
+                    "1" AS activityType,
+                    s.`name`,
+                    s.begin_time,
+                    s.end_time,
+                    s.source,
+                    "0" as ticketType,
+                    ( SELECT count( g.id ) FROM catering_marketing_goods g WHERE  g.of_id = s.id ) AS goodsNumber,
+                    s.up_down AS upDownState,
+                    s.create_time,
+                    ( SELECT GROUP_CONCAT( DISTINCT ser.event_time ) FROM catering_marketing_seckill_event_relation ser WHERE ser.seckill_id = s.id ) AS seckillEvent,
+                    "0" AS virtualGroupon,
+                    NULL AS effectiveData,
+                    NULL AS specialFixType
+                FROM
+                    catering_marketing_seckill s
+                WHERE
+                    s.is_del = 0
+                  AND s.merchant_id = #{shopId} UNION ALL
+                    -- 团购
+                SELECT
+                    g.id,
+                    "2" AS activityType,
+                    g.`name`,
+                    g.begin_time,
+                    g.end_time,
+                    g.source,
+                    "0" as ticketType,
+                    ( SELECT count( mg.id ) FROM catering_marketing_goods mg WHERE  mg.of_id = g.id ) AS goodsNumber,
+                    g.up_down AS upDownState,
+                    g.create_time,
+                    NULL AS seckillEvent,
+                    g.virtual_groupon,
+                    NULL AS effectiveData,
+                    NULL AS specialFixType
+                FROM
+                    catering_marketing_groupon g
+                WHERE
+                    g.is_del = 0
+                  AND g.merchant_id = #{shopId} UNION ALL
+                  -- 特价商品
+                SELECT
+                    sp.id,
+                    "4" AS activityType,
+                    sp.`name`,
+                    sp.begin_time,
+                    sp.end_time,
+                    "3" AS source,
+                    "0" as ticketType,
+                    NULL AS goodsNumber,
+                    sp.up_down AS upDownState,
+                    sp.create_time,
+                    NULL AS seckillEvent,
+                    "0" AS virtualGroupon,
+                    NULL AS effectiveData,
+                    fix_type AS specialFixType
+                from
+                    catering_marketing_special sp
+                where
+                    sp.is_del = 0
+                   AND sp.shop_id = #{shopId}
+            ) AS temp
+          <where>
+              <choose>
+                  <when test="dto.status != null and dto.status == 2">
+                      AND temp.begin_time &lt;= now(3) AND temp.end_time &gt; now(3) AND temp.upDownState = 2
+                  </when>
+                  <when test="dto.status != null and dto.status == 1">
+                      AND temp.begin_time &gt; now(3) AND temp.upDownState = 2
+                  </when>
+                  <when test="dto.status != null and dto.status == 3">
+                      AND (temp.end_time &lt;= now(3) OR temp.upDownState = 1)
+                  </when>
+                  <otherwise></otherwise>
+              </choose>
+          </where>
+
+        ORDER BY
+            temp.create_time DESC
+
+
+
+
+    </select>
+    <select id="selectListByShopIds" resultMap="CateringMarketingSeckillMap">
+        select
+            cms.id,
+            cms.merchant_id,
+            cms.`name`,
+            cms.`code`,
+            cms.begin_time,
+            cms.end_time,
+            cms.up_down,
+            cms.object_limit,
+            cms.order_cancellation_time,
+            cms.description,
+            cms.source,
+            cms.activity_target,
+            cms.user_target,
+            cms.business_target,
+            cms.is_del,
+            cms.create_time,
+            cms.create_by,
+            cms.update_time,
+            cms.update_by
+        from
+            catering_marketing_seckill as cms
+        right join catering_marketing_goods as cmg on cmg.of_id = cms.id
+        where
+            <![CDATA[ begin_time <= #{dateTime} and end_time >= #{dateTime} ]]>
+           and cms.up_down = 2 and cms.is_del = 0 and cmg.goods_status = 2 and cmg.is_del = 0
+           and cms.merchant_id in
+           <foreach collection="shopIds" item="item" index="index" open="(" separator="," close=")">
+               #{item}
+           </foreach>
+           <if test="userType != null and userType == 1">
+               and (cms.object_limit = 0 or cms.object_limit = 1)
+           </if>
+            <if test="userType != null and userType == 2">
+                and (cms.object_limit = 0 or cms.object_limit = 2)
+            </if>
+        group by cms.id
+    </select>
+
+    <select id="listGoodsMinPriceByShop" resultType="com.meiyuan.catering.marketing.dto.groupon.ShopGrouponGoodsDTO">
+        SELECT
+            ms.merchant_id shopId,
+
+            MIN(mg.activity_price) activityPrice
+        FROM
+            catering_marketing_seckill ms
+            right JOIN catering_marketing_goods mg ON ms.id = mg.of_id
+            LEFT JOIN catering_marketing_seckill_event_relation ser ON ser.seckill_id = ms.id
+        WHERE
+            ms.up_down = 2  AND ms.is_del = 0  AND mg.is_del = false and mg.goods_status = 2
+            and (<![CDATA[ ms.begin_time <= now() and ms.end_time >= now()]]>)
+            <if test="type">
+                and (ms.object_limit = 0 or  ms.object_limit = 2)
+            </if>
+            <if test="!type">
+                and (ms.object_limit = 0 or  ms.object_limit = 1)
+            </if>
+            <if test="shopIds != null and shopIds.size != 0">
+                AND ms.merchant_id in
+                <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                    #{shopId}
+                </foreach>
+            </if>
+            and DATE_FORMAT(now(),'%H:%i:%S') >= event_begin_time
+            and DATE_FORMAT(now(),'%H:%i:%S') &lt;= event_end_time
+            GROUP BY shopId;
+    </select>
+
+    <select id="listShopHaveSeckill" resultType="long">
+        SELECT
+        ms.merchant_id shopId
+        FROM
+        catering_marketing_seckill ms
+        LEFT JOIN catering_marketing_goods mg ON ms.id = mg.of_id AND mg.goods_status = 2 AND mg.is_del = FALSE
+        LEFT JOIN catering_marketing_seckill_event_relation ser ON ser.seckill_id = ms.id
+        WHERE
+        ms.up_down = 2  AND ms.is_del = 0  AND mg.is_del = false and mg.goods_status = 2
+        and (<![CDATA[ ms.begin_time <= now() and ms.end_time >= now()]]>)
+        <if test="type">
+            and (ms.object_limit = 0 or  ms.object_limit = 2)
+        </if>
+        <if test="!type">
+            and (ms.object_limit = 0 or  ms.object_limit = 1)
+        </if>
+        <if test="shopIds != null and shopIds.size != 0">
+            AND ms.merchant_id in
+            <foreach collection="shopIds" item="shopId" open="(" close=")" separator=",">
+                #{shopId}
+            </foreach>
+        </if>
+        and DATE_FORMAT(now(),'%H:%i:%S') >= event_begin_time
+        and DATE_FORMAT(now(),'%H:%i:%S') &lt;= event_end_time
+        GROUP BY shopId;
+    </select>
+    <select id="selectValidBeginOrNoBegin" resultType="java.lang.Long">
+        select
+            id
+        from
+            catering_marketing_seckill
+        where
+            merchant_id = #{shopId} and up_down = 2 and is_del = false
+            and ( <![CDATA[ begin_time >= #{now} or (begin_time <= #{now} and #{now} <= end_time)]]> )
+    </select>
+    <select id="selectEventGoodsFilter"
+            resultType="com.meiyuan.catering.marketing.vo.seckill.MarketingSeckillEventGoodsFilterVO">
+        select
+            cms.id as seckillId,
+            cmser.event_id as eventId,
+            cmser.event_time as eventTime,
+            cmg.id as mGoodsId,
+            cmg.goods_name as goodsName,
+            cmg.sku as goodsSku,
+            cmg.sku_value as goodsSkuValue
+        from
+            catering_marketing_seckill as cms
+        left join catering_marketing_seckill_event_relation as cmser on cmser.seckill_id = cms.id
+        left join catering_marketing_goods as cmg on cmg.of_id = cms.id
+        where
+            cms.merchant_id = #{shopId} and cms.is_del = FALSE and cms.up_down = 2
+            and ( ( #{beginTime} BETWEEN cms.begin_time and cms.end_time ) OR ( #{endTime} BETWEEN cms.begin_time and cms.end_time ) OR (#{beginTime} &lt;= cms.begin_time and #{endTime} &gt;= cms.end_time))
+            <if test="objectLimit != null and objectLimit == 0">
+                and (cms.object_limit = 0 or cms.object_limit = 1 or cms.object_limit = 2)
+            </if>
+            <if test="objectLimit != null and objectLimit == 1">
+                and cms.object_limit = 1
+            </if>
+            <if test="objectLimit != null and objectLimit == 2">
+                and cms.object_limit = 2
+            </if>
+            and cmg.sku in
+            <foreach collection="goodsSkuList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            and cmser.event_id in
+            <foreach collection="eventIds" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+    </select>
+
+    <update id="freezeBath">
+        update catering_marketing_seckill
+        set up_down = 1
+        where id in
+        <foreach collection="ids" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+</mapper>

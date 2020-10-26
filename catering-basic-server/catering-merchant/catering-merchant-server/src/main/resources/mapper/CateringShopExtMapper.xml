@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringShopExtMapper">
+
+        <!-- 通用查询映射结果 -->
+        <resultMap id="BaseResultMap" type="com.meiyuan.catering.merchant.entity.CateringShopExtEntity">
+                    <id column="id" property="id" />
+                    <result column="shop_id" property="shopId" />
+                    <result column="contract_no" property="contractNo" />
+                    <result column="bank_name" property="bankName" />
+                    <result column="bank_branch" property="bankBranch" />
+                    <result column="bank_card_number" property="bankCardNumber" />
+                    <result column="business_license" property="businessLicense" />
+                    <result column="food_business_license" property="foodBusinessLicense" />
+                    <result column="id_card_positive" property="idCardPositive" />
+                    <result column="id_card_back" property="idCardBack" />
+                    <result column="id_card_withhand" property="idCardWithhand" />
+                    <result column="audit_status" property="auditStatus" />
+                    <result column="is_del" property="del" />
+                    <result column="create_time" property="createTime" />
+                    <result column="update_time" property="updateTime" />
+        </resultMap>
+
+        <!-- 通用查询结果列 -->
+        <sql id="Base_Column_List">
+        id, shop_id, contract_no, bank_name, bank_branch, bank_card_number, business_license, food_business_license, id_card_positive, id_card_back, id_card_withhand, audit_status, is_del, create_time, update_time
+    </sql>
+
+    <select id="selectByShopId" resultType="com.meiyuan.catering.merchant.entity.CateringShopExtEntity">
+        select * from catering_shop_ext where shop_id=#{shopId} limit 1
+    </select>
+</mapper>

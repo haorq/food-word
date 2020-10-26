@@ -1,0 +1,103 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  profiles:
+    include: common
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  #实体扫描，多个package用逗号或者分号分隔
+  typeAliasesPackage: com.meiyuan.catering.goods.entity,com.meiyuan.catering.merchant.entity,com.meiyuan.catering.marketing.entity,com.meiyuan.catering.order.entity,com.meiyuan.catering.user.entity
+  type-handlers-package: com.meiyuan.catering.core.mybatis
+  global-config:
+    #数据库相关配置
+    db-config:
+      #主键类型  AUTO:"数据库ID自增", INPUT:"用户输入ID", ID_WORKER:"全局唯一ID (数字类型唯一ID)", UUID:"全局唯一ID UUID";
+      id-type: ID_WORKER
+      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+    banner: false
+  #原生配置
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
+
+
+goods:
+  merchant:
+    id: 1
+
+psssword:
+  encrypt:
+    key: 1234567890123456
+    iv: 1234567890123456 # 16位数字
+
+
+map:
+  baidu:
+    ak: 71K0FLSi7UkH6j59EkZBMBAbRFQVff7G
+
+catering:
+  limit:
+    url: /execute
+    # 对象存储配置
+  storage:
+    # 当前工作的对象存储模式，分别是aliyun
+    active: aliyun
+    # 阿里云对象存储配置信息
+    aliyun:
+      endpoint: http://oss-cn-shenzhen.aliyuncs.com
+      accessKeyId: LTAI4FpiF18xnmDnKggv4wDf
+      accessKeySecret: ADGeUIbMFUnLtgrkYbrbJ2O6VezNLO
+      bucketName: dev-my-common
+      domain: https://dev-my-common.meiy520.com/
+swagger:
+  enabled: true
+  docket:
+    goods:
+      title: 商品
+      base-package: com.meiyuan.catering.wx.api.goods
+    marketing:
+      title: 营销
+      base-package: com.meiyuan.catering.wx.api.marketing
+    merchant:
+      title: 商户
+      base-package: com.meiyuan.catering.wx.api.merchant
+    order:
+      title: 订单
+      base-package: com.meiyuan.catering.wx.api.order
+    user:
+      title: 用户
+      base-package: com.meiyuan.catering.wx.api.user
+    index:
+      title: 首页
+      base-package: com.meiyuan.catering.wx.api.index
+    finance:
+      title: 财务
+      base-package: com.meiyuan.catering.wx.api.finance
+    pay:
+      title: 支付
+      base-package: com.meiyuan.catering.wx.api.pay
+    notify:
+      title: 通知
+      base-package: com.meiyuan.catering.wx.api.notify
+    cart:
+      title: 购物车
+      base-package: com.meiyuan.catering.wx.api.cart
+    sharebill:
+      title: 拼单
+      base-package: com.meiyuan.catering.wx.api.sharebill
+    es:
+      title: ES
+      base-package: com.meiyuan.catering.wx.api.es
+    storage:
+      title: 文件上传
+      base-package: com.meiyuan.catering.wx.api.storage
+    common:
+      title: 文字图片过滤
+      base-package: com.meiyuan.catering.wx.api.common
+  authorization:
+    key-name: X-Catering-Token
+

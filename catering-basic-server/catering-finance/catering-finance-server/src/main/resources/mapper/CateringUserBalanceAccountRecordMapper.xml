@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.finance.dao.CateringUserBalanceAccountRecordMapper">
+
+
+    <select id="incomeExpendByUserId" resultType="com.meiyuan.catering.finance.vo.account.IncomeExpendVO">
+        SELECT
+           ifnull(sum(CASE WHEN type=1 THEN account END),0) income,
+           ifnull(sum(CASE WHEN type=2 THEN account END),0) expend
+        FROM
+            `catering_user_balance_account_record`
+        where
+          status = 1
+          and
+          user_id= #{userId}
+    </select>
+    <select id="queryAccountRecordList" resultType="com.meiyuan.catering.finance.vo.account.UserAccountRecordListVO">
+        SELECT
+             title,
+             account,
+             type,
+             create_time createTime
+        FROM
+            `catering_user_balance_account_record`
+            WHERE
+            status = 1
+            and
+            user_id = #{userId}
+            order by create_time desc
+    </select>
+    <select id="consumeRefundByUserId" resultType="com.meiyuan.catering.finance.vo.account.ConsumeRefundVO">
+       SELECT
+           ifnull(sum(CASE WHEN (type=1 and fund_type=3) THEN account END),0) income,
+           ifnull(sum(CASE WHEN type=2 THEN account END),0) expend
+        FROM
+            `catering_user_balance_account_record`
+        where
+          status = 1
+          and
+          user_id= #{userId}
+    </select>
+</mapper>
+

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringUserExtMapper">
+
+    <resultMap type="com.meiyuan.catering.user.entity.CateringUserExtEntity" id="CateringUserExtMap">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+                    <result property="userId" column="user_id" jdbcType="BIGINT"/>
+                    <result property="wechat" column="wechat" jdbcType="VARCHAR"/>
+                    <result property="nickName" column="nick_name" jdbcType="VARCHAR"/>
+                    <result property="headImg" column="head_img" jdbcType="VARCHAR"/>
+                    <result property="address" column="address" jdbcType="VARCHAR"/>
+                    <result property="birthday" column="birthday" jdbcType="TIMESTAMP"/>
+                    <result property="profession" column="profession" jdbcType="VARCHAR"/>
+                    <result property="del" column="is_del" jdbcType="INTEGER"/>
+                    <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                    <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+                    <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                    <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+            </resultMap>
+
+</mapper>

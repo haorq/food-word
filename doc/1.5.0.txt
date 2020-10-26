@@ -1,0 +1,125 @@
+--营销商品
+http://192.168.98.84:9200/catering_marketing_v1/_mapping/marketing/?pretty
+{
+	"properties": {
+		"goodsSpecType": {
+			"type": "integer"
+		},
+		"packPrice": {
+			"type": "double"
+		}
+	}
+}
+    1.执行SQL补全字段值
+    2.执行接口 /manage/admin/es/setMarketingGoodsSpecType -- GET
+
+-- 营销商品修改seckillEventIds字段可被索引的字符长度
+http://192.168.98.84:9200/catering_marketing_v1/_mapping/marketing/?pretty  -- PUT
+{
+	"properties": {
+		"seckillEventIds": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "ignore_above": 1024,
+                    "type": "keyword"
+                }
+            }
+        }
+	}
+}
+
+
+--商品es新增餐盒费
+http://192.168.98.84:9200/catering_goods_v2/_mapping/goods/?pretty
+{
+            "properties":{
+                "skuList": {
+                    "type": "nested",
+                    "properties": {
+                    "packPrice": {
+                    "type": "double"
+                    }
+            }
+          }
+        }
+}
+1.es新增餐盒费后，执行pushEs 接口，刷新数据
+
+
+-- 通商云初始化数据
+--初始化用户数据(创建会员,绑定支付标识(openId))
+http://xs-dev.meiy520.com/wx/api/init/initUserMember
+--初始化门店数据(创建会员)
+http://xs-dev.meiy520.com/wx/api/init/initShopMember
+
+
+-- test\uat新增微信公众号配置
+catering.wx.app-public-id=wx99cf7ba3fe7d08de
+catering.wx.app-public-secret=9c4da6905815aa4d37adca57c9eedf2e
+
+-- 处理异常分账信息定时任务
+    任务描述：处理异常分账信息
+    cron：0 0 2 * * ?
+    url：/job/splitBill/makeAbnormalSplitBill
+
+-- 商家通联账户余额提现定时任务
+    任务描述：商家通联账户余额提现
+    cron：0 0 0 * * ?
+    url：/job/shop/allinPayWithdraw
+
+
+
+--test\uat新增通商云配置
+catering.allinpay.url=https://cloud.allinpay.com/gateway
+catering.allinpay.appId=1311119382956048385
+catering.allinpay.secretKey=ysoAHEtKcqHcZOHCGKn8Jkk3VDy5HdnA
+catering.allinpay.certPath=classpath:/allinpay/prod/1311119382956048385.pfx
+catering.allinpay.certPwd=meiyuan12345
+catering.allinpay.tlCertPath=classpath:/allinpay/prod/TLCert.cer
+catering.allinpay.domain=https://xs-test.meiy365.com
+catering.allinpay.domainH5=https://xs-test.meiy365.com
+catering.allinpay.accountSetNo=400679
+catering.allinpay.vspMerchantId=55265105812D73F
+catering.allinpay.vspMerchantAppId=00197968
+catering.allinpay.vspCusId=55265105812D73W
+catering.allinpay.wxAppId=wx090d61996d5b51b6
+catering.allinpay.subsidyAccountNo=2000000
+catering.allinpay.splitAccountNo=100001
+
+-- 达达配置
+catering:
+    delivery:
+        dada:
+          appId: dadad98fd9a49e88165
+          appSecret: 2e138a9561aa22fda4271a71473af2ab
+          isOnline: false
+          domain: http://xs-dev.meiy520.com
+          sourceId: 97987
+-- 易联运
+catering:
+    yly:
+        appId: 1095413271
+        appSecret: 814c78f3680cd1b12d5260e09fd8e313
+        appToken: 624a0a209fc2454eac47f0e04aafa73b
+        imgUrl: https://oss-prod-catering.meiy365.com/catering-prod/20201019/ryvuu3y43vlpiez2he8v.png
+
+-- 门店老数据处理[]
+http://xs-dev.meiy520.com/manage/admin/merchant/data/handleShopDataV5
+--- yly 回调地址修改[店铺打印机状态改变信息同步]
+修改地址：https://dev.10ss.net/admin/listmkey
+https://xs-test.meiy365.com/merchant/app/printingConfig/changePrintStatusNotify
+http://xs-dev.meiy520.com/merchant/app/printingConfig/changePrintStatusNotify
+https://xs-uat.meiy365.com/merchant/app/printingConfig/changePrintStatusNotify
+https://xs.meiy365.com//merchant/app/printingConfig/changePrintStatusNotify
+-- 初始化门店负债信息
+    url:/wx/api/init/initShopDebt
+
+---- 清除pc端，登录token
+8号库
+mercahnt:token
+mercahnt:pc:token
+shop:order:notice
+delieve:notice:queue
+清除门店通知记录
+http://127.0.0.1:8078/manage/admin/merchant/data/handleAppTokenV5

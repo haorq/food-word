@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersDeliveryNoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.order.entity.CateringOrdersDeliveryNoEntity">
+        <id column="id" property="id"/>
+        <result column="order_id" property="orderId"/>
+        <result column="delivery_no" property="deliveryNo"/>
+        <result column="delivery_type" property="deliveryType"/>
+        <result column="delivery_type_remark" property="deliveryTypeRemark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="distance" property="distance"/>
+        <result column="fee" property="fee"/>
+        <result column="delivery_fee" property="delivery_fee"/>
+        <result column="coupon_fee" property="coupon_fee"/>
+        <result column="deduct_fee" property="deduct_fee"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, order_id, delivery_no, delivery_type, delivery_type_remark, create_time,distance,fee,delivery_fee,coupon_fee,deduct_fee
+    </sql>
+
+
+    <update id="updateDeductFee">
+        update catering_orders_delivery_no
+        set deduct_fee = #{deductFee}
+        where order_id = #{orderId}
+    </update>
+
+
+    <select id="listByOrderId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from catering_orders_delivery_no
+        where
+        order_id = #{orderId}
+        order by create_time desc
+    </select>
+</mapper>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersOperationMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersOperationEntity" id="CateringOrdersOperationMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="operationPhase" column="operation_phase" jdbcType="INTEGER"/>
+        <result property="operationTime" column="operation_time" jdbcType="TIMESTAMP"/>
+        <result property="operationType" column="operation_type" jdbcType="INTEGER"/>
+        <result property="operationId" column="operation_id" jdbcType="INTEGER"/>
+        <result property="operationName" column="operation_name" jdbcType="VARCHAR"/>
+        <result property="operationPhone" column="operation_phone" jdbcType="VARCHAR"/>
+        <result property="operationExplain" column="operation_explain" jdbcType="VARCHAR"/>
+    </resultMap>
+    <resultMap type="com.meiyuan.catering.order.dto.query.wx.CateringOrdersOperationDTO" id="ProgressMap">
+        <result property="operationPhase" column="operation_phase" jdbcType="INTEGER"/>
+        <result property="operationTime" column="operation_time" jdbcType="TIMESTAMP"/>
+        <result property="remark" column="operation_explain"/>
+    </resultMap>
+    <select id="progress" resultMap="ProgressMap">
+            SELECT
+                operation_phase,
+                operation_time,
+                if(operation_type=2 and operation_phase=3,operation_explain,"") operation_explain
+            FROM
+                catering_orders_operation
+                 where order_id = #{orderId}
+    </select>
+</mapper>

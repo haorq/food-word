@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.order.dao.CateringOrdersDeliveryMapper">
+
+    <resultMap type="com.meiyuan.catering.order.entity.CateringOrdersDeliveryEntity" id="CateringOrdersDeliveryMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="orderId" column="order_id" jdbcType="INTEGER"/>
+        <result property="orderNumber" column="order_number" jdbcType="VARCHAR"/>
+        <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+        <result property="storeName" column="store_name" jdbcType="VARCHAR"/>
+        <result property="consigneeName" column="consignee_name" jdbcType="VARCHAR"/>
+        <result property="consigneeSex" column="consignee_sex" jdbcType="INTEGER"/>
+        <result property="consigneePhone" column="consignee_phone" jdbcType="VARCHAR"/>
+        <result property="tableware" column="tableware" jdbcType="INTEGER"/>
+        <result property="consigneeArea" column="consignee_area" jdbcType="VARCHAR"/>
+        <result property="consigneeAddress" column="consignee_address" jdbcType="VARCHAR"/>
+        <result property="consigneeCode" column="consignee_code" jdbcType="VARCHAR"/>
+        <result property="estimateTime" column="estimate_time" jdbcType="TIMESTAMP"/>
+        <result property="estimateEndTime" column="estimate_end_time" jdbcType="TIMESTAMP"/>
+        <result property="actualTime" column="actual_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="createName" column="create_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+        <result property="updateName" column="update_name" jdbcType="VARCHAR"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+</mapper>

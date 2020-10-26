@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.user.dao.CateringUserPusherTicketRelationMapper">
+    <resultMap id="BaseResultMap" type="com.meiyuan.catering.user.entity.CateringUserPusherTicketRelationEntity">
+        <result column="id" jdbcType="BIGINT" property="id" />
+        <result column="ground_pusher_id" jdbcType="BIGINT" property="groundPusherId" />
+        <result column="ticket_id" jdbcType="BIGINT" property="ticketId" />
+        <result column="is_del" jdbcType="TINYINT" property="isDel" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="create_by" jdbcType="BIGINT" property="createBy" />
+        <result column="update_by" jdbcType="BIGINT" property="updateBy" />
+    </resultMap>
+
+    <select id="listPusherTicket" resultType="com.meiyuan.catering.user.dto.user.PusherTicketDTO" parameterType="java.lang.Long">
+        SELECT
+        t2.ticket_name,
+        t2.on_click,
+        t2.child_type,
+        t2.consume_condition,
+        t2.amount,
+        t2.indate_type,
+        t2.use_begin_time,
+        t2.use_end_time,
+        t2.use_days,
+        t2.id as ticketId
+        FROM
+        catering_marketing_ticket t2
+        left join catering_marketing_repertory t4 on t2.id = t4.of_id and t4.is_del=false
+        WHERE
+        t2.is_del = FALSE
+        and t4.residual_inventory>0
+        AND t4.activity_id is null
+        AND t2.id IN (
+          SELECT t1.ticket_id FROM catering_user_pusher_ticket_relation t1
+          join catering_user_ground_pusher t3 on t3.id = t1.ground_pusher_id
+          WHERE t1.ground_pusher_id = #{groundPusherId} AND t3.pusher_status = 1 AND t1.is_del = FALSE
+          )
+
+    </select>
+
+</mapper>

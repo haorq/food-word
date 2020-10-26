@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.merchant.dao.CateringShopTagMapper">
+
+    <resultMap type="com.meiyuan.catering.merchant.entity.CateringShopTagEntity" id="CateringMerchantFlagMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="tagName" column="tag_name" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="del" column="is_del" jdbcType="INTEGER"/>
+        <result property="createBy" column="create_by" jdbcType="BIGINT"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="BIGINT"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            </resultMap>
+
+    <select id="shopTagList" resultType="com.meiyuan.catering.merchant.vo.ShopTagVo">
+        SELECT  t.id, t.tag_name ,t.type,count(r.shop_tag_id) as usedNum
+        from catering_shop_tag  t
+        left join catering_shop_tag_relation r on t.id = r.shop_tag_id
+        <where>
+            <if test="tagName != null and tagName != ''">
+                t.tag_name like concat('%', REPLACE(REPLACE(#{tagName,jdbcType=VARCHAR},'%','\\%'),'_','\\_'), '%')  and
+            </if>
+            t.is_del=0
+        </where>
+        group by t.id
+        order by t.create_time desc
+    </select>
+
+
+
+
+    <select id="queryById" resultType="com.meiyuan.catering.merchant.vo.ShopTagDetailVo">
+        SELECT
+            m.merchant_name shopName,
+            m.merchant_status shopStatus,
+            m.legal_person_name primaryPersonName,
+            m.phone merchantPhone,
+            t.tag_name
+        FROM
+            catering_merchant m
+            INNER JOIN catering_shop_tag_relation r ON r.merchant_id = m.id
+            INNER JOIN catering_shop_tag t ON t.id = r.shop_tag_id
+        <where>
+            <if test="id != null ">
+                t.id = #{id} and
+            </if>
+        </where>
+       t.is_del=0
+    </select>
+
+    <select id="getMerchantShopTags" parameterType="long"
+            resultType="com.meiyuan.catering.merchant.vo.merchant.MerchantShopTagsVo">
+        SELECT
+            cst.id id,
+            cst.tag_name tagName
+        FROM
+            catering_shop_tag_relation cstr
+            RIGHT JOIN catering_shop_tag cst ON cstr.shop_tag_id = cst.id AND cst.is_del = FALSE
+        WHERE
+            cstr.merchant_id = #{merchantId}
+    </select>
+    <select id="selectUsed" resultType="com.meiyuan.catering.merchant.vo.ShopTagVo">
+        SELECT
+            t.id,
+            t.tag_name,
+            t.type,
+            count( r.merchant_id ) AS usedNum
+        FROM
+            catering_shop_tag t
+        LEFT JOIN
+            catering_shop_tag_relation r ON t.id = r.shop_tag_id
+        <where>
+            <if test="id != null and id != ''">
+                t.id = #{id}
+            </if>
+        </where>
+
+        group by t.tag_name
+    </select>
+
+    <select id="selectByTagType" resultType="com.meiyuan.catering.merchant.entity.CateringShopTagEntity">
+        SELECT
+            *
+        FROM
+            catering_shop_tag cst
+        WHERE
+            cst.type = #{type}
+    </select>
+
+    <delete id="delOldMerchantShopTagV3" >
+        DELETE
+        FROM
+          catering_shop_tag_relation
+        WHERE
+          catering_shop_tag_relation.merchant_id = #{merchantId}
+    </delete>
+
+    <delete id="deleteByRelation">
+        delete from catering_shop_tag_relation where shop_tag_id=#{id};
+    </delete>
+
+    <insert id="insertShopTagRelation" >
+        INSERT INTO catering_shop_tag_relation (id,merchant_id, shop_tag_id )
+        VALUES
+        <foreach collection="list" item="item" open="(" close=")" separator="),(">
+            #{item.id},#{merchantId},#{item.shopTagId}
+        </foreach>
+    </insert>
+
+
+    <!--通过标签id获取绑定店铺id-->
+    <select id="queryList" resultType="java.lang.String">
+        SELECT
+        r.merchant_id FROM
+        catering_shop_tag  t
+        INNER JOIN catering_shop_tag_relation  r on
+        t.id=r.shop_tag_id where t.type=2 and
+        t.id = #{id}
+    </select>
+
+
+
+
+</mapper>

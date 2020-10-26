@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.meiyuan.catering.goods.dao.CateringGoodsMenuMapper">
+
+    <resultMap type="com.meiyuan.catering.goods.entity.CateringGoodsMenuEntity" id="CateringGoodsMenuMap">
+            <result property="id" column="id" jdbcType="BIGINT"/>
+            <result property="menuName" column="menu_name" jdbcType="VARCHAR"/>
+            <result property="menuCode" column="menu_code" jdbcType="VARCHAR"/>
+            <result property="menuType" column="menu_type" jdbcType="INTEGER"/>
+            <result property="serviceTime" column="service_time" jdbcType="TIMESTAMP"/>
+            <result property="upperShelfTime" column="upper_shelf_time" jdbcType="TIMESTAMP"/>
+            <result property="lowerShelfTime" column="lower_shelf_time" jdbcType="TIMESTAMP"/>
+            <result property="menuPicture" column="menu_picture" jdbcType="VARCHAR"/>
+            <result property="menuStatus" column="menu_status" jdbcType="INTEGER"/>
+            <result property="del" column="is_del" jdbcType="INTEGER"/>
+            <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.meiyuan.catering.goods.dto.menu.GoodsMenuDTO" id="BaseGoodsMenuDTOMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="merchantId" column="merchant_id" jdbcType="BIGINT"/>
+        <result property="menuName" column="menu_name" jdbcType="VARCHAR"/>
+        <result property="menuCode" column="menu_code" jdbcType="VARCHAR"/>
+        <result property="menuType" column="menu_type" jdbcType="INTEGER"/>
+        <result property="serviceTime" column="service_time" jdbcType="TIMESTAMP"/>
+        <result property="upperShelfTime" column="upper_shelf_time" jdbcType="TIMESTAMP"/>
+        <result property="lowerShelfTime" column="lower_shelf_time" jdbcType="TIMESTAMP"/>
+        <result property="menuPicture" column="menu_picture" jdbcType="VARCHAR"/>
+        <result property="menuStatus" column="menu_status" jdbcType="INTEGER"/>
+        <result property="menuDescribe" column="menu_describe" jdbcType="VARCHAR" />
+    </resultMap>
+
+        <resultMap type="com.meiyuan.catering.goods.dto.menu.GoodsMenuDTO" extends="BaseGoodsMenuDTOMap" id="GoodsMenuDTOMap">
+                <collection property="goodsInfoList" javaType="ArrayList"
+                            select="listGoodsInMenu" column="{menuId=id}">
+                </collection>
+        </resultMap>
+
+        <resultMap type="com.meiyuan.catering.goods.dto.goods.GoodsNameAndIdDTO" id="GoodsNameAndIdDTOMap">
+                <result property="id" column="id" jdbcType="BIGINT"/>
+                <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+                <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+        </resultMap>
+
+    <select id="listForMerchant" resultMap="GoodsMenuDTOMap">
+    SELECT gm.id,gm.menu_name,gm.menu_type,gm.service_time,
+	    gm.menu_picture,gm.menu_status,
+	    gm.upper_shelf_time,gm.lower_shelf_time
+    FROM `catering_goods_menu` gm
+    JOIN `catering_merchant_menu_goods_relation` mm
+    ON gm.id = mm.menu_id AND mm.data_bind_type=2
+    <where>
+        gm.is_del=0
+        <if test="merchantId != null">
+                and mm.merchant_id=#{merchantId}
+        </if>
+        <if test="dto.menuStatus != null and dto.menuStatus != 3">
+                and gm.menu_status=#{dto.menuStatus}
+        </if>
+        <if test="dto.goodsStatus != null">
+            and mm.status=#{dto.goodsStatus}
+        </if>
+        <if test="dto.date != null and dto.date != ''">
+            AND gm.`upper_shelf_time`&gt;=#{dto.date}
+        </if>
+    </where>
+    ORDER BY gm.`upper_shelf_time` DESC
+    </select>
+
+        <select id="listGoodsInMenu" resultMap="GoodsNameAndIdDTOMap">
+            SELECT g.`id`,g.`goods_name`,c.`category_name`
+            FROM `catering_category` c
+            JOIN `catering_goods_category_relation` gc
+            ON c.`id`=gc.`category_id`
+            JOIN `catering_goods` g
+            ON g.`id`=gc.`goods_id`
+            JOIN `catering_merchant_menu_goods_relation` mm
+            ON mm.goods_id=g.`id`
+            <where>
+                g.is_del=0 AND g.`goods_status`=2
+                AND mm.menu_id=#{menuId}
+            </where>
+
+        </select>
+
+    <select id="listForWechat" resultMap="BaseGoodsMenuDTOMap">
+        SELECT gm.id,gm.menu_name,gm.menu_type,gm.service_time,
+        gm.menu_picture,gm.menu_status,gm.menu_describe,
+        gm.upper_shelf_time,gm.lower_shelf_time,
+        mm.merchant_id
+        FROM `catering_goods_menu` gm
+        JOIN `catering_merchant_menu_goods_relation` mm
+        ON gm.id = mm.menu_id AND mm.data_bind_type=2
+        <where>
+            gm.is_del=0
+            <if test="dto.menuStatus != null">
+                and mm.status=#{dto.menuStatus}
+            </if>
+
+            <if test="dto.merchantIds != null and dto.merchantIds != ''">
+                and mm.merchant_id in (${dto.merchantIds})
+            </if>
+
+            <if test="dto.date != null">
+                and gm.`upper_shelf_time` &gt;= #{dto.date} AND gm.`lower_shelf_time` &lt;= #{dto.date}
+            </if>
+
+        </where>
+
+        <choose>
+            <when test="dto.merchantIds != null and dto.merchantIds != ''">
+                order by FIELD(mm.merchant_id,${dto.merchantIds}),gm.upper_shelf_time desc
+            </when>
+            <otherwise>
+                order by gm.upper_shelf_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--上下架时间段包含的菜单-->
+    <select id="timeContainMenu" resultType="com.meiyuan.catering.goods.entity.CateringGoodsMenuEntity">
+        select
+        id,
+        menu_name as menuName,
+        menu_code as menuCode
+        from
+        catering_goods_menu
+        where
+        is_del = 0
+        and
+        (
+            (
+                -- 开始时间
+		        #{begin} BETWEEN upper_shelf_time AND lower_shelf_time
+            )
+            or
+            (
+                -- 结束时间
+		        #{end} BETWEEN upper_shelf_time AND lower_shelf_time
+            )
+            or
+            (
+                -- 两个时间 都包含
+                #{begin} &lt;= upper_shelf_time
+                and
+                #{end} &gt;= lower_shelf_time
+            )
+        )
+    </select>
+
+    <select id="listForWxMerchantIndex" resultMap="BaseGoodsMenuDTOMap">
+        SELECT gm.id,gm.menu_name,gm.menu_type,gm.service_time,
+        gm.menu_picture,gm.menu_status,
+        gm.upper_shelf_time,gm.lower_shelf_time
+        FROM `catering_goods_menu` gm
+        WHERE
+        gm.is_del=0
+        <if test="dto.menuStatus != null">
+            and gm.menu_status=#{dto.menuStatus}
+        </if>
+        <if test="dto.date != null and dto.date != ''">
+            AND gm.`upper_shelf_time`&gt;=#{dto.date}
+        </if>
+        <if test="dto.endDate != null and dto.endDate != ''">
+            AND gm.`upper_shelf_time`&lt;=#{dto.endDate}
+        </if>
+        AND gm.id IN (
+        SELECT mm.`menu_id` FROM
+        `catering_merchant_menu_goods_relation` mm
+        WHERE
+        mm.`data_bind_type`=2
+        <if test="merchantId != null">
+            and mm.merchant_id=#{merchantId}
+        </if>
+        <if test="dto.goodsStatus != null">
+            and mm.status=#{dto.goodsStatus}
+        </if>
+        )
+        ORDER BY gm.`upper_shelf_time` asc
+        LIMIT 0,7;
+    </select>
+</mapper>

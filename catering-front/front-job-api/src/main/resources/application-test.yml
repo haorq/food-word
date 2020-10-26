@@ -1,0 +1,10 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+app:
+  id: xs-front-job-api
+apollo: 
+  meta: http://192.168.98.74:18080
+  bootstrap: 
+    enabled: true
+    namespaces: application,xs-catering.common.config
